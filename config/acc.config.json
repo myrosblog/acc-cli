@@ -36,7 +36,8 @@
     }
   },
   "xtk:jssp": {
-    "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.js",
+    "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp",
+    "metaname": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [
@@ -74,6 +75,7 @@
   },
   "xtk:javascript": {
     "filename": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.js",
+    "metaname": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [

@@ -235,6 +235,7 @@ class CampaignInstance {
       ? this.campaignConfig[schemaId]
       : this.campaignConfig[CONFIG_DEFAULT_KEY];
     const configFilename = config.filename;
+    const configMetaname = config.metaname;
 
     const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
 
@@ -253,14 +254,14 @@ class CampaignInstance {
           child,
           false,
         );
-        const filepath = path.join(folderPath, filename);
+        const datapath = path.join(folderPath, filename);
         
 
         // no decomposition: save raw XML
-        if(!options.metadata){
+        if(!configMetaname){
           const raw = DomUtil.toXMLString(child);
-          fs.outputFileSync(filepath, raw);
-          const filenameOnly = path.basename(filepath);
+          fs.outputFileSync(datapath, raw);
+          const filenameOnly = path.basename(datapath);
           process.stdout.write(`${chalk.underline(filenameOnly)} `);
         } 
         // decomposition: save data and metadata separately
@@ -268,12 +269,18 @@ class CampaignInstance {
           // data
           const dataNode = DomUtil.getFirstChildElement(child, "data");
           const dataContent = DomUtil.elementValue(dataNode);
-          const datapath = filepath.replace(".", ".data.");
           fs.outputFileSync(datapath, dataContent);
+          // metadata path
+          const metaname = this._computeFilename(
+            configMetaname,
+            configAttributes,
+            child,
+            false,
+          );
+          const metapath = path.join(folderPath, metaname);
           // metadata
           child.removeChild(dataNode);
           const metaContent = DomUtil.toXMLString(child);
-          const metapath = filepath.replace(".", ".meta.");
           fs.outputFileSync(metapath, metaContent);
         }
 
