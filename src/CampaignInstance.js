@@ -168,7 +168,8 @@ class CampaignInstance {
    * @example
    * await instance.pull('/path/to/download');
    */
-  async pull(downloadPath) {
+  async pull(options) {
+    const { path: downloadPath } = options;
     console.log(`✨ Pulling instance to ${downloadPath}...`);
     if (!fs.existsSync(downloadPath)) {
       fs.mkdirSync(downloadPath, { recursive: true });
@@ -192,7 +193,7 @@ class CampaignInstance {
         console.log(
           `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
         );
-        recordsLength = await this.download(schemaId, downloadPath, startLine);
+        recordsLength = await this.download(schemaId, downloadPath, startLine, options);
         startLine += lineCount;
       } while (recordsLength >= lineCount);
     }
@@ -209,7 +210,7 @@ class CampaignInstance {
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async download(schemaId, folderPath, startLine) {
+  async download(schemaId, folderPath, startLine, options) {
     const DomUtil = this.client.DomUtil;
 
     const baseQueryDef = {
@@ -253,10 +254,28 @@ class CampaignInstance {
           false,
         );
         const filepath = path.join(folderPath, filename);
-        const data = DomUtil.toXMLString(child);
-        fs.outputFileSync(filepath, data);
-        const filenameOnly = path.basename(filepath);
-        process.stdout.write(`${chalk.underline(filenameOnly)} `);
+        
+
+        // no decomposition: save raw XML
+        if(!options.metadata){
+          const raw = DomUtil.toXMLString(child);
+          fs.outputFileSync(filepath, raw);
+          const filenameOnly = path.basename(filepath);
+          process.stdout.write(`${chalk.underline(filenameOnly)} `);
+        } 
+        // decomposition: save data and metadata separately
+        else {
+          // data
+          const dataNode = DomUtil.getFirstChildElement(child, "data");
+          const dataContent = DomUtil.elementValue(dataNode);
+          const datapath = filepath.replace(".", ".data.");
+          fs.outputFileSync(datapath, dataContent);
+          // metadata
+          child.removeChild(dataNode);
+          const metaContent = DomUtil.toXMLString(child);
+          const metapath = filepath.replace(".", ".meta.");
+          fs.outputFileSync(metapath, metaContent);
+        }
 
         child = DomUtil.getNextSiblingElement(child);
       }

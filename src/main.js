@@ -154,6 +154,11 @@ program
         "Path to the configuration file. Defaults ./config/acc.config.json.",
         defaultConfigPath,
       )
+      .option(
+        "--metadata",
+        "Decompose configuration items and check metadata values. Defaults to false.",
+        false,
+      )
       .action(async (options) => {
         try {
           const campaignConfig = JSON.parse(fs.readFileSync(options.config));
@@ -163,7 +168,7 @@ program
             campaignConfig,
             options,
           );
-          await instance.pull(options.path);
+          await instance.pull(options);
         } catch (err) {
           handleCampaignError(err);
         }
