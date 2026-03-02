@@ -259,34 +259,51 @@ class CampaignInstance {
           child,
           false,
         );
+        const filenameOnly = path.basename(filename);
         const datapath = path.join(folderPath, filename);
 
         // no decomposition: save raw XML
         if (!configMetaname) {
           const raw = DomUtil.toXMLString(child);
           fs.outputFileSync(datapath, raw);
-          const filenameOnly = path.basename(datapath);
           process.stdout.write(`${chalk.underline(filenameOnly)} `);
         }
         // specific decomposition: save html, text and netadata
-        else if (schemaId === "nms:delivery") {
+        else if (
+          schemaId === "nms:delivery" ||
+          schemaId === "nms:includeView"
+        ) {
+          // nms:delivery: content.html.source + content.text.source + metadata
+          // nms:includeView: source.html + source.text + metadata
           // html
-          const contentNode = DomUtil.getFirstChildElement(child, "content");
-          const htmlNode = DomUtil.getFirstChildElement(contentNode, "html");
-          const htmlSourceNode = DomUtil.getFirstChildElement(
-            htmlNode,
-            "source",
-          );
-          const htmlContent = DomUtil.elementValue(htmlSourceNode);
-          fs.outputFileSync(datapath, htmlContent);
-          // text
-          const textNode = DomUtil.getFirstChildElement(contentNode, "text");
-          const textSourceNode = DomUtil.getFirstChildElement(
-            textNode,
-            "source",
-          );
-          const textContent = DomUtil.elementValue(textSourceNode);
-          fs.outputFileSync(datapath + ".txt", textContent);
+          var parentHtmlNode, parentTextNode;
+          var htmlNode, textNode;
+          if (schemaId === "nms:delivery") {
+            const contentNode = DomUtil.getFirstChildElement(child, "content");
+            parentHtmlNode = DomUtil.getFirstChildElement(contentNode, "html");
+            htmlNode = DomUtil.getFirstChildElement(
+              parentHtmlNode,
+              "source",
+            );
+            parentTextNode = DomUtil.getFirstChildElement(contentNode, "text");
+            textNode = DomUtil.getFirstChildElement(
+              parentTextNode,
+              "source",
+            );
+          } else if (schemaId === "nms:includeView") {
+            parentHtmlNode = DomUtil.getFirstChildElement(child, "source");
+            htmlNode = DomUtil.getFirstChildElement(
+              parentHtmlNode,
+              "html",
+            );
+            parentTextNode = DomUtil.getFirstChildElement(child, "source");
+            textNode = DomUtil.getFirstChildElement(
+              parentTextNode,
+              "text",
+            );
+          }
+          fs.outputFileSync(datapath, DomUtil.elementValue(htmlNode));
+          fs.outputFileSync(datapath + ".txt", DomUtil.elementValue(textNode));
           // metadata path
           const metaname = this._computeFilename(
             configMetaname,
@@ -297,14 +314,14 @@ class CampaignInstance {
           const metapath = path.join(folderPath, metaname);
           // metadata
           try {
-            htmlNode.removeChild(htmlSourceNode);
+            parentHtmlNode.removeChild(htmlNode);
           } catch (err) {
-            console.log("Error removing htmlSourceNode nodes:", err.message);
+            console.log(`Error removing htmlNode for ${filenameOnly}: ${err.message}`);
           }
           try {
-            textNode.removeChild(textSourceNode);
+            parentTextNode.removeChild(textNode);
           } catch (err) {
-            console.log("Error removing textSourceNode nodes:", err.message);
+            console.log(`Error removing textNode for ${filenameOnly}: ${err.message}`);
           }
           const metaContent = DomUtil.toXMLString(child);
           fs.outputFileSync(metapath, metaContent);
