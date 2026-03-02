@@ -140,7 +140,8 @@
     }
   },
   "nms:delivery": {
-    "filename": "/Campaign Management/Deliveries/{@internalName}.xml",
+    "filename": "/Campaign Management/Deliveries/{@internalName}.html",
+    "metaname": "/Campaign Management/Deliveries/{@internalName}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]

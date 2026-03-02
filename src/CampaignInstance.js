@@ -264,6 +264,33 @@ class CampaignInstance {
           const filenameOnly = path.basename(datapath);
           process.stdout.write(`${chalk.underline(filenameOnly)} `);
         } 
+        // specific decomposition: save html, text and netadata
+        else if (schemaId === "nms:delivery") {
+          // html
+          const contentNode = DomUtil.getFirstChildElement(child, "content");
+          const htmlNode = DomUtil.getFirstChildElement(contentNode, "html");
+          const htmlSourceNode = DomUtil.getFirstChildElement(htmlNode, "source");
+          const htmlContent = DomUtil.elementValue(htmlSourceNode);
+          fs.outputFileSync(datapath, htmlContent);
+          // text
+          const textNode = DomUtil.getFirstChildElement(contentNode, "text");
+          const textSourceNode = DomUtil.getFirstChildElement(textNode, "source");
+          const textContent = DomUtil.elementValue(textSourceNode);
+          fs.outputFileSync(datapath + ".txt", textContent);
+          // metadata path
+          const metaname = this._computeFilename(
+            configMetaname,
+            configAttributes,
+            child,
+            false,
+          );
+          const metapath = path.join(folderPath, metaname);
+          // metadata
+          htmlNode.removeChild(htmlSourceNode);
+          textNode.removeChild(textSourceNode);
+          const metaContent = DomUtil.toXMLString(child);
+          fs.outputFileSync(metapath, metaContent);
+        }
         // decomposition: save data and metadata separately
         else {
           // data
