@@ -101,6 +101,7 @@
 
   "xtk:sql": {
     "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql",
+    "metaname": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [
