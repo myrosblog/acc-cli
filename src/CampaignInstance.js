@@ -193,7 +193,12 @@ class CampaignInstance {
         console.log(
           `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
         );
-        recordsLength = await this.download(schemaId, downloadPath, startLine, options);
+        recordsLength = await this.download(
+          schemaId,
+          downloadPath,
+          startLine,
+          options,
+        );
         startLine += lineCount;
       } while (recordsLength >= lineCount);
     }
@@ -255,26 +260,31 @@ class CampaignInstance {
           false,
         );
         const datapath = path.join(folderPath, filename);
-        
 
         // no decomposition: save raw XML
-        if(!configMetaname){
+        if (!configMetaname) {
           const raw = DomUtil.toXMLString(child);
           fs.outputFileSync(datapath, raw);
           const filenameOnly = path.basename(datapath);
           process.stdout.write(`${chalk.underline(filenameOnly)} `);
-        } 
+        }
         // specific decomposition: save html, text and netadata
         else if (schemaId === "nms:delivery") {
           // html
           const contentNode = DomUtil.getFirstChildElement(child, "content");
           const htmlNode = DomUtil.getFirstChildElement(contentNode, "html");
-          const htmlSourceNode = DomUtil.getFirstChildElement(htmlNode, "source");
+          const htmlSourceNode = DomUtil.getFirstChildElement(
+            htmlNode,
+            "source",
+          );
           const htmlContent = DomUtil.elementValue(htmlSourceNode);
           fs.outputFileSync(datapath, htmlContent);
           // text
           const textNode = DomUtil.getFirstChildElement(contentNode, "text");
-          const textSourceNode = DomUtil.getFirstChildElement(textNode, "source");
+          const textSourceNode = DomUtil.getFirstChildElement(
+            textNode,
+            "source",
+          );
           const textContent = DomUtil.elementValue(textSourceNode);
           fs.outputFileSync(datapath + ".txt", textContent);
           // metadata path
@@ -286,8 +296,16 @@ class CampaignInstance {
           );
           const metapath = path.join(folderPath, metaname);
           // metadata
-          htmlNode.removeChild(htmlSourceNode);
-          textNode.removeChild(textSourceNode);
+          try {
+            htmlNode.removeChild(htmlSourceNode);
+          } catch (err) {
+            console.log("Error removing htmlSourceNode nodes:", err.message);
+          }
+          try {
+            textNode.removeChild(textSourceNode);
+          } catch (err) {
+            console.log("Error removing textSourceNode nodes:", err.message);
+          }
           const metaContent = DomUtil.toXMLString(child);
           fs.outputFileSync(metapath, metaContent);
         }
