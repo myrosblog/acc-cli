@@ -4,17 +4,22 @@ import path from "node:path";
 import chalk from "chalk";
 // acc
 import CampaignError from "./CampaignError.js";
-
-/**
- * Key for default configuration in campaign config
- * @constant {string}
- * @private
- */
-const CONFIG_DEFAULT_KEY = "default";
+import console from "node:console";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
  * Handles data checking, pulling, and downloading from ACC schemas.
+ * - check()
+ *   - xml.xtkQueryDef.create(schema)
+ *   - adds attributes from the config
+ *   - xml.xtkQueryDef.executeQuery() and parses to get records.length
+ * - pull(), very similar:
+ *   - paginates by batch of 10 (startLine, lineCount)
+ *   - download()
+ *     - xml.xtkQueryDef.create(schema)
+ *     - xml.xtkQueryDef.selectAll()
+ *     - for each XML record: 
+ *       - parse()
  *
  * @class CampaignInstance
  * @classdesc Class for managing data operations with ACC instances
@@ -44,9 +49,7 @@ class CampaignInstance {
      * Array of schema names to process (excluding default config)
      * @type {string[]}
      */
-    this.schemas = Object.keys(this.campaignConfig).filter(
-      (key) => key !== CONFIG_DEFAULT_KEY,
-    );
+    this.schemas = Object.keys(this.campaignConfig);
 
     this.client.registerObserver({
       onSOAPCall: (soapCall, safeRequestData) => {
@@ -75,9 +78,7 @@ class CampaignInstance {
    * });
    */
   _getQueryDefForSchema(schema, baseQueryDef) {
-    const config = this.campaignConfig[schema]
-      ? this.campaignConfig[schema]
-      : this.campaignConfig[CONFIG_DEFAULT_KEY];
+    const config = this.campaignConfig[schema];
     const configQueryDef = config.queryDef ? config.queryDef : {};
 
     return {
@@ -193,7 +194,7 @@ class CampaignInstance {
         console.log(
           `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
         );
-        recordsLength = await this.download(
+        recordsLength = await this.downloadAndParse(
           schemaId,
           downloadPath,
           startLine,
@@ -215,7 +216,7 @@ class CampaignInstance {
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async download(schemaId, folderPath, startLine, options) {
+  async downloadAndParse(schemaId, folderPath, startLine, options) {
     const DomUtil = this.client.DomUtil;
 
     const baseQueryDef = {
@@ -236,13 +237,7 @@ class CampaignInstance {
 
     const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
 
-    const config = this.campaignConfig[schemaId]
-      ? this.campaignConfig[schemaId]
-      : this.campaignConfig[CONFIG_DEFAULT_KEY];
-    const configFilename = config.filename;
-    const configMetaname = config.metaname;
-
-    const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
+    const config = this.campaignConfig[schemaId];
 
     let message = "";
     var recordsLength = 0;
@@ -253,98 +248,8 @@ class CampaignInstance {
       // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
       while (child) {
         recordsLength++;
-        const filename = this._computeFilename(
-          configFilename,
-          configAttributes,
-          child,
-          false,
-        );
-        const filenameOnly = path.basename(filename);
-        const datapath = path.join(folderPath, filename);
 
-        // no decomposition: save raw XML
-        if (!configMetaname) {
-          const raw = DomUtil.toXMLString(child);
-          fs.outputFileSync(datapath, raw);
-          process.stdout.write(`${chalk.underline(filenameOnly)} `);
-        }
-        // specific decomposition: save html, text and netadata
-        else if (
-          schemaId === "nms:delivery" ||
-          schemaId === "nms:includeView"
-        ) {
-          // nms:delivery: content.html.source + content.text.source + metadata
-          // nms:includeView: source.html + source.text + metadata
-          // html
-          var parentHtmlNode, parentTextNode;
-          var htmlNode, textNode;
-          if (schemaId === "nms:delivery") {
-            const contentNode = DomUtil.getFirstChildElement(child, "content");
-            parentHtmlNode = DomUtil.getFirstChildElement(contentNode, "html");
-            htmlNode = DomUtil.getFirstChildElement(
-              parentHtmlNode,
-              "source",
-            );
-            parentTextNode = DomUtil.getFirstChildElement(contentNode, "text");
-            textNode = DomUtil.getFirstChildElement(
-              parentTextNode,
-              "source",
-            );
-          } else if (schemaId === "nms:includeView") {
-            parentHtmlNode = DomUtil.getFirstChildElement(child, "source");
-            htmlNode = DomUtil.getFirstChildElement(
-              parentHtmlNode,
-              "html",
-            );
-            parentTextNode = DomUtil.getFirstChildElement(child, "source");
-            textNode = DomUtil.getFirstChildElement(
-              parentTextNode,
-              "text",
-            );
-          }
-          fs.outputFileSync(datapath, DomUtil.elementValue(htmlNode));
-          fs.outputFileSync(datapath + ".txt", DomUtil.elementValue(textNode));
-          // metadata path
-          const metaname = this._computeFilename(
-            configMetaname,
-            configAttributes,
-            child,
-            false,
-          );
-          const metapath = path.join(folderPath, metaname);
-          // metadata
-          try {
-            parentHtmlNode.removeChild(htmlNode);
-          } catch (err) {
-            console.log(`Error removing htmlNode for ${filenameOnly}: ${err.message}`);
-          }
-          try {
-            parentTextNode.removeChild(textNode);
-          } catch (err) {
-            console.log(`Error removing textNode for ${filenameOnly}: ${err.message}`);
-          }
-          const metaContent = DomUtil.toXMLString(child);
-          fs.outputFileSync(metapath, metaContent);
-        }
-        // decomposition: save data and metadata separately
-        else {
-          // data
-          const dataNode = DomUtil.getFirstChildElement(child, "data");
-          const dataContent = DomUtil.elementValue(dataNode);
-          fs.outputFileSync(datapath, dataContent);
-          // metadata path
-          const metaname = this._computeFilename(
-            configMetaname,
-            configAttributes,
-            child,
-            false,
-          );
-          const metapath = path.join(folderPath, metaname);
-          // metadata
-          child.removeChild(dataNode);
-          const metaContent = DomUtil.toXMLString(child);
-          fs.outputFileSync(metapath, metaContent);
-        }
+        this.parse(child, config, folderPath, schemaId);
 
         child = DomUtil.getNextSiblingElement(child);
       }
@@ -356,6 +261,95 @@ class CampaignInstance {
       console.log(` => ` + message + "\n");
     }
     return recordsLength;
+  }
+
+  parse(child, config, folderPath, schemaId) {
+    const configFilename = config.filename;
+    const configMetaname = config.metaname;
+    const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
+    const DomUtil = this.client.DomUtil;
+
+    const filename = this._computeFilename(
+      configFilename,
+      configAttributes,
+      child,
+      false,
+    );
+    const filenameOnly = path.basename(filename);
+    const datapath = path.join(folderPath, filename);
+
+    // no decomposition: save raw XML
+    if (!configMetaname) {
+      const raw = DomUtil.toXMLString(child);
+      fs.outputFileSync(datapath, raw);
+      process.stdout.write(`${chalk.underline(filenameOnly)} `);
+    }
+    // specific decomposition: save html, text and netadata
+    else if (schemaId === "nms:delivery" || schemaId === "nms:includeView") {
+      // nms:delivery: content.html.source + content.text.source + metadata
+      // nms:includeView: source.html + source.text + metadata
+      // html
+      var parentHtmlNode, parentTextNode;
+      var htmlNode, textNode;
+      if (schemaId === "nms:delivery") {
+        const contentNode = DomUtil.getFirstChildElement(child, "content");
+        parentHtmlNode = DomUtil.getFirstChildElement(contentNode, "html");
+        htmlNode = DomUtil.getFirstChildElement(parentHtmlNode, "source");
+        parentTextNode = DomUtil.getFirstChildElement(contentNode, "text");
+        textNode = DomUtil.getFirstChildElement(parentTextNode, "source");
+      } else if (schemaId === "nms:includeView") {
+        parentHtmlNode = DomUtil.getFirstChildElement(child, "source");
+        htmlNode = DomUtil.getFirstChildElement(parentHtmlNode, "html");
+        parentTextNode = DomUtil.getFirstChildElement(child, "source");
+        textNode = DomUtil.getFirstChildElement(parentTextNode, "text");
+      }
+      fs.outputFileSync(datapath, DomUtil.elementValue(htmlNode));
+      fs.outputFileSync(datapath + ".txt", DomUtil.elementValue(textNode));
+      // metadata path
+      const metaname = this._computeFilename(
+        configMetaname,
+        configAttributes,
+        child,
+        false,
+      );
+      const metapath = path.join(folderPath, metaname);
+      // metadata
+      try {
+        parentHtmlNode.removeChild(htmlNode);
+      } catch (err) {
+        console.log(
+          `Error removing htmlNode for ${filenameOnly}: ${err.message}`,
+        );
+      }
+      try {
+        parentTextNode.removeChild(textNode);
+      } catch (err) {
+        console.log(
+          `Error removing textNode for ${filenameOnly}: ${err.message}`,
+        );
+      }
+      const metaContent = DomUtil.toXMLString(child);
+      fs.outputFileSync(metapath, metaContent);
+    }
+    // decomposition: save data and metadata separately
+    else {
+      // data
+      const dataNode = DomUtil.getFirstChildElement(child, "data");
+      const dataContent = DomUtil.elementValue(dataNode);
+      fs.outputFileSync(datapath, dataContent);
+      // metadata path
+      const metaname = this._computeFilename(
+        configMetaname,
+        configAttributes,
+        child,
+        false,
+      );
+      const metapath = path.join(folderPath, metaname);
+      // metadata
+      child.removeChild(dataNode);
+      const metaContent = DomUtil.toXMLString(child);
+      fs.outputFileSync(metapath, metaContent);
+    }
   }
 
   _getAttributesFromSchemaConfig(schemaConfig) {

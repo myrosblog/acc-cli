@@ -1,0 +1,166 @@
+{
+  "nms:localOrgUnit": {
+    "filename": "/Administration/Access Management/Organizational entities/{@name}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
+    }
+  },
+  "nms:deliveryMapping": {
+    "filename": "/Administration/Campaign Management/Target mappings/{@name}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@builtIn = false" }] }
+    }
+  },
+  "nms:typology": {
+    "filename": "/Administration/Campaign Management/Typology management/Typologies/{@name}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
+    }
+  },
+  "nms:typologyRule": {
+    "filename": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
+    }
+  },
+  "xtk:srcSchema": {
+    "filename": "/Administration/Configuration/Data schemas/{@namespace}/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:jssp": {
+    "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp",
+    "metaname": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:formRendering": {
+    "filename": "/Administration/Configuration/Form rendering/{@internalName}.css",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@internalName NOT LIKE 'xtk%' AND @internalName NOT LIKE 'nl%' AND @internalName NOT LIKE 'ncm%' AND @internalName NOT LIKE 'nms%'"
+          }
+        ]
+      }
+    }
+  },
+
+  "xtk:form": {
+    "filename": "/Administration/Configuration/Input forms/{@namespace}/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:javascript": {
+    "filename": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.js",
+    "metaname": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:navtree": {
+    "filename": "/Administration/Configuration/Navigation hierarchies/{@namespace}/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+
+  "xtk:sql": {
+    "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql",
+    "metaname": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:xslt": {
+    "filename": "/Administration/Configuration/XSL style sheets/{@namespace}/{@name}.xsl",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:workflow": {
+    "filename": "/Administration/Production/{@internalName}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+      }
+    }
+  },
+  "nms:operation": {
+    "filename": "/Campaign Management/Campaigns/{@internalName}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+      }
+    }
+  },
+  "nms:delivery": {
+    "filename": "/Campaign Management/Deliveries/{@internalName}.html",
+    "metaname": "/Campaign Management/Deliveries/{@internalName}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+      }
+    }
+  },
+  "nms:includeView": {
+    "filename": "/Resources/Campaign Management/Personalization blocks/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]
+      }
+    }
+  },
+  "nms:webApp": {
+    "filename": "/Resources/Online/Web applications/{@internalName}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@builtIn = false" }] }
+    }
+  }
+}

@@ -123,11 +123,8 @@ Create a `acc.config.json` file to customize data pulling:
 
 ```json
 {
-  "default": {
-    "filename": "%schema%_%name%.xml"
-  },
-  "nms:recipient": {
-    "filename": "recipients/%name%.xml",
+  "nms:delivery": {
+    "filename": "Deliveries/{%name%}.xml",
     "queryDef": {
       "where": {"condition": [{ "expr": "@builtIn = false AND @isModel = true" }]},
     }
