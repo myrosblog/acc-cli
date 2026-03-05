@@ -150,7 +150,8 @@
     }
   },
   "nms:includeView": {
-    "filename": "/Resources/Campaign Management/Personalization blocks/{@name}.xml",
+    "filename": "/Resources/Campaign Management/Personalization blocks/{@name}.html",
+    "metaname": "/Resources/Campaign Management/Personalization blocks/{@name}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]

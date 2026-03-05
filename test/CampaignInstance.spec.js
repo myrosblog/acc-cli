@@ -21,9 +21,10 @@ const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const nmsDelivery554 = loadXml("nms/delivery/DM554.xml");
 const nmsDeliverySummer = loadXml("nms/delivery/DM_Newsletter_Summer2025.xml");
+const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
+
 // acc
 import CampaignInstance from "../src/CampaignInstance.js";
-import CampaignError from "../src/CampaignError.js";
 
 describe("CampaignInstance", function () {
   let mockClient, instance;
@@ -168,13 +169,14 @@ describe("CampaignInstance", function () {
         );
         expect(contentMeta).to.contain(`xtkschema="xtk:sql"/>`);
         expect(contentMeta).to.not.contain(`<data`);
+
         expect(contentSql).to.contain(`-- comment here`);
         expect(contentSql).to.contain(`CREATE DATABASE $DatabaseName;`);
         expect(contentSql).to.not.contain(`<`);
         expect(contentSql).to.not.contain(`>`);
       });
 
-      it("xtk:sql (meta)", async () => {
+      it("nms:delivery (meta)", async () => {
         instance = new CampaignInstance(mockClient, configDefault);
         const child = DomUtil.getFirstChildElement(nmsDeliverySummer);
         const schemaConfig = configDefault["nms:delivery"];
@@ -204,7 +206,6 @@ describe("CampaignInstance", function () {
         const contentHtml = fs.readFileSync(fileHtml, "utf8");
         const contentText = fs.readFileSync(fileText, "utf8");
         const contentMeta = fs.readFileSync(fileMeta, "utf8");
-        
 
         expect(contentHtml).to.contain(`<p>Dear {{recipient.firstName}},</p>`);
         expect(contentHtml).to.contain(`<a href="https`);
@@ -222,6 +223,53 @@ describe("CampaignInstance", function () {
           `<p>Dear {{recipient.firstName}},</p>`,
         );
         expect(contentMeta).to.not.contain(`<a href="https`);
+      });
+
+      it("nms:includeView (meta)", async () => {
+        instance = new CampaignInstance(mockClient, configDefault);
+        const child = DomUtil.getFirstChildElement(nmsViewSubscription);
+        const schemaConfig = configDefault["nms:includeView"];
+        instance.parse(
+          child,
+          schemaConfig,
+          join(__dirname, "../dist/"),
+          "nms:includeView",
+        );
+
+        const basename =
+          "../dist/Resources/Campaign Management/Personalization blocks/SubscriptionLink";
+
+        const fileHtml = join(__dirname, basename + ".html");
+        const fileHtmlExists = await fs.pathExists(fileHtml);
+        expect(fileHtmlExists).to.be.true;
+        const fileText = join(__dirname, basename + ".html.txt");
+        const fileTextExists = await fs.pathExists(fileText);
+        expect(fileTextExists).to.be.true;
+        const fileMeta = join(__dirname, basename + ".meta.xml");
+        const fileMetaExists = await fs.pathExists(fileMeta);
+        expect(fileMetaExists).to.be.true;
+        const contentHtml = fs.readFileSync(fileHtml, "utf8");
+        const contentText = fs.readFileSync(fileText, "utf8");
+        const contentMeta = fs.readFileSync(fileMeta, "utf8");
+
+        expect(contentMeta).to.contain(`<includeView xmlns="`);
+        expect(contentMeta).to.contain(`name="SubscriptionLink"`);
+        expect(contentMeta).to.not.contain(`<html`);
+        expect(contentMeta).to.not.contain(`<text`);
+
+        expect(contentHtml).to.contain(`<a href="`);
+        expect(contentHtml).to.contain(`<%@ include view='Subscription`);
+        expect(contentHtml).to.contain(`To register`);
+        expect(contentHtml).to.not.contain(`CDATA`);
+        expect(contentHtml).to.not.contain(`<html`);
+
+        expect(contentText).to.contain(`<%@ include view='Subscription`);
+        console.log(contentText);
+        
+        expect(contentText).to.contain(`Use this link`);
+        expect(contentText).to.not.contain(`<a href="`);
+        expect(contentText).to.not.contain(`CDATA`);
+        expect(contentText).to.not.contain(`<html`);
       });
     });
   });
