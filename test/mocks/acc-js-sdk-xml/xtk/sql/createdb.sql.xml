@@ -1,0 +1,3 @@
+<sql xmlns="urn:xtk:queryDef" entitySchema="xtk:sql" img="xtk:sql.png" md5="ABCDEF" name="createdb.sql" namespace="xtk" xtkschema="xtk:sql"><data><![CDATA[-- comment here;
+CREATE DATABASE $DatabaseName;
+]]></data></sql>

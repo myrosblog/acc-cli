@@ -1,0 +1,7 @@
+<srcSchema name="delivery" namespace="nms" implements="xtk:persist">
+    <element name="delivery"></element>
+    <methods>
+        <method name="Test">
+        </method>
+    </methods>
+</srcSchema>

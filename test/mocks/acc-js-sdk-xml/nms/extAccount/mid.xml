@@ -1,0 +1,1 @@
+<extAccount account="mid" id="2088" name="defaultEmailMid" password="${encryptedPassword}" server="http://ffdamid:8080" type="3"/>

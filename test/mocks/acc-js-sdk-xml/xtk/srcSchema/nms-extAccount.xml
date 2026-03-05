@@ -1,0 +1,11 @@
+<srcSchema name="extAccount" namespace="nms" xtkschema="xtk:schema">
+    <enumeration basetype="byte" default="delivery" name="type">
+        <value name="bounces" value="0"/>
+        <value name="hdfs" value="17"/>
+    </enumeration>
+    <enumeration basetype="byte" default="none" name="encryptionType">
+        <value name="none" value="0"/>
+        <value name="ssl" value="1"/>
+    </enumeration>
+    <element name="extAccount"></element>
+</srcSchema>
