@@ -1,0 +1,56 @@
+<delivery xtkschema="nms:delivery" internalName="DM_Newsletter_Summer2025" label="Summer 2025 Newsletter">
+  <deliveryMode>email</deliveryMode>
+  <scheduler>
+    <startDate>2025-06-15T09:00:00Z</startDate>
+  </scheduler>
+  <target>
+    <where>
+      <condition expr="@optIn = true AND @lastPurchaseDate &gt; SubDays(GetDate(), 90)" />
+    </where>
+  </target>
+  <content>
+    <html>
+      <source>
+      <![CDATA[
+        <html>
+          <body>
+            <h1>Summer 2025 Collection</h1>
+            <p>Dear {{recipient.firstName}},</p>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.
+              Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor.
+              Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.
+            </p>
+            <a href="https://example.com/summer-collection">Shop Now</a>
+          </body>
+        </html>
+      ]]>
+      </source>
+    </html>
+    <text>
+      <source>
+      <![CDATA[
+        Dear {{recipient.firstName}},
+
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris.
+        Vivamus hendrerit arcu sed erat molestie vehicula.
+
+        Shop now: https://example.com/summer-collection
+      ]]>
+      </source>
+    </text>
+  </content>
+  <subject>🌞 Summer 2025 Collection - Exclusive Offers Inside!</subject>
+  <sender>
+    <email>newsletter@example.com</email>
+    <label>Example Corp</label>
+  </sender>
+  <replyTo>
+    <email>support@example.com</email>
+    <label>Example Corp Support</label>
+  </replyTo>
+  <tracking>
+    <open>true</open>
+    <click>true</click>
+  </tracking>
+</delivery>
