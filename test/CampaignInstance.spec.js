@@ -167,8 +167,9 @@ describe("CampaignInstance", function () {
         expect(contentMeta).to.contain(
           `<sql xmlns="urn:xtk:queryDef" entitySchema="xtk:sql"`,
         );
-        expect(contentMeta).to.contain(`xtkschema="xtk:sql"/>`);
-        expect(contentMeta).to.not.contain(`<data`);
+        expect(contentMeta).to.contain(`xtkschema="xtk:sql"`);
+        expect(contentMeta).to.contain(`<data/>`);
+        expect(contentMeta).to.not.contain(`CREATE DATABASE $DatabaseName`);
 
         expect(contentSql).to.contain(`-- comment here`);
         expect(contentSql).to.contain(`CREATE DATABASE $DatabaseName;`);
@@ -254,8 +255,11 @@ describe("CampaignInstance", function () {
 
         expect(contentMeta).to.contain(`<includeView xmlns="`);
         expect(contentMeta).to.contain(`name="SubscriptionLink"`);
-        expect(contentMeta).to.not.contain(`<html`);
-        expect(contentMeta).to.not.contain(`<text`);
+        expect(contentMeta).to.contain(`<html/>`);
+        expect(contentMeta).to.contain(`<text/>`);
+        expect(contentMeta).to.not.contain(`<a href="`);
+        expect(contentMeta).to.not.contain(`<%@ include view='Subscription`);
+        expect(contentMeta).to.not.contain(`To register`);
 
         expect(contentHtml).to.contain(`<a href="`);
         expect(contentHtml).to.contain(`<%@ include view='Subscription`);
@@ -265,7 +269,7 @@ describe("CampaignInstance", function () {
 
         expect(contentText).to.contain(`<%@ include view='Subscription`);
         console.log(contentText);
-        
+
         expect(contentText).to.contain(`Use this link`);
         expect(contentText).to.not.contain(`<a href="`);
         expect(contentText).to.not.contain(`CDATA`);

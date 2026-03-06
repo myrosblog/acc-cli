@@ -308,8 +308,7 @@ class CampaignInstance {
         const decomposedFilenameOnly = path.basename(decomposedFilename);
         process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
         // removeElement
-        const parent = childTraverse.parentNode;
-        parent.removeChild(childTraverse);
+        childTraverse.textContent = ''; // @since 0.5.1, instead of removeChild that removed attributes
       }
       // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
