@@ -36,8 +36,10 @@
     }
   },
   "xtk:jssp": {
-    "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp",
-    "metaname": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
+    "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
+    "decompose": {
+      "data": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp"
+    },
     "queryDef": {
       "where": {
         "condition": [
@@ -74,8 +76,10 @@
     }
   },
   "xtk:javascript": {
-    "filename": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.js",
-    "metaname": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.meta.xml",
+    "filename": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.meta.xml",
+    "decompose": {
+      "data": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.js"
+    },
     "queryDef": {
       "where": {
         "condition": [
@@ -100,8 +104,10 @@
   },
 
   "xtk:sql": {
-    "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql",
-    "metaname": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.meta.xml",
+    "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.meta.xml",
+    "decompose": {
+      "data": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql"
+    },
     "queryDef": {
       "where": {
         "condition": [
@@ -141,8 +147,11 @@
     }
   },
   "nms:delivery": {
-    "filename": "/Campaign Management/Deliveries/{@internalName}.html",
-    "metaname": "/Campaign Management/Deliveries/{@internalName}.meta.xml",
+    "filename": "/Campaign Management/Deliveries/{@internalName}.meta.xml",
+    "decompose": {
+      "content/html/source": "/Campaign Management/Deliveries/{@internalName}.html",
+      "content/text/source": "/Campaign Management/Deliveries/{@internalName}.txt"
+    },
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
@@ -150,8 +159,11 @@
     }
   },
   "nms:includeView": {
-    "filename": "/Resources/Campaign Management/Personalization blocks/{@name}.html",
-    "metaname": "/Resources/Campaign Management/Personalization blocks/{@name}.meta.xml",
+    "filename": "/Resources/Campaign Management/Personalization blocks/{@name}.meta.xml",
+    "decompose": {
+      "source/html": "/Resources/Campaign Management/Personalization blocks/{@name}.html",
+      "source/text": "/Resources/Campaign Management/Personalization blocks/{@name}.txt"
+    },
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]

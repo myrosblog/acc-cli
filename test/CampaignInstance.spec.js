@@ -194,7 +194,7 @@ describe("CampaignInstance", function () {
         const fileHtmlExists = await fs.pathExists(fileHtml);
         expect(fileHtmlExists).to.be.true;
         // text
-        const fileText = join(__dirname, basename + ".html.txt");
+        const fileText = join(__dirname, basename + ".txt");
         const fileTextExists = await fs.pathExists(fileText);
         expect(fileTextExists).to.be.true;
         // meta
@@ -242,7 +242,7 @@ describe("CampaignInstance", function () {
         const fileHtml = join(__dirname, basename + ".html");
         const fileHtmlExists = await fs.pathExists(fileHtml);
         expect(fileHtmlExists).to.be.true;
-        const fileText = join(__dirname, basename + ".html.txt");
+        const fileText = join(__dirname, basename + ".txt");
         const fileTextExists = await fs.pathExists(fileText);
         expect(fileTextExists).to.be.true;
         const fileMeta = join(__dirname, basename + ".meta.xml");
