@@ -35,11 +35,47 @@
       }
     }
   },
+  "xtk:enum": {
+    "filename": "/Administration/Platform/Enumerations/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@name NOT LIKE ''"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:counter": {
+    "filename": "/Administration/Platform/Counters/{@name}.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@name NOT LIKE ''"
+          }
+        ]
+      }
+    }
+  },
   "xtk:jssp": {
     "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
     "decompose": {
       "data": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp"
     },
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
+  "xtk:jst": {
+    "filename": "/Administration/Configuration/JavaScript templates/{@namespace}/{@name}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [
@@ -62,7 +98,6 @@
       }
     }
   },
-
   "xtk:form": {
     "filename": "/Administration/Configuration/Input forms/{@namespace}/{@name}.xml",
     "queryDef": {
@@ -102,7 +137,6 @@
       }
     }
   },
-
   "xtk:sql": {
     "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.meta.xml",
     "decompose": {
@@ -168,6 +202,12 @@
       "where": {
         "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]
       }
+    }
+  },
+  "nms:deliveryCustomization": {
+    "filename": "/Resources/Campaign Management/Personalization fields/{@name}.xml",
+    "queryDef": {
+      "where": { "condition": [{ "expr": "@isModel = true" }] }
     }
   },
   "nms:webApp": {
