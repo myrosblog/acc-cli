@@ -2,6 +2,9 @@
 import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
+// sdk
+import sdk from "@adobe/acc-js-sdk";
+const { DomUtil } = sdk;
 // acc
 import CampaignError from "./CampaignError.js";
 
@@ -113,46 +116,51 @@ class CampaignInstance {
         select: { node: [] },
       };
       const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
+      const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
       // get all attributes from the config
       const configAttributes =
         this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
       queryDef.select.node = configAttributes.map((attr) => ({ expr: attr }));
       // API call
-      const query = this.client.NLWS.xtkQueryDef.create(queryDef);
+      const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
       // parsing
-      let message = "";
-      let data, firstKey, records;
+      let recordsElement;
       try {
-        data = await query.executeQuery();
+        recordsElement = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
       } catch (err) {
         console.log(
-          `⚠️ ${schemaConfig.filename}: N/A (API call failed: ${err.message})`,
+          `⚠️ ${schemaConfig.filename}: <No records> ${chalk.bgCyan(schemaId)} (Warning: API call failed)`,
+          err,
         );
         continue;
       }
       try {
-        firstKey = Object.keys(data)[0];
-        records = data[firstKey] || [];
+        var recordsLength = 0;
+        var recordElement = DomUtil.getFirstChildElement(recordsElement);
+        var messages = [];
+        while (recordElement) {
+          recordsLength++;
+
+          const filepath = this._computeFilename(
+            schemaConfig.filename,
+            configAttributes,
+            recordElement,
+          );
+          const filenameOnly = path.basename(filepath);
+          messages.push(`${chalk.underline(filenameOnly)}`);
+
+          recordElement = DomUtil.getNextSiblingElement(recordElement);
+        }
         console.log(
-          `✅ ${schemaConfig.filename}: ${records.length} ${chalk.bgCyan(schemaId)}`,
+          `✅ ${schemaConfig.filename}: ${recordsLength} ${chalk.bgCyan(schemaId)}`,
         );
         if (this.verbose) {
-          const message = records
-            .map((record) => {
-              const filepath = this._computeFilename(
-                schemaConfig.filename,
-                configAttributes,
-                record,
-              );
-              const filenameOnly = path.basename(filepath);
-              return `${chalk.underline(filenameOnly)}`;
-            })
-            .join(" ");
-          console.log(">>> " + message);
+          console.log(">>> " + messages.join(', '));
         }
       } catch (err) {
         console.log(
-          `⚠️ ${schemaConfig.filename}: N/A (Parsing failed: ${err.message})`,
+          `⚠️ ${schemaConfig.filename}: <No records> ${chalk.bgCyan(schemaId)} (Warning: Parsing failed)`,
+          err,
         );
         continue;
       }
@@ -205,8 +213,6 @@ class CampaignInstance {
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
   async downloadAndParse(schemaId, startLine) {
-    const DomUtil = this.client.DomUtil;
-
     const baseQueryDef = {
       schema: schemaId,
       operation: "select",
@@ -217,11 +223,7 @@ class CampaignInstance {
       lineCount: 10, // @todo pagination
     };
     const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
-    const queryDefXml = this.client.DomUtil.fromJSON(
-      "queryDef",
-      queryDef,
-      "SimpleJson",
-    );
+    const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
 
     const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
 
@@ -231,7 +233,7 @@ class CampaignInstance {
     var recordsLength = 0;
     try {
       await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
-      const records = await query.executeQuery(); // DOMDocument <srcSchema-collection><srcSchema></srcSchema>...
+      const records = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
       var child = DomUtil.getFirstChildElement(records);
       // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
       while (child) {
@@ -257,13 +259,11 @@ class CampaignInstance {
     const configFilename = config.filename;
     const configDecompose = config.decompose;
     const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
-    const DomUtil = this.client.DomUtil;
 
     const filename = this._computeFilename(
       configFilename,
       configAttributes,
       childElement,
-      false,
     );
     const filenameOnly = path.basename(filename);
     const datapath = path.join(this.downloadPath, filename);
@@ -284,7 +284,6 @@ class CampaignInstance {
           filenameTemplate,
           configAttributes,
           childElement,
-          false,
         );
         // then traverse xpath
         let childTraverse = childElement;
@@ -319,16 +318,13 @@ class CampaignInstance {
     return configAttributesArr.map((attr) => attr[1]); // [ '@name', '@namespace' ]
   }
 
-  _computeFilename(configFilename, configAttributes, record, json = true) {
-    const DomUtil = this.client.DomUtil;
+  _computeFilename(configFilename, configAttributes, record) {
     var filename = configFilename;
     for (let configAttribute of configAttributes) {
-      const value = json
-        ? record[configAttribute.replace("@", "")]
-        : DomUtil.getAttributeAsString(
-            record,
-            configAttribute.replace("@", ""),
-          );
+      const value = DomUtil.getAttributeAsString(
+        record,
+        configAttribute.replace("@", ""),
+      );
       filename = filename.replace(`{${configAttribute}}`, value);
     }
     return filename;
