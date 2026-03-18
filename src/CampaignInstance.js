@@ -155,7 +155,7 @@ class CampaignInstance {
           `✅ ${schemaConfig.filename}: ${recordsLength} ${chalk.bgCyan(schemaId)}`,
         );
         if (this.verbose) {
-          console.log(">>> " + messages.join(', '));
+          console.log(">>> " + messages.join(", "));
         }
       } catch (err) {
         console.log(
@@ -279,27 +279,31 @@ class CampaignInstance {
       for (const [xpaths, filenameTemplate] of Object.entries(
         configDecompose,
       )) {
-        // compute filename
-        const decomposedFilename = this._computeFilename(
-          filenameTemplate,
-          configAttributes,
-          childElement,
-        );
-        // then traverse xpath
-        let childTraverse = childElement;
-        xpaths.split(this.CONFIG_XPATH_SEP).forEach((xpath) => {
-          childTraverse = DomUtil.getFirstChildElement(childTraverse, xpath);
-        });
-        const elementValue = DomUtil.elementValue(childTraverse);
-        // save to file
-        const datapath = path.join(this.downloadPath, decomposedFilename);
-        fs.outputFileSync(datapath, elementValue);
-        const decomposedFilenameOnly = path.basename(decomposedFilename);
-        if (this.verbose) {
-          process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
+        try {
+          // compute filename
+          const decomposedFilename = this._computeFilename(
+            filenameTemplate,
+            configAttributes,
+            childElement,
+          );
+          // then traverse xpath
+          let childTraverse = childElement;
+          xpaths.split(this.CONFIG_XPATH_SEP).forEach((xpath) => {
+            childTraverse = DomUtil.getFirstChildElement(childTraverse, xpath);
+          });
+          const elementValue = DomUtil.elementValue(childTraverse);
+          // save to file
+          const datapath = path.join(this.downloadPath, decomposedFilename);
+          fs.outputFileSync(datapath, elementValue);
+          const decomposedFilenameOnly = path.basename(decomposedFilename);
+          if (this.verbose) {
+            process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
+          }
+          // removeElement
+          childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
+        } catch (err) {
+          console.log(`(⚠️ warning:parse ${err.message})`);
         }
-        // removeElement
-        childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
       }
       // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
