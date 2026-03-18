@@ -45,6 +45,7 @@ class CampaignInstance {
     this.client = client;
     this.campaignConfig = campaignConfig;
     this.verbose = options.verbose;
+    this.downloadPath = options.path;
     /**
      * Array of schema names to process (excluding default config)
      * @type {string[]}
@@ -94,17 +95,14 @@ class CampaignInstance {
    * - calls executeQuery() and parses to get records.length
    * - if verbose, outputs the list of filenames to be created
    *
-   * @param {string} downloadPath - Path where data would be downloaded
    * @returns {Promise<void>} Resolves when check is complete
    * @throws {CampaignError} Throws if download path is not empty
    *
    * @example
    * await instance.check('/path/to/download');
    */
-  async check(options) {
-    console.log("📡 Checking instance...");
-    // don't deconstruct "path" to avoid confusion with the "path" module
-    const { verbose } = options;
+  async check() {
+    console.log(`📡 Checking data to be downloaded in ${this.downloadPath}`);
 
     for (const [schemaId, schemaConfig] of Object.entries(
       this.campaignConfig,
@@ -123,85 +121,76 @@ class CampaignInstance {
       const query = this.client.NLWS.xtkQueryDef.create(queryDef);
       // parsing
       let message = "";
+      let data, firstKey, records;
       try {
-        const data = await query.executeQuery();
-        const firstKey = Object.keys(data)[0];
-        const records = data[firstKey] || [];
-        message = `${records.length} found (${chalk.bgCyan(schemaId)}).`;
-        if (verbose) {
-          message +=
-            "\n" +
-            records
-              .map((record) => {
-                const filepath = this._computeFilename(
-                  schemaConfig.filename,
-                  configAttributes,
-                  record,
-                );
-                const filenameOnly = path.basename(filepath);
-                return `${chalk.underline(filenameOnly)}`;
-              })
-              .join(" ");
+        data = await query.executeQuery();
+      } catch (err) {
+        console.log(
+          `⚠️ ${schemaConfig.filename}: N/A (API call failed: ${err.message})`,
+        );
+        continue;
+      }
+      try {
+        firstKey = Object.keys(data)[0];
+        records = data[firstKey] || [];
+        console.log(
+          `✅ ${schemaConfig.filename}: ${records.length} ${chalk.bgCyan(schemaId)}`,
+        );
+        if (this.verbose) {
+          const message = records
+            .map((record) => {
+              const filepath = this._computeFilename(
+                schemaConfig.filename,
+                configAttributes,
+                record,
+              );
+              const filenameOnly = path.basename(filepath);
+              return `${chalk.underline(filenameOnly)}`;
+            })
+            .join(" ");
+          console.log(">>> " + message);
         }
       } catch (err) {
-        message = `⚠️ Error executing query: ${err.message}.`;
-      } finally {
-        console.log(`- ${schemaConfig.filename}: ` + message + "\n");
+        console.log(
+          `⚠️ ${schemaConfig.filename}: N/A (Parsing failed: ${err.message})`,
+        );
+        continue;
       }
     }
-
-    console.log(`📂 Will be downloaded to ${options.path}`);
-
-    // if (!this.isFolderEmpty(downloadPath)) {
-    //   throw new CampaignError(
-    //     `Directory already exists and is not empty. Please choose an empty directory or a different path.`,
-    //   );
-    // }
   }
 
   /**
    * Pulls data from all schemas in the ACC instance.
    * Implements pagination to handle large datasets.
    *
-   * @param {string} downloadPath - Path where data will be downloaded
    * @returns {Promise<void>} Resolves when pull operation is complete
    *
    * @example
    * await instance.pull('/path/to/download');
    */
-  async pull(options) {
-    const { path: downloadPath } = options;
-    console.log(`✨ Pulling instance to ${downloadPath}...`);
-    if (!fs.existsSync(downloadPath)) {
-      fs.mkdirSync(downloadPath, { recursive: true });
-    }
-
-    if (!this.isFolderEmpty(downloadPath)) {
-      //   throw new CampaignError(
-      //     `Directory already exists and is not empty. Please choose an empty directory or a different path.`,
-      //   );
-    }
+  async pull() {
+    console.log(`✨ Pulling data to ${this.downloadPath}...`);
 
     for (const [schemaId, schemaConfig] of Object.entries(
       this.campaignConfig,
     )) {
-      console.log(`- Schema ${chalk.bgCyan(schemaId)}`);
-
       const lineCount = 10;
       let startLine = 1;
-      let recordsLength = 0;
+      let recordsLengthTotal = 0;
+      let recordsLengthCurrent = 0;
       do {
-        console.log(
-          `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
-        );
-        recordsLength = await this.downloadAndParse(
-          schemaId,
-          downloadPath,
-          startLine,
-          options,
-        );
+        if (this.verbose) {
+          console.log(
+            `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
+          );
+        }
+        recordsLengthCurrent = await this.downloadAndParse(schemaId, startLine);
         startLine += lineCount;
-      } while (recordsLength >= lineCount);
+        recordsLengthTotal += recordsLengthCurrent;
+      } while (recordsLengthCurrent >= lineCount);
+      console.log(
+        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaId)}`,
+      );
     }
   }
 
@@ -209,14 +198,13 @@ class CampaignInstance {
    * Downloads records from a specific schema and saves them as XML files.
    *
    * @param {string} schemaId - Schema name to download
-   * @param {string} folderPath - Path where files will be saved
    * @param {number} startLine - Starting line number for pagination
    * @returns {Promise<number>} Number of records downloaded
    *
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async downloadAndParse(schemaId, folderPath, startLine, options) {
+  async downloadAndParse(schemaId, startLine) {
     const DomUtil = this.client.DomUtil;
 
     const baseQueryDef = {
@@ -249,7 +237,7 @@ class CampaignInstance {
       while (child) {
         recordsLength++;
 
-        this.parse(child, config, folderPath);
+        this.parse(child, config);
 
         child = DomUtil.getNextSiblingElement(child);
       }
@@ -258,12 +246,14 @@ class CampaignInstance {
     } catch (err) {
       message = `⚠️ Error executing query: ${err.message}.`;
     } finally {
-      console.log(` => ` + message + "\n");
+      if (this.verbose) {
+        console.log(` => ` + message + "\n");
+      }
     }
     return recordsLength;
   }
 
-  parse(childElement, config, folderPath) {
+  parse(childElement, config) {
     const configFilename = config.filename;
     const configDecompose = config.decompose;
     const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
@@ -276,7 +266,7 @@ class CampaignInstance {
       false,
     );
     const filenameOnly = path.basename(filename);
-    const datapath = path.join(folderPath, filename);
+    const datapath = path.join(this.downloadPath, filename);
 
     // no decomposition: save raw XML
     if (!configDecompose) {
@@ -303,18 +293,22 @@ class CampaignInstance {
         });
         const elementValue = DomUtil.elementValue(childTraverse);
         // save to file
-        const datapath = path.join(folderPath, decomposedFilename);
+        const datapath = path.join(this.downloadPath, decomposedFilename);
         fs.outputFileSync(datapath, elementValue);
         const decomposedFilenameOnly = path.basename(decomposedFilename);
-        process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
+        if (this.verbose) {
+          process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
+        }
         // removeElement
-        childTraverse.textContent = ''; // @since 0.5.1, instead of removeChild that removed attributes
+        childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
       }
       // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
       fs.outputFileSync(datapath, metaContent);
     }
-    process.stdout.write(`${chalk.underline(filenameOnly)} `);
+    if (this.verbose) {
+      process.stdout.write(`${chalk.underline(filenameOnly)} `);
+    }
   }
 
   _getAttributesFromSchemaConfig(schemaConfig) {

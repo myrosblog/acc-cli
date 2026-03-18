@@ -154,6 +154,11 @@ program
         "Path to the configuration file. Defaults ./config/acc.config.json.",
         defaultConfigPath,
       )
+      .option(
+        "--verbose",
+        "Verbose output with details on each configuration item. Defaults to false.",
+        false,
+      )
       .action(async (options) => {
         try {
           const campaignConfig = JSON.parse(fs.readFileSync(options.config));
