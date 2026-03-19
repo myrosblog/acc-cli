@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { pathToFileURL } from "url";
 
+// Récupère le chemin absolu du fichier courant
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Set the main module path and import it
-process.argv[1] = join(__dirname, "..", "src", "main.js");
+// Chemin vers le fichier main.mjs (compatible Windows/macOS/Linux)
+const mainPath = join(__dirname, "..", "src", "main.js");
+const mainUrl = pathToFileURL(mainPath).href; // Convertit en URL valide pour ESM
 
 try {
-  await import(join(__dirname, "..", "src", "main.js"));
+  await import(mainUrl);
 } catch (error) {
   console.error("Failed to load acc:", error.message);
   process.exit(1);
