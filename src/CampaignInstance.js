@@ -5,8 +5,6 @@ import chalk from "chalk";
 // sdk
 import sdk from "@adobe/acc-js-sdk";
 const { DomUtil } = sdk;
-// acc
-import CampaignError from "./CampaignError.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -29,6 +27,7 @@ import CampaignError from "./CampaignError.js";
 class CampaignInstance {
   REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
   CONFIG_XPATH_SEP = "/";
+  CONFIG_XPATH_ATTR = "@";
 
   /**
    * Creates a new CampaignInstance.
@@ -255,10 +254,31 @@ class CampaignInstance {
     return recordsLength;
   }
 
+  /**
+   * manual xpath to return the last Element
+   * - abc/def => def
+   * - abc/def/@ghi => def
+   *
+   * @param {Element} element
+   * @param {string} xpath
+   * @return Element
+   */
+  _getLastElement(element, xpath) {
+    let childTraverse = element;
+    xpath.split(this.CONFIG_XPATH_SEP).forEach((xp) => {
+      if (xp.startsWith(this.CONFIG_XPATH_ATTR)) {
+        return;
+      }
+      childTraverse = DomUtil.getFirstChildElement(childTraverse, xp);
+    });
+    return childTraverse;
+  }
+
   parse(childElement, config) {
     const configFilename = config.filename;
     const configDecompose = config.decompose;
     const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
+    const configExcludeXPaths = config.excludeXPaths;
 
     const filename = this._computeFilename(
       configFilename,
@@ -268,6 +288,27 @@ class CampaignInstance {
     const filenameOnly = path.basename(filename);
     const datapath = path.join(this.downloadPath, filename);
 
+    // prepare XML by removing excluded attributes
+    if (configExcludeXPaths) {
+      for (let xpath of configExcludeXPaths) {
+        const chunks = xpath.split(this.CONFIG_XPATH_SEP);
+        const childTraverse = this._getLastElement(childElement, xpath);
+
+        // remove attribute
+        if (xpath.includes(this.CONFIG_XPATH_ATTR)) {
+          const attribute = chunks[chunks.length - 1];
+          const attributeName = attribute.replace(this.CONFIG_XPATH_ATTR, "");
+          if (!childTraverse.getAttribute(attributeName)) {
+            continue;
+          }
+          childTraverse.setAttribute(attributeName, "");
+        }
+        // remove element
+        else {
+        }
+      }
+    }
+
     // no decomposition: save raw XML
     if (!configDecompose) {
       const raw = DomUtil.toXMLString(childElement);
@@ -276,9 +317,7 @@ class CampaignInstance {
     // with decomposition: save each xpath, then save the clean meta
     else {
       // 1. save each xpath + removeElement
-      for (const [xpaths, filenameTemplate] of Object.entries(
-        configDecompose,
-      )) {
+      for (const [xpath, filenameTemplate] of Object.entries(configDecompose)) {
         try {
           // compute filename
           const decomposedFilename = this._computeFilename(
@@ -287,10 +326,7 @@ class CampaignInstance {
             childElement,
           );
           // then traverse xpath
-          let childTraverse = childElement;
-          xpaths.split(this.CONFIG_XPATH_SEP).forEach((xpath) => {
-            childTraverse = DomUtil.getFirstChildElement(childTraverse, xpath);
-          });
+          let childTraverse = this._getLastElement(childElement, xpath);
           const elementValue = DomUtil.elementValue(childTraverse);
           // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);

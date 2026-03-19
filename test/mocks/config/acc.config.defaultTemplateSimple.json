@@ -96,7 +96,6 @@
       }
     }
   },
-
   "xtk:sql": {
     "filename": "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql",
     "queryDef": {

@@ -15,19 +15,18 @@ const loadJson = (file) => JSON.parse(fs.readFileSync(configPathJson + file));
 const configPathXml = join(__dirname, "mocks/acc-js-sdk-xml/");
 const loadXml = (file) => DomUtil.parse(fs.readFileSync(configPathXml + file));
 // mocks
-const configDefault = loadJson("acc.config.defaultTemplate.json");
-const configDefaultNoMeta = loadJson("acc.config.defaultTemplateNoMeta.json");
+const configDefaultFull = loadJson("acc.config.defaultTemplateFull.json");
+const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const nmsDelivery554 = loadXml("nms/delivery/DM554.xml");
-const nmsDeliverySummer = loadXml("nms/delivery/DM_Newsletter_Summer2025.xml");
 const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 
 // acc
 import CampaignInstance from "../src/CampaignInstance.js";
 
 describe("CampaignInstance", function () {
-  let mockClient, instance, options;
+  let mockClient, instance, pathSimple, optionsSimple, pathFull, optionsFull;
 
   beforeEach(function () {
     // mock client
@@ -60,27 +59,31 @@ describe("CampaignInstance", function () {
     };
 
     // mock options
-    options = {
-      path: join(__dirname, "../dist/"),
-    }
+    pathSimple = join(__dirname, "../dist/configSimple/");
+    pathFull = join(__dirname, "../dist/configFull/");
+    optionsSimple = {
+      path: pathSimple,
+    };
+    optionsFull = {
+      path: pathFull,
+    };
   });
 
   describe("parse", () => {
-    describe("should parse without meta", () => {
+    describe("should parse with simple config", () => {
       it("xtk:sql", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
-        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
-        const schemaConfig = configDefaultNoMeta["xtk:sql"];
-        instance.parse(
-          child,
-          schemaConfig,
-          // join(__dirname, "../dist/"),
-          // "xtk:sql",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultSimple,
+          optionsSimple,
         );
+        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
+        const schemaConfig = configDefaultSimple["xtk:sql"];
+        instance.parse(child, schemaConfig);
 
         const fileRaw = join(
-          __dirname,
-          "../dist/Administration/Configuration/SQL scripts/xtk/createdb.sql.sql",
+          pathSimple,
+          "Administration/Configuration/SQL scripts/xtk/createdb.sql.sql",
         );
         const fileExists = await fs.pathExists(fileRaw);
         expect(fileExists).to.be.true;
@@ -95,43 +98,44 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:delivery", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
-        const child = DomUtil.getFirstChildElement(nmsDelivery554);
-        const schemaConfig = configDefaultNoMeta["nms:delivery"];
-        instance.parse(
-          child,
-          schemaConfig,
-          join(__dirname, "../dist/"),
-          "nms:delivery",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultSimple,
+          optionsSimple,
         );
+        const child = DomUtil.getFirstChildElement(nmsDelivery554);
+        const schemaConfig = configDefaultSimple["nms:delivery"];
+        instance.parse(child, schemaConfig);
 
         const fileRaw = join(
-          __dirname,
-          "../dist/Campaign Management/Deliveries/DM554.html",
+          pathSimple,
+          "Campaign Management/Deliveries/DM554.html",
         );
         const fileExists = await fs.pathExists(fileRaw);
         expect(fileExists).to.be.true;
         const content = fs.readFileSync(fileRaw, "utf8");
-        expect(content).to.contain(`<delivery _operation="insert"`); // main element + attribute
+        expect(content).to.contain(`<delivery xtkschema="nms:delivery"`); // main element + attribute
         expect(content).to.contain(`<folder _cs="`); // link
         expect(content).to.contain(`<properties deliveryState="0"`); // element
+        expect(content).to.contain(`cryptedId`);
+        
+        expect(content).to.contain(`@encrypted`);
         expect(content).to.contain(`<content`); // no decomposition
       });
 
       it("xtk:srcSchema", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
-        const child = DomUtil.getFirstChildElement(xtkSchemaDelivery);
-        const schemaConfig = configDefaultNoMeta["xtk:srcSchema"];
-        instance.parse(
-          child,
-          schemaConfig,
-          join(__dirname, "../dist/"),
-          "xtk:srcSchema",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultSimple,
+          optionsSimple,
         );
+        const child = DomUtil.getFirstChildElement(xtkSchemaDelivery);
+        const schemaConfig = configDefaultSimple["xtk:srcSchema"];
+        instance.parse(child, schemaConfig);
 
         const fileRaw = join(
-          __dirname,
-          "../dist/Administration/Configuration/Data schemas/nms/delivery.xml",
+          pathSimple,
+          "Administration/Configuration/Data schemas/nms/delivery.xml",
         );
         const fileExists = await fs.pathExists(fileRaw);
         expect(fileExists).to.be.true;
@@ -143,27 +147,26 @@ describe("CampaignInstance", function () {
       });
     });
 
-    describe("should parse with meta", () => {
+    describe("should parse with full config", () => {
       it("xtk:sql (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault, options);
-        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
-        const schemaConfig = configDefault["xtk:sql"];
-        instance.parse(
-          child,
-          schemaConfig,
-          join(__dirname, "../dist/"),
-          "xtk:sql",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultFull,
+          optionsFull,
         );
+        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
+        const schemaConfig = configDefaultFull["xtk:sql"];
+        instance.parse(child, schemaConfig);
 
         const fileSql = join(
-          __dirname,
-          "../dist/Administration/Configuration/SQL scripts/xtk/createdb.sql.sql",
+          pathFull,
+          "Administration/Configuration/SQL scripts/xtk/createdb.sql.sql",
         );
         const fileSqlExists = await fs.pathExists(fileSql);
         expect(fileSqlExists).to.be.true;
         const fileMeta = join(
-          __dirname,
-          "../dist/Administration/Configuration/SQL scripts/xtk/createdb.sql.meta.xml",
+          pathFull,
+          "/Administration/Configuration/SQL scripts/xtk/createdb.sql.meta.xml",
         );
         const fileMetaExists = await fs.pathExists(fileMeta);
         expect(fileMetaExists).to.be.true;
@@ -183,28 +186,27 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:delivery (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault, options);
-        const child = DomUtil.getFirstChildElement(nmsDeliverySummer);
-        const schemaConfig = configDefault["nms:delivery"];
-        instance.parse(
-          child,
-          schemaConfig,
-          join(__dirname, "../dist/"),
-          "nms:delivery",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultFull,
+          optionsFull,
         );
+        const child = DomUtil.getFirstChildElement(nmsDelivery554);
+        const schemaConfig = configDefaultFull["nms:delivery"];
+        instance.parse(child, schemaConfig);
 
         // html
         const basename =
-          "../dist/Campaign Management/Deliveries/DM_Newsletter_Summer2025";
-        const fileHtml = join(__dirname, basename + ".html");
+          "Campaign Management/Deliveries/DM554";
+        const fileHtml = join(pathFull, basename + ".html");
         const fileHtmlExists = await fs.pathExists(fileHtml);
         expect(fileHtmlExists).to.be.true;
         // text
-        const fileText = join(__dirname, basename + ".txt");
+        const fileText = join(pathFull, basename + ".txt");
         const fileTextExists = await fs.pathExists(fileText);
         expect(fileTextExists).to.be.true;
         // meta
-        const fileMeta = join(__dirname, basename + ".meta.xml");
+        const fileMeta = join(pathFull, basename + ".meta.xml");
         const fileMetaExists = await fs.pathExists(fileMeta);
         expect(fileMetaExists).to.be.true;
 
@@ -225,6 +227,8 @@ describe("CampaignInstance", function () {
 
         expect(contentMeta).to.contain(`<delivery xtkschema`);
         expect(contentMeta).to.contain(`<html`);
+        expect(contentMeta).to.contain(`cryptedId`);
+        expect(contentMeta).to.not.contain(`@encrypted`);
         expect(contentMeta).to.not.contain(
           `<p>Dear {{recipient.firstName}},</p>`,
         );
@@ -232,26 +236,25 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:includeView (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault, options);
-        const child = DomUtil.getFirstChildElement(nmsViewSubscription);
-        const schemaConfig = configDefault["nms:includeView"];
-        instance.parse(
-          child,
-          schemaConfig,
-          join(__dirname, "../dist/"),
-          "nms:includeView",
+        instance = new CampaignInstance(
+          mockClient,
+          configDefaultFull,
+          optionsFull,
         );
+        const child = DomUtil.getFirstChildElement(nmsViewSubscription);
+        const schemaConfig = configDefaultFull["nms:includeView"];
+        instance.parse(child, schemaConfig);
 
         const basename =
-          "../dist/Resources/Campaign Management/Personalization blocks/SubscriptionLink";
+          "Resources/Campaign Management/Personalization blocks/SubscriptionLink";
 
-        const fileHtml = join(__dirname, basename + ".html");
+        const fileHtml = join(pathFull, basename + ".html");
         const fileHtmlExists = await fs.pathExists(fileHtml);
         expect(fileHtmlExists).to.be.true;
-        const fileText = join(__dirname, basename + ".txt");
+        const fileText = join(pathFull, basename + ".txt");
         const fileTextExists = await fs.pathExists(fileText);
         expect(fileTextExists).to.be.true;
-        const fileMeta = join(__dirname, basename + ".meta.xml");
+        const fileMeta = join(pathFull, basename + ".meta.xml");
         const fileMetaExists = await fs.pathExists(fileMeta);
         expect(fileMetaExists).to.be.true;
         const contentHtml = fs.readFileSync(fileHtml, "utf8");
@@ -273,7 +276,6 @@ describe("CampaignInstance", function () {
         expect(contentHtml).to.not.contain(`<html`);
 
         expect(contentText).to.contain(`<%@ include view='Subscription`);
-        console.log(contentText);
 
         expect(contentText).to.contain(`Use this link`);
         expect(contentText).to.not.contain(`<a href="`);
