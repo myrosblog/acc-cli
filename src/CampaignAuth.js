@@ -35,9 +35,6 @@ class CampaignAuth {
     this.config = config;
     this.instances = config.get(this.INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
-    console.log(
-      `🏠 acc initialized with SDK ${this.sdk.getSDKVersion().version} and authentication from ${this.config.path}`,
-    );
   }
 
   async ip(){
