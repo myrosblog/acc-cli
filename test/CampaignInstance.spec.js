@@ -27,10 +27,10 @@ const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 import CampaignInstance from "../src/CampaignInstance.js";
 
 describe("CampaignInstance", function () {
-  let mockClient, instance;
+  let mockClient, instance, options;
 
   beforeEach(function () {
-    // Mock client
+    // mock client
     mockClient = {
       registerObserver: sinon.stub(),
       NLWS: {
@@ -58,19 +58,24 @@ describe("CampaignInstance", function () {
       },
       DomUtil: DomUtil,
     };
+
+    // mock options
+    options = {
+      path: join(__dirname, "../dist/"),
+    }
   });
 
   describe("parse", () => {
     describe("should parse without meta", () => {
       it("xtk:sql", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta);
+        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
         const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
         const schemaConfig = configDefaultNoMeta["xtk:sql"];
         instance.parse(
           child,
           schemaConfig,
-          join(__dirname, "../dist/"),
-          "xtk:sql",
+          // join(__dirname, "../dist/"),
+          // "xtk:sql",
         );
 
         const fileRaw = join(
@@ -90,7 +95,7 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:delivery", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta);
+        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
         const child = DomUtil.getFirstChildElement(nmsDelivery554);
         const schemaConfig = configDefaultNoMeta["nms:delivery"];
         instance.parse(
@@ -114,7 +119,7 @@ describe("CampaignInstance", function () {
       });
 
       it("xtk:srcSchema", async () => {
-        instance = new CampaignInstance(mockClient, configDefaultNoMeta);
+        instance = new CampaignInstance(mockClient, configDefaultNoMeta, options);
         const child = DomUtil.getFirstChildElement(xtkSchemaDelivery);
         const schemaConfig = configDefaultNoMeta["xtk:srcSchema"];
         instance.parse(
@@ -140,7 +145,7 @@ describe("CampaignInstance", function () {
 
     describe("should parse with meta", () => {
       it("xtk:sql (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault);
+        instance = new CampaignInstance(mockClient, configDefault, options);
         const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
         const schemaConfig = configDefault["xtk:sql"];
         instance.parse(
@@ -178,7 +183,7 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:delivery (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault);
+        instance = new CampaignInstance(mockClient, configDefault, options);
         const child = DomUtil.getFirstChildElement(nmsDeliverySummer);
         const schemaConfig = configDefault["nms:delivery"];
         instance.parse(
@@ -227,7 +232,7 @@ describe("CampaignInstance", function () {
       });
 
       it("nms:includeView (meta)", async () => {
-        instance = new CampaignInstance(mockClient, configDefault);
+        instance = new CampaignInstance(mockClient, configDefault, options);
         const child = DomUtil.getFirstChildElement(nmsViewSubscription);
         const schemaConfig = configDefault["nms:includeView"];
         instance.parse(
