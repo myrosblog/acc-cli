@@ -1,7 +1,7 @@
 {
   "name": "@myros/acc-cli",
   "version": "0.5.2",
-  "description": "A CLI tool to build faster for the Adobe Campaign platform",
+  "description": "Save time, reduce risk and improve code health with acc CLI",
   "keywords": [
     "adobe",
     "adobe campaign",
@@ -45,5 +45,5 @@
   "bugs": {
     "url": "https://github.com/myrosblog/campaign-cli/issues"
   },
-  "homepage": "https://github.com/myrosblog/campaign-cli#readme"
+  "homepage": "https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=acc-cli"
 }

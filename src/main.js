@@ -12,13 +12,15 @@ import CampaignInstance from "./CampaignInstance.js";
 
 const dirMain = path.dirname(fileURLToPath(import.meta.url));
 const dirPackage = path.resolve(dirMain, "..");
+const packageJsonPath = path.join(dirPackage, "package.json");
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
 const authFile = new Configstore("campaign-cli.auth");
 const auth = new CampaignAuth(sdk, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
 
-const vAcc = "0.5.2";
+const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
 const pathConfig = "config.path";
 console.log(
@@ -27,7 +29,9 @@ console.log(
 
 program
   .name("acc")
-  .description("Save time, reduce risk and improve code health. Documentation on https://myrosblog.com/adobe-campaign/acc-cli")
+  .description(
+    `${packageJson.description}. Documentation on ${packageJson.homepage}`,
+  )
   .version(vAcc);
 
 // AUTH
