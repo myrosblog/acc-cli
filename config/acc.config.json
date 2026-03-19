@@ -76,6 +76,9 @@
   },
   "xtk:jst": {
     "filename": "/Administration/Configuration/JavaScript templates/{@namespace}/{@name}.meta.xml",
+    "decompose": {
+      "code": "/Administration/Configuration/JavaScript templates/{@namespace}/{@name}.js"
+    },
     "queryDef": {
       "where": {
         "condition": [
