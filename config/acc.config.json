@@ -116,6 +116,18 @@
       }
     }
   },
+  "ncm:publishing": {
+    "filename": "/Administration/Configuration/Publication Templates/{@namespace}/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+          }
+        ]
+      }
+    }
+  },
   "xtk:javascript": {
     "filename": "/Administration/Configuration/JavaScript codes/{@namespace}/{@name}.meta.xml",
     "decompose": {
