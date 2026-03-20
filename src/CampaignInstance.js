@@ -181,7 +181,7 @@ class CampaignInstance {
     for (const [schemaId, schemaConfig] of Object.entries(
       this.campaignConfig,
     )) {
-      const lineCount = 10;
+      const lineCount = schemaConfig.queryDef.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
       let recordsLengthCurrent = 0;
@@ -191,7 +191,7 @@ class CampaignInstance {
             `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
           );
         }
-        recordsLengthCurrent = await this.downloadAndParse(schemaId, startLine);
+        recordsLengthCurrent = await this.downloadAndParse(schemaId, schemaConfig, startLine);
         startLine += lineCount;
         recordsLengthTotal += recordsLengthCurrent;
       } while (recordsLengthCurrent >= lineCount);
@@ -211,7 +211,7 @@ class CampaignInstance {
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async downloadAndParse(schemaId, startLine) {
+  async downloadAndParse(schemaId, schemaConfig, startLine) {
     const baseQueryDef = {
       schema: schemaId,
       operation: "select",
@@ -219,7 +219,7 @@ class CampaignInstance {
         node: [{ expr: "data" }],
       },
       startLine: startLine,
-      lineCount: 10, // @todo pagination
+      lineCount: schemaConfig.queryDef.lineCount || 10,
     };
     const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
@@ -363,26 +363,11 @@ class CampaignInstance {
     for (let configAttribute of configAttributes) {
       const value = DomUtil.getAttributeAsString(
         record,
-        configAttribute.replace("@", ""),
+        configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
       );
       filename = filename.replace(`{${configAttribute}}`, value);
     }
     return filename;
-  }
-
-  /**
-   * Checks if a folder is empty or doesn't exist.
-   *
-   * @param {string} path - Path to check
-   * @returns {boolean} True if folder is empty or doesn't exist, false otherwise
-   *
-   * @example
-   * if (instance.isFolderEmpty('/path/to/check')) {
-   *   // Folder is empty or doesn't exist
-   * }
-   */
-  isFolderEmpty(path) {
-    return !fs.existsSync(path) || fs.readdirSync(path).length === 0;
   }
 
   /**

@@ -69,6 +69,47 @@ describe("CampaignInstance", function () {
     };
   });
 
+  describe("Private methods", () => {
+    it("_getQueryDefForSchema where.condition.expr", () => {
+      instance = new CampaignInstance(
+        mockClient,
+        configDefaultSimple,
+        optionsSimple,
+      );
+      const baseQueryDef = {
+        schema: "nms:deliveryMapping",
+        operation: "select",
+        select: { node: [] },
+      };
+      const deliveryMapping = instance._getQueryDefForSchema(
+        "nms:deliveryMapping",
+        baseQueryDef,
+      );
+      expect(deliveryMapping).to.deep.equal({
+        schema: "nms:deliveryMapping",
+        operation: "select",
+        select: { node: [] },
+        where: { condition: [{ expr: "@builtIn = false" }] },
+      });
+    });
+
+    it("_getQueryDefForSchema where.condition.expr", () => {
+      const baseQueryDef = {
+        schema: "xtk:folder",
+        operation: "select",
+        select: { node: [] },
+      };
+      const folder = instance._getQueryDefForSchema("xtk:folder", baseQueryDef);
+      expect(folder).to.deep.equal({
+        lineCount: 100,
+        schema: "xtk:folder",
+        operation: "select",
+        select: { node: [] },
+        where: { condition: [{ expr: "@builtIn = true" }] },
+      });
+    });
+  });
+
   describe("parse", () => {
     describe("should parse with simple config", () => {
       it("xtk:sql", async () => {
@@ -118,7 +159,7 @@ describe("CampaignInstance", function () {
         expect(content).to.contain(`<folder _cs="`); // link
         expect(content).to.contain(`<properties deliveryState="0"`); // element
         expect(content).to.contain(`cryptedId`);
-        
+
         expect(content).to.contain(`@encrypted`);
         expect(content).to.contain(`<content`); // no decomposition
       });
@@ -196,8 +237,7 @@ describe("CampaignInstance", function () {
         instance.parse(child, schemaConfig);
 
         // html
-        const basename =
-          "Campaign Management/Deliveries/DM554";
+        const basename = "Campaign Management/Deliveries/DM554";
         const fileHtml = join(pathFull, basename + ".html");
         const fileHtmlExists = await fs.pathExists(fileHtml);
         expect(fileHtmlExists).to.be.true;

@@ -157,5 +157,18 @@
     "queryDef": {
       "where": { "condition": [{ "expr": "@builtIn = false" }] }
     }
+  },
+  "xtk:folder": {
+    "filename": "/Explorer/{@name}.meta.xml",
+    "queryDef": {
+      "lineCount": 100,
+      "where": {
+        "condition": [
+          {
+            "expr": "@builtIn = true"
+          }
+        ]
+      }
+    }
   }
 }
