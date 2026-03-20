@@ -237,5 +237,25 @@
     "queryDef": {
       "where": { "condition": [{ "expr": "@builtIn = false" }] }
     }
+  },
+  "xtk:queryFilter": {
+    "filename": "/Profiles and Targets/Predefined filters/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [{ "expr": "@name NOT LIKE ''" }]
+      }
+    }
+  },
+  "xtk:folder": {
+    "filename": "/Explorer/{@name}.meta.xml",
+    "queryDef": {
+      "where": {
+        "condition": [
+          {
+            "expr": "@name NOT LIKE 'xtk'"
+          }
+        ]
+      }
+    }
   }
 }
