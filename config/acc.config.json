@@ -62,7 +62,7 @@
   "xtk:jssp": {
     "filename": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.meta.xml",
     "decompose": {
-      "data": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.jsp"
+      "data": "/Administration/Configuration/Dynamic JavaScript pages/{@namespace}/{@name}.js"
     },
     "queryDef": {
       "where": {
