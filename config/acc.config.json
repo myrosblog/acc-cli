@@ -1,24 +1,24 @@
 {
   "nms:localOrgUnit": {
-    "filename": "/Administration/Access Management/Organizational entities/{@name}.xml",
+    "filename": "/Administration/Access Management/Organizational entities/{@name}.meta.xml",
     "queryDef": {
       "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
     }
   },
   "nms:deliveryMapping": {
-    "filename": "/Administration/Campaign Management/Target mappings/{@name}.xml",
+    "filename": "/Administration/Campaign Management/Target mappings/{@name}.meta.xml",
     "queryDef": {
       "where": { "condition": [{ "expr": "@builtIn = false" }] }
     }
   },
   "nms:typology": {
-    "filename": "/Administration/Campaign Management/Typology management/Typologies/{@name}.xml",
+    "filename": "/Administration/Campaign Management/Typology management/Typologies/{@name}.meta.xml",
     "queryDef": {
       "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
     }
   },
   "nms:typologyRule": {
-    "filename": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.xml",
+    "filename": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.meta.xml",
     "queryDef": {
       "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
     }
@@ -168,7 +168,7 @@
     }
   },
   "xtk:workflow": {
-    "filename": "/Administration/Production/{@internalName}.xml",
+    "filename": "/Administration/Production/{@internalName}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
@@ -176,7 +176,7 @@
     }
   },
   "nms:operation": {
-    "filename": "/Campaign Management/Campaigns/{@internalName}.xml",
+    "filename": "/Campaign Management/Campaigns/{@internalName}.meta.xml",
     "queryDef": {
       "where": {
         "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
