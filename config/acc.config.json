@@ -171,7 +171,10 @@
     }
   },
   "xtk:xslt": {
-    "filename": "/Administration/Configuration/XSL style sheets/{@namespace}/{@name}.xsl",
+    "filename": "/Administration/Configuration/XSL style sheets/{@namespace}/{@name}.meta.xml",
+    "decompose": {
+      "data": "/Administration/Configuration/XSL style sheets/{@namespace}/{@name}.xsl"
+    },
     "queryDef": {
       "where": {
         "condition": [
