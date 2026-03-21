@@ -214,7 +214,7 @@
     },
     {
       "schemaId": "xtk:workflow",
-      "filename": "/Administration/Production/{@internalName}.meta.xml",
+      "filename": "/Administration/Production/Technical workflows/{@internalName}.meta.xml",
       "queryDef": {
         "where": {
           "condition": [{ "expr": "@builtIn = true AND @isModel = false AND [@operation-id] = 0" }]
