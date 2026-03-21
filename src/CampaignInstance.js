@@ -77,9 +77,8 @@ class CampaignInstance {
    *   operation: 'count'
    * });
    */
-  _getQueryDefForSchema(schema, baseQueryDef) {
-    const config = this.campaignConfig[schema];
-    const configQueryDef = config.queryDef ? config.queryDef : {};
+  _getQueryDefForSchema(schemaConfig, baseQueryDef) {
+    const configQueryDef = schemaConfig.queryDef ? schemaConfig.queryDef : {};
 
     return {
       ...baseQueryDef,
@@ -101,9 +100,7 @@ class CampaignInstance {
       `✨ ${isPreview ? "Previewing" : "Pulling"} data to ${this.downloadPath}`,
     );
 
-    for (const [schemaId, schemaConfig] of Object.entries(
-      this.campaignConfig,
-    )) {
+    for (const schemaConfig of this.campaignConfig.schemas) {
       const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
@@ -115,16 +112,16 @@ class CampaignInstance {
           );
         }
         recordsLengthCurrent = await this.downloadAndParse(
-          schemaId,
           schemaConfig,
           startLine,
+          lineCount,
           isPreview,
         );
         startLine += lineCount;
         recordsLengthTotal += recordsLengthCurrent;
       } while (recordsLengthCurrent >= lineCount);
       this.log(
-        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaId)}\n`,
+        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaConfig.schemaId)}\n`,
       );
     }
   }
@@ -132,14 +129,16 @@ class CampaignInstance {
   /**
    * Downloads records from a specific schema and saves them as XML files.
    *
-   * @param {string} schemaId - Schema name to download
+   * @param {Object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
+   * @param {number} lineCount - Size of pagination
    * @returns {Promise<number>} Number of records downloaded
    *
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async downloadAndParse(schemaId, schemaConfig, startLine, isPreview) {
+  async downloadAndParse(schemaConfig, startLine, lineCount, isPreview) {
+    const { schemaId } = schemaConfig;
     const baseQueryDef = {
       schema: schemaId,
       operation: "select",
@@ -147,14 +146,12 @@ class CampaignInstance {
         node: [{ expr: "data" }],
       },
       startLine: startLine,
-      lineCount: schemaConfig.queryDef?.lineCount || 10,
+      lineCount: lineCount,
     };
     const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
 
     const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
-
-    const config = this.campaignConfig[schemaId];
 
     let message = "";
     var recordsLength = 0;
@@ -170,7 +167,7 @@ class CampaignInstance {
       while (child) {
         recordsLength++;
 
-        this.parse(child, config, isPreview);
+        this.parse(child, schemaConfig, isPreview);
 
         child = DomUtil.getNextSiblingElement(child);
       }
