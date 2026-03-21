@@ -119,7 +119,7 @@ class CampaignInstance {
         recordsLengthTotal += recordsLengthCurrent;
       } while (recordsLengthCurrent >= lineCount);
       this.log(
-        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaConfig.schemaId)}\n`,
+        `✅ ${schemaConfig.filename}: ${chalk.bgCyan(schemaConfig.schemaId)} ${recordsLengthTotal} records\n`,
       );
     }
   }
@@ -146,8 +146,10 @@ class CampaignInstance {
       startLine: startLine,
       lineCount: lineCount,
     };
-    const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
+    const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
+    // console.log("queryDef", JSON.stringify(queryDef));
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
+    // console.log("queryDefXml", DomUtil.toXMLString(queryDefXml));
 
     const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
 
@@ -156,6 +158,7 @@ class CampaignInstance {
     try {
       await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
       const records = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
+      // console.log("records", DomUtil.toXMLString(records));
       if (this.verbose) {
         this.log(
           `Parsing XML Response with ${records.childElementCount} children`,
@@ -202,7 +205,8 @@ class CampaignInstance {
   }
 
   parse(childElement, schemaConfig, isPreview) {
-    const {filename, decompose, excludeXPaths} = schemaConfig;
+    // console.log(`>>> parse with isPreview:${isPreview}`);
+    const { filename, decompose, excludeXPaths } = schemaConfig;
     const configAttributes = this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
 
     const computedFilename = this._computeFilename(
@@ -223,7 +227,7 @@ class CampaignInstance {
         if (xpath.includes(this.CONFIG_XPATH_ATTR)) {
           const attribute = chunks[chunks.length - 1];
           const attributeName = attribute.replace(this.CONFIG_XPATH_ATTR, "");
-          if (!childTraverse.getAttribute(attributeName)) {
+          if (!childTraverse.hasAttribute(attributeName)) {
             continue;
           }
           childTraverse.setAttribute(attributeName, "");
@@ -265,7 +269,9 @@ class CampaignInstance {
             this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
           }
           // removeElement
-          childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
+          if (childTraverse) {
+            childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
+          }
         } catch (err) {
           this.log(`(⚠️ warning:parse ${err.message})`);
         }
