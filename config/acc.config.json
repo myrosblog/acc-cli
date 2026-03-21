@@ -15,7 +15,7 @@
       }
     },
     {
-      "schemaId": "nms:deliveryMapping",
+      "schemaId": "nms:typology",
       "filename": "/Administration/Campaign Management/Typology management/Typologies/{@name}.meta.xml",
       "queryDef": {
         "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
