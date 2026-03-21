@@ -30,26 +30,24 @@ class CampaignInstance {
    * Creates a new CampaignInstance.
    *
    * @param {Object} client - Authenticated ACC client
-   * @param {Object} campaignConfig - Configuration object defining schemas and download options
-   * @param {Object} campaignConfig.default - Default configuration for all schemas
-   * @param {Object} [campaignConfig.*] - Schema-specific configurations
+   * @param {Object} accConfig - Configuration object defining schemas and download options
+   * @param {Object} [accConfig.*] - Schema-specific configurations
    *
    * @example
-   * const instance = new CampaignInstance(client, {
-   *   default: { filename: "%schema%_%name%.xml" },
-   *   "nms:recipient": { filename: "recipient_%name%.xml" }
-   * });
+   * const instance = new CampaignInstance(client, { schemas: [
+   *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
+   * ]});
    */
-  constructor(client, campaignConfig, options = { verbose: false }) {
+  constructor(client, accConfig, options = { verbose: false }) {
     this.client = client;
-    this.campaignConfig = campaignConfig;
+    this.accConfig = accConfig;
     this.verbose = options.verbose;
     this.downloadPath = options.path;
     /**
      * Array of schema names to process (excluding default config)
      * @type {string[]}
      */
-    this.schemas = Object.keys(this.campaignConfig);
+    this.schemas = Object.keys(this.accConfig);
 
     this.client.registerObserver({
       onSOAPCall: (soapCall, safeRequestData) => {
@@ -100,7 +98,7 @@ class CampaignInstance {
       `✨ ${isPreview ? "Previewing" : "Pulling"} data to ${this.downloadPath}`,
     );
 
-    for (const schemaConfig of this.campaignConfig.schemas) {
+    for (const schemaConfig of this.accConfig.schemas) {
       const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
@@ -203,23 +201,21 @@ class CampaignInstance {
     return childTraverse;
   }
 
-  parse(childElement, config, isPreview) {
-    const configFilename = config.filename;
-    const configDecompose = config.decompose;
-    const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
-    const configExcludeXPaths = config.excludeXPaths;
+  parse(childElement, schemaConfig, isPreview) {
+    const {filename, decompose, excludeXPaths} = schemaConfig;
+    const configAttributes = this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
 
-    const filename = this._computeFilename(
-      configFilename,
+    const computedFilename = this._computeFilename(
+      filename,
       configAttributes,
       childElement,
     );
-    const filenameOnly = path.basename(filename);
-    const datapath = path.join(this.downloadPath, filename);
+    const filenameOnly = path.basename(computedFilename);
+    const datapath = path.join(this.downloadPath, computedFilename);
 
     // prepare XML by removing excluded attributes
-    if (configExcludeXPaths) {
-      for (let xpath of configExcludeXPaths) {
+    if (excludeXPaths) {
+      for (let xpath of excludeXPaths) {
         const chunks = xpath.split(this.CONFIG_XPATH_SEP);
         const childTraverse = this._getLastElement(childElement, xpath);
 
@@ -239,7 +235,7 @@ class CampaignInstance {
     }
 
     // no decomposition: save raw XML
-    if (!configDecompose) {
+    if (!decompose) {
       const raw = DomUtil.toXMLString(childElement);
       if (isPreview) {
         fs.outputFileSync(datapath, raw);
@@ -248,7 +244,7 @@ class CampaignInstance {
     // with decomposition: save each xpath, then save the clean meta
     else {
       // 1. save each xpath + removeElement
-      for (const [xpath, filenameTemplate] of Object.entries(configDecompose)) {
+      for (const [xpath, filenameTemplate] of Object.entries(decompose)) {
         try {
           // compute filename
           const decomposedFilename = this._computeFilename(
