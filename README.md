@@ -21,12 +21,8 @@ acc instance pull --alias staging
 ### Quick installation
 
 ```bash
-cd ~/Downloads
-git clone https://github.com/myrosblog/campaign-cli.git
-cd campaign-cli
-npm install
-npm link
-acc # check installation
+$ npm install -g campaign-cli
+$ acc # check installation
 ```
 
 ### Basic Usage
