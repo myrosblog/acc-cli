@@ -119,8 +119,12 @@ class CampaignInstance {
         recordsLengthTotal += recordsLengthCurrent;
       } while (recordsLengthCurrent >= lineCount);
       this.log(
-        `✅ ${schemaConfig.filename}: ${chalk.bgCyan(schemaConfig.schemaId)} ${recordsLengthTotal} records\n`,
+        `✅ ${schemaConfig.filename}: ${chalk.bgCyan(schemaConfig.schemaId)} ${recordsLengthTotal} records`,
       );
+      // new line when verbose
+      if (this.verbose) {
+        this.log("");
+      }
     }
   }
 
