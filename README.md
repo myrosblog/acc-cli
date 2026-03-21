@@ -2,193 +2,27 @@
 
 **A command-line interface for ACC (Campaign Classic) developers**
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
-[![npm](https://img.shields.io/badge/npm-CLI-blue.svg)](https://www.npmjs.com/)
+Full article in the blog post [Getting started with acc](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
 ## 🚀 Quick Start
 
 ### Quick usage
 
 ```bash
-acc auth init --host https://instance.com --user username --password --alias staging
+$ npm install -g campaign-cli
 
-acc instance pull --alias staging
+$ acc auth init --host https://instance.com --user username --password --alias staging
+
+$ acc instance check --alias staging
 # Downloaded /Administration/Configuration/Form rendering
 # Downloaded /Administration/Configuration/Dynamic Javascript pages
+
+$ acc instance pull --alias staging
 ```
 
-### Quick installation
+### 🔧 Advanced Configuration
 
-```bash
-$ npm install -g campaign-cli
-$ acc # check installation
-```
-
-### Basic Usage
-
-Folder structure recommendation, under a local folder, i.e. `Downloads`
-
-```bash
-/Downloads/
-├── campaign-cli/                  # Clone of this source code
-│
-├── instance1-staging/             # Staging Instance 1
-│   ├── config/                          # Instance-specific config => automatically created with acc check
-│   │   └── acc.config.json
-│   └── Administration/Configuration/    # Downloaded schemas => automatically downloaded with acc pull
-│       ├── schema1.xml
-│       └── schema2.xml
-│
-└── instance1-production/          # Production Instance 2
-    ├── config/
-    │   └── acc.config.json
-    └── Administration/Configuration/
-        ├── schema1.xml
-        └── schema2.xml
-```
-
-#### Step 1: Configure an ACC Instance
-
-```bash
-acc auth init \
-  --host http://localhost:8080 \
-  --user admin \
-  --password admin \
-  --alias local
-```
-
-This command:
-
-- Saves credentials securely in your config store
-- Tests the connection to your ACC instance
-- Lists available schemas and record counts
-
-#### Step 2: Pull Data from Your Instance with default configuration
-
-```bash
-acc instance check --alias local
-acc instance pull --alias local
-```
-
-This command:
-
-- Creates a local directory structure
-- Downloads schema definitions as XML files
-- Preserves original naming conventions
-- Implements pagination for large datasets
-
-#### Step 2-bis: Pull Data from Your Instance with custom configuration
-
-Create
-
-```bash
-
-```
-
-## 📚 Features
-
-### Authentication Management
-
-```bash
-# List all configured instances
-acc auth list
-
-# Troubleshoot IP via https://api.db-ip.com/v2/free/self @see https://opensource.adobe.com/acc-js-sdk/connecting.html
-acc auth ip
-
-# Login to an existing instance
-acc auth login --alias prod
-
-# Initialize a new instance
-acc auth init --alias staging --host https://staging.example.com
-```
-
-### Data Operations
-
-```bash
-# Check instance (count records without downloading)
-acc instance check --alias prod
-
-# Pull data with custom config
-acc instance pull \
-  --alias prod \
-  --path ./my-project/data \
-  --config ./config/acc.config.json
-```
-
-### Configuration Management
-
-Create a `acc.config.json` file to customize data pulling:
-
-```json
-{
-  "nms:delivery": {
-    "filename": "Deliveries/{%name%}.xml",
-    "queryDef": {
-      "where": {
-        "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
-      }
-    }
-  }
-}
-```
-
-## 🎯 Use Cases
-
-### For ACC Developers
-
-```bash
-# Setup development environment
-acc auth init --alias dev --host http://localhost:8080
-
-# Pull specific schemas
-acc instance pull --alias dev
-
-# Regular data refresh
-acc instance pull --alias prod --path ./backup/$(date +%Y-%m-%d)
-```
-
-### For DevOps Teams
-
-```bash
-# CI/CD integration
-acc auth init --alias ci --host $ACC_HOST --user $ACC_USER --password $ACC_PASSWORD
-acc instance check --alias ci || exit 1
-
-# Automated backups
-acc instance pull --alias prod --path /backups/acc/$(date +%Y-%m-%d)
-```
-
-### For Data Analysts
-
-```bash
-# Quick data extraction
-acc instance pull --alias analytics --config ./config/analytics.config.json
-
-# Schema documentation
-acc instance check --alias prod > schema_report.txt
-```
-
-## 🔧 Advanced Configuration
-
-### Custom Paths and Configs
-
-```bash
-acc instance pull \
-  --alias staging \
-  --path /projects/acc-migration/data \
-  --config ./config/migration.config.json
-```
-
-### Filename Patterns
-
-Available variables for filename patterns:
-
-- `%schema%` - Schema name (e.g., `nms_recipient`)
-- `%namespace%` - Schema namespace
-- `%name%` - Schema display name
-- `%internalName%` - Internal schema name
+[Advanced use cases with acc](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
 ## 🤝 Contributing
 
@@ -228,7 +62,7 @@ config/
 
 ## Roadmap
 
-- Publish to npm
+- `acc instance push`
 
 ## 🔒 Security
 
