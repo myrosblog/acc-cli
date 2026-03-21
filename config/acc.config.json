@@ -205,10 +205,28 @@
     },
     {
       "schemaId": "xtk:workflow",
+      "filename": "/Administration/Production/Objects created automatically/Campaign workflows/{@internalName}.meta.xml",
+      "queryDef": {
+        "where": {
+          "condition": [{ "expr": "@builtIn = true AND @isModel = false AND [@operation-id] != 0" }]
+        }
+      }
+    },
+    {
+      "schemaId": "xtk:workflow",
       "filename": "/Administration/Production/{@internalName}.meta.xml",
       "queryDef": {
         "where": {
-          "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+          "condition": [{ "expr": "@builtIn = true AND @isModel = false AND [@operation-id] = 0" }]
+        }
+      }
+    },
+    {
+      "schemaId": "xtk:workflow",
+      "filename": "/Resources/Templates/Workflow templates/{@internalName}.meta.xml",
+      "queryDef": {
+        "where": {
+          "condition": [{ "expr": "@builtIn = true AND @isModel = true" }]
         }
       }
     },
