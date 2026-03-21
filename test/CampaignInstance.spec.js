@@ -129,7 +129,7 @@ describe("CampaignInstance", function () {
   });
 
   describe("check", () => {
-    it("should check without error without verbose", async () => {
+    it("should check without error", async () => {
       instance = new CampaignInstance(
         mockClient,
         configDefaultSimple,
@@ -139,23 +139,7 @@ describe("CampaignInstance", function () {
 
       await instance.pull(true, optionsSimple);
 
-      // console.log(
-      //   "Appels à instance.log :",
-      //   logStub.getCalls().map((call) => call.args),
-      // );
-
       expect(logStub.callCount).to.equal(19);
-
-      // Vérifie que `log` a été appelé avec un texte contenant "Access Management"
-      // const logs = [
-      //   `✅ /Administration/Access Management/Organizational entities/{@name}.xml: 0 nms:localOrgUnit`,
-      // ];
-      // for (let log of logs) {
-      //   // expect(logStub.calledWithMatch(log)).to.be.true;
-      //   expect(logStub).to.have.been.calledWith(
-      //     sinon.match((text) => text.includes(log)),
-      //   );
-      // }
     });
   });
 

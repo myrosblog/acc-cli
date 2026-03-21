@@ -237,7 +237,7 @@ class CampaignInstance {
     // no decomposition: save raw XML
     if (!decompose) {
       const raw = DomUtil.toXMLString(childElement);
-      if (isPreview) {
+      if (!isPreview) {
         fs.outputFileSync(datapath, raw);
       }
     }
