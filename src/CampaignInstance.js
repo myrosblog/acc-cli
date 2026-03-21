@@ -272,7 +272,7 @@ class CampaignInstance {
       }
       // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
-      if (isPreview) {
+      if (!isPreview) {
         fs.outputFileSync(datapath, metaContent);
       }
     }
