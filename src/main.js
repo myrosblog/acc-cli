@@ -124,29 +124,7 @@ program
       )
       .action(async (options) => {
         try {
-          // if the config file doesn't exist at the default location, copy the example config there
-          if (
-            options.config == defaultConfigPath &&
-            !fs.existsSync(options.config)
-          ) {
-            console.log(
-              `🛠️ Config not found, initalializing ${options.config}`,
-            );
-            fs.copySync(
-              path.join(dirPackage, "config", "acc.config.json"),
-              options.config,
-            );
-          } else {
-            console.log(`🛠️ Using config ${options.config}`);
-          }
-          const campaignConfig = JSON.parse(fs.readFileSync(options.config));
-          const client = await auth.login({ alias: options.alias });
-          const instance = new CampaignInstance(
-            client,
-            campaignConfig,
-            options,
-          );
-          await instance.pull(true);
+          await pull(options, true);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -177,14 +155,7 @@ program
       )
       .action(async (options) => {
         try {
-          const campaignConfig = JSON.parse(fs.readFileSync(options.config));
-          const client = await auth.login({ alias: options.alias });
-          const instance = new CampaignInstance(
-            client,
-            campaignConfig,
-            options,
-          );
-          await instance.pull(false);
+          await pull(options, false);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -192,6 +163,23 @@ program
   );
 
 program.parse(process.argv);
+
+async function pull(options, isPreview) {
+  // if the config file doesn't exist at the default location, copy the example config there
+  if (options.config == defaultConfigPath && !fs.existsSync(options.config)) {
+    console.log(`🛠️ Config not found, initalializing ${options.config}`);
+    fs.copySync(
+      path.join(dirPackage, "config", "acc.config.json"),
+      options.config,
+    );
+  } else {
+    console.log(`🛠️ Using config ${options.config}`);
+  }
+  const campaignConfig = JSON.parse(fs.readFileSync(options.config));
+  const client = await auth.login({ alias: options.alias });
+  const instance = new CampaignInstance(client, campaignConfig, options);
+  await instance.pull(isPreview);
+}
 
 /**
  * Handles errors from Campaign CLI operations.
