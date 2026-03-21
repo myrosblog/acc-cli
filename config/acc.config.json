@@ -32,7 +32,8 @@
             "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
           }
         ]
-      }
+      },
+      "orderBy": { "node": [{ "expr": "@namespace" }, {"expr": "@name"}]}
     }
   },
   "xtk:enum": {
