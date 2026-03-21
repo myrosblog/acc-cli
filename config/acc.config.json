@@ -231,7 +231,27 @@
       "excludeXPaths": ["@cryptedId"],
       "queryDef": {
         "where": {
-          "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+          "condition": [
+            { "expr": "@builtIn = true", "boolOperator": "AND" },
+            { "expr": "@isModel = false", "boolOperator": "AND" }
+          ]
+        }
+      }
+    },
+    {
+      "schemaId": "nms:delivery",
+      "filename": "/Resources/Templates/Delivery templates/{@internalName}.meta.xml",
+      "decompose": {
+        "content/html/source": "/Campaign Management/Deliveries/{@internalName}.html",
+        "content/text/source": "/Campaign Management/Deliveries/{@internalName}.txt"
+      },
+      "excludeXPaths": ["@cryptedId"],
+      "queryDef": {
+        "where": {
+          "condition": [
+            { "expr": "@builtIn = true", "boolOperator": "AND" },
+            { "expr": "@isModel = true", "boolOperator": "AND" }
+          ]
         }
       }
     },
