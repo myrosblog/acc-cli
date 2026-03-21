@@ -1,6 +1,6 @@
 {
-  "name": "@myros/acc-cli",
-  "version": "0.7.1",
+  "name": "campaign-cli",
+  "version": "0.7.2",
   "description": "Save time, reduce risk and improve code health with acc CLI",
   "keywords": [
     "adobe",
@@ -38,12 +38,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/myrosblog/campaign-cli.git"
+    "url": "git+https://github.com/myrosblog/acc-cli.git"
   },
   "author": "Myros",
   "license": "AGPL-3.0-only",
   "bugs": {
-    "url": "https://github.com/myrosblog/campaign-cli/issues"
+    "url": "https://github.com/myrosblog/acc-cli/issues"
   },
   "homepage": "https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=acc-cli"
 }
