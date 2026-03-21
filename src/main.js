@@ -184,7 +184,7 @@ program
             campaignConfig,
             options,
           );
-          await instance.pull(false, options);
+          await instance.pull(false);
         } catch (err) {
           handleCampaignError(err);
         }

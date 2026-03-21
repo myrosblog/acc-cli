@@ -9,15 +9,12 @@ const { DomUtil } = sdk;
 /**
  * Campaign Instance class for interacting with ACC instances.
  * Handles data checking, pulling, and downloading from ACC schemas.
- * - check()
- *   - xml.xtkQueryDef.create(schema)
- *   - adds attributes from the config
- *   - xml.xtkQueryDef.executeQuery() and parses to get records.length
- * - pull(), very similar:
+ * - pull():
  *   - paginates by batch of 10 (startLine, lineCount)
  *   - download()
- *     - xml.xtkQueryDef.create(schema)
- *     - xml.xtkQueryDef.selectAll()
+ *     - sdk.xml.xtkQueryDef.create(schema)
+ *     - sdk.xml.xtkQueryDef.selectAll()
+ *     - sdk.xml.xtkQueryDef.executeQuery()
  *     - for each XML record:
  *       - parse()
  *
@@ -100,7 +97,9 @@ class CampaignInstance {
    * await instance.pull('/path/to/download');
    */
   async pull(isPreview) {
-    this.log(`✨ Pulling data to ${this.downloadPath}...`);
+    this.log(
+      `✨ ${isPreview ? "Previewing" : "Pulling"} data to ${this.downloadPath}`,
+    );
 
     for (const [schemaId, schemaConfig] of Object.entries(
       this.campaignConfig,
@@ -265,7 +264,9 @@ class CampaignInstance {
           const elementValue = DomUtil.elementValue(childTraverse);
           // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);
-          fs.outputFileSync(datapath, elementValue);
+          if (!isPreview) {
+            fs.outputFileSync(datapath, elementValue);
+          }
           const decomposedFilenameOnly = path.basename(decomposedFilename);
           if (this.verbose) {
             this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
