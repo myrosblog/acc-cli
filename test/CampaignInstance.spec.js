@@ -16,7 +16,7 @@ const loadJson = (file) => JSON.parse(fs.readFileSync(configPathJson + file));
 const configPathXml = join(__dirname, "mocks/acc-js-sdk-xml/");
 const loadXml = (file) => DomUtil.parse(fs.readFileSync(configPathXml + file));
 // mocks
-const configDefaultFull = loadJson("acc.config.defaultTemplateFull.json");
+const configDefaultFull = loadJson("../../../config/acc.config.json");
 const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
@@ -95,7 +95,9 @@ describe("CampaignInstance", function () {
         select: { node: [] },
       };
       const deliveryMapping = instance._getQueryDefForSchema(
-        "nms:deliveryMapping",
+        configDefaultSimple.schemas.find(
+          (x) => x.schemaId == "nms:deliveryMapping",
+        ),
         baseQueryDef,
       );
       expect(deliveryMapping).to.deep.equal({
@@ -112,7 +114,10 @@ describe("CampaignInstance", function () {
         operation: "select",
         select: { node: [] },
       };
-      const folder = instance._getQueryDefForSchema("xtk:folder", baseQueryDef);
+      const folder = instance._getQueryDefForSchema(
+        configDefaultSimple.schemas.find((x) => x.schemaId == "xtk:folder"),
+        baseQueryDef,
+      );
       expect(folder).to.deep.equal({
         lineCount: 100,
         schema: "xtk:folder",
@@ -163,7 +168,9 @@ describe("CampaignInstance", function () {
           optionsSimple,
         );
         const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
-        const schemaConfig = configDefaultSimple["xtk:sql"];
+        const schemaConfig = configDefaultSimple.schemas.find(
+          (x) => x.schemaId == "xtk:sql",
+        );
         instance.parse(child, schemaConfig);
 
         const fileRaw = join(
@@ -189,7 +196,9 @@ describe("CampaignInstance", function () {
           optionsSimple,
         );
         const child = DomUtil.getFirstChildElement(nmsDelivery554);
-        const schemaConfig = configDefaultSimple["nms:delivery"];
+        const schemaConfig = configDefaultSimple.schemas.find(
+          (x) => x.schemaId == "nms:delivery",
+        );
         instance.parse(child, schemaConfig);
 
         const fileRaw = join(
@@ -215,7 +224,9 @@ describe("CampaignInstance", function () {
           optionsSimple,
         );
         const child = DomUtil.getFirstChildElement(xtkSchemaDelivery);
-        const schemaConfig = configDefaultSimple["xtk:srcSchema"];
+        const schemaConfig = configDefaultSimple.schemas.find(
+          (x) => x.schemaId == "xtk:srcSchema",
+        );
         instance.parse(child, schemaConfig);
 
         const fileRaw = join(
@@ -240,7 +251,9 @@ describe("CampaignInstance", function () {
           optionsFull,
         );
         const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
-        const schemaConfig = configDefaultFull["xtk:sql"];
+        const schemaConfig = configDefaultFull.schemas.find(
+          (x) => x.schemaId == "xtk:sql",
+        );
         instance.parse(child, schemaConfig);
 
         const fileSql = join(
@@ -277,7 +290,9 @@ describe("CampaignInstance", function () {
           optionsFull,
         );
         const child = DomUtil.getFirstChildElement(nmsDelivery554);
-        const schemaConfig = configDefaultFull["nms:delivery"];
+        const schemaConfig = configDefaultFull.schemas.find(
+          (x) => x.schemaId == "nms:delivery",
+        );
         instance.parse(child, schemaConfig);
 
         // html
@@ -326,7 +341,9 @@ describe("CampaignInstance", function () {
           optionsFull,
         );
         const child = DomUtil.getFirstChildElement(nmsViewSubscription);
-        const schemaConfig = configDefaultFull["nms:includeView"];
+        const schemaConfig = configDefaultFull.schemas.find(
+          (x) => x.schemaId == "nms:includeView",
+        );
         instance.parse(child, schemaConfig);
 
         const basename =
