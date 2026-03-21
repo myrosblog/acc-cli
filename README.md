@@ -63,6 +63,7 @@ acc auth init \
 ```
 
 This command:
+
 - Saves credentials securely in your config store
 - Tests the connection to your ACC instance
 - Lists available schemas and record counts
@@ -75,6 +76,7 @@ acc instance pull --alias local
 ```
 
 This command:
+
 - Creates a local directory structure
 - Downloads schema definitions as XML files
 - Preserves original naming conventions
@@ -82,8 +84,10 @@ This command:
 
 #### Step 2-bis: Pull Data from Your Instance with custom configuration
 
-Create 
+Create
+
 ```bash
+
 ```
 
 ## 📚 Features
@@ -126,7 +130,9 @@ Create a `acc.config.json` file to customize data pulling:
   "nms:delivery": {
     "filename": "Deliveries/{%name%}.xml",
     "queryDef": {
-      "where": {"condition": [{ "expr": "@builtIn = false AND @isModel = true" }]},
+      "where": {
+        "condition": [{ "expr": "@builtIn = false AND @isModel = true" }]
+      }
     }
   }
 }
@@ -182,33 +188,24 @@ acc instance pull \
 ### Filename Patterns
 
 Available variables for filename patterns:
+
 - `%schema%` - Schema name (e.g., `nms_recipient`)
 - `%namespace%` - Schema namespace
 - `%name%` - Schema display name
 - `%internalName%` - Internal schema name
 
-## 🛠️ Development
+## 🤝 Contributing
 
-### Prerequisites
+Contributions are welcome! Please open a Pull Request!
 
-- Node.js 22+
-- npm 9+
-- ACC instance access
-
-### Setup
+### Local development
 
 ```bash
 # Clone repository
-git clone https://github.com/myrosblog/campaign-cli.git
-cd campaign-cli
-
-# Install dependencies
+git clone https://github.com/myrosblog/acc-cli.git
+cd acc-cli
 npm install
-
-# Link for local development
 npm link
-
-# Run tests
 npm test
 ```
 
@@ -216,7 +213,7 @@ npm test
 
 ```
 src/
-├── main.js              # CLI entry point
+├── main.js               # CLI entry point
 ├── CampaignAuth.js       # Authentication and instance management
 ├── CampaignInstance.js   # Data operations (check, pull, download)
 └── CampaignError.js      # Custom error handling
@@ -233,37 +230,6 @@ config/
 └── acc.config.json # Default configuration template
 ```
 
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test files
-npx mocha test/CampaignAuth.spec.js
-
-# Test with coverage
-npm run test
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/your-feature`
-3. **Commit changes**: `git commit -m 'Add some feature'`
-4. **Push to branch**: `git push origin feature/your-feature`
-5. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow existing code style
-- Add JSDoc comments for new functions
-- Write tests for new features
-- Update README for significant changes
-- Keep commits focused and descriptive
-
 ## Roadmap
 
 - Publish to npm
@@ -274,19 +240,3 @@ Contributions are welcome! Please follow these steps:
 - No credentials are logged or transmitted unnecessarily
 - All network communications use the official ACC JS SDK
 - Regular dependency updates for security patches
-
-## 📄 License
-
-This project is licensed under the **AGPL-3.0 License** - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with ❤️ for ACC developers
-- Inspired by modern CLI tools like Shopify CLI
-- Powered by Node.js and the ACC JS SDK
-
-## 📬 Contact
-
-For questions, issues, or contributions:
-- **GitHub Issues**: https://github.com/myrosblog/campaign-cli/issues
-- **Source Code**: https://github.com/myrosblog/campaign-cli
