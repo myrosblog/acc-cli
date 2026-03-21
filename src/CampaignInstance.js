@@ -91,82 +91,6 @@ class CampaignInstance {
   }
 
   /**
-   * Checks the ACC instance & config by getting records for each schema:
-   * - xtkQueryDef.create(schema)
-   * - adds attributes from the config
-   * - calls executeQuery() and parses to get records.length
-   * - if verbose, outputs the list of filenames to be created
-   *
-   * @returns {Promise<void>} Resolves when check is complete
-   * @throws {CampaignError} Throws if download path is not empty
-   *
-   * @example
-   * await instance.check('/path/to/download');
-   */
-  async check() {
-    console.log(`📡 Checking data to be downloaded in ${this.downloadPath}`);
-
-    for (const [schemaId, schemaConfig] of Object.entries(
-      this.campaignConfig,
-    )) {
-      const baseQueryDef = {
-        schema: schemaId,
-        operation: "select",
-        select: { node: [] },
-      };
-      const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
-      const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
-      // get all attributes from the config
-      const configAttributes =
-        this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
-      queryDef.select.node = configAttributes.map((attr) => ({ expr: attr }));
-      // API call
-      const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
-      // parsing
-      let recordsElement;
-      try {
-        recordsElement = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
-      } catch (err) {
-        console.log(
-          `⚠️ ${schemaConfig.filename}: <No records> ${chalk.bgCyan(schemaId)} (Warning: API call failed)`,
-          err,
-        );
-        continue;
-      }
-      try {
-        var recordsLength = 0;
-        var recordElement = DomUtil.getFirstChildElement(recordsElement);
-        var messages = [];
-        while (recordElement) {
-          recordsLength++;
-
-          const filepath = this._computeFilename(
-            schemaConfig.filename,
-            configAttributes,
-            recordElement,
-          );
-          const filenameOnly = path.basename(filepath);
-          messages.push(`${chalk.underline(filenameOnly)}`);
-
-          recordElement = DomUtil.getNextSiblingElement(recordElement);
-        }
-        console.log(
-          `✅ ${schemaConfig.filename}: ${recordsLength} ${chalk.bgCyan(schemaId)}`,
-        );
-        if (this.verbose) {
-          console.log(">>> " + messages.join(", "));
-        }
-      } catch (err) {
-        console.log(
-          `⚠️ ${schemaConfig.filename}: <No records> ${chalk.bgCyan(schemaId)} (Warning: Parsing failed)`,
-          err,
-        );
-        continue;
-      }
-    }
-  }
-
-  /**
    * Pulls data from all schemas in the ACC instance.
    * Implements pagination to handle large datasets.
    *
@@ -175,28 +99,33 @@ class CampaignInstance {
    * @example
    * await instance.pull('/path/to/download');
    */
-  async pull() {
-    console.log(`✨ Pulling data to ${this.downloadPath}...`);
+  async pull(isPreview) {
+    this.log(`✨ Pulling data to ${this.downloadPath}...`);
 
     for (const [schemaId, schemaConfig] of Object.entries(
       this.campaignConfig,
     )) {
-      const lineCount = schemaConfig.queryDef.lineCount || 10;
+      const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
       let recordsLengthCurrent = 0;
       do {
         if (this.verbose) {
-          console.log(
-            `  Downloading lines ${startLine} to ${startLine + lineCount - 1}...`,
+          this.log(
+            `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
           );
         }
-        recordsLengthCurrent = await this.downloadAndParse(schemaId, schemaConfig, startLine);
+        recordsLengthCurrent = await this.downloadAndParse(
+          schemaId,
+          schemaConfig,
+          startLine,
+          isPreview,
+        );
         startLine += lineCount;
         recordsLengthTotal += recordsLengthCurrent;
       } while (recordsLengthCurrent >= lineCount);
-      console.log(
-        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaId)}`,
+      this.log(
+        `✅ ${schemaConfig.filename}: ${recordsLengthTotal} ${chalk.bgCyan(schemaId)}\n`,
       );
     }
   }
@@ -211,7 +140,7 @@ class CampaignInstance {
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async downloadAndParse(schemaId, schemaConfig, startLine) {
+  async downloadAndParse(schemaId, schemaConfig, startLine, isPreview) {
     const baseQueryDef = {
       schema: schemaId,
       operation: "select",
@@ -219,7 +148,7 @@ class CampaignInstance {
         node: [{ expr: "data" }],
       },
       startLine: startLine,
-      lineCount: schemaConfig.queryDef.lineCount || 10,
+      lineCount: schemaConfig.queryDef?.lineCount || 10,
     };
     const queryDef = this._getQueryDefForSchema(schemaId, baseQueryDef);
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
@@ -233,12 +162,16 @@ class CampaignInstance {
     try {
       await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
       const records = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
-      var child = DomUtil.getFirstChildElement(records);
-      // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
+      if (this.verbose) {
+        this.log(
+          `Parsing XML Response with ${records.childElementCount} children`,
+        );
+      }
+      var child = DomUtil.getFirstChildElement(records); // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
       while (child) {
         recordsLength++;
 
-        this.parse(child, config);
+        this.parse(child, config, isPreview);
 
         child = DomUtil.getNextSiblingElement(child);
       }
@@ -248,7 +181,7 @@ class CampaignInstance {
       message = `⚠️ Error executing query: ${err.message}.`;
     } finally {
       if (this.verbose) {
-        console.log(` => ` + message + "\n");
+        this.log(` => ${message}`);
       }
     }
     return recordsLength;
@@ -274,7 +207,7 @@ class CampaignInstance {
     return childTraverse;
   }
 
-  parse(childElement, config) {
+  parse(childElement, config, isPreview) {
     const configFilename = config.filename;
     const configDecompose = config.decompose;
     const configAttributes = this._getAttributesFromSchemaConfig(config); // [ '@name', '@namespace' ]
@@ -312,7 +245,9 @@ class CampaignInstance {
     // no decomposition: save raw XML
     if (!configDecompose) {
       const raw = DomUtil.toXMLString(childElement);
-      fs.outputFileSync(datapath, raw);
+      if (isPreview) {
+        fs.outputFileSync(datapath, raw);
+      }
     }
     // with decomposition: save each xpath, then save the clean meta
     else {
@@ -333,20 +268,23 @@ class CampaignInstance {
           fs.outputFileSync(datapath, elementValue);
           const decomposedFilenameOnly = path.basename(decomposedFilename);
           if (this.verbose) {
-            process.stdout.write(`${chalk.underline(decomposedFilenameOnly)} `);
+            this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
           }
           // removeElement
           childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
         } catch (err) {
-          console.log(`(⚠️ warning:parse ${err.message})`);
+          this.log(`(⚠️ warning:parse ${err.message})`);
         }
       }
       // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
-      fs.outputFileSync(datapath, metaContent);
+      if (isPreview) {
+        fs.outputFileSync(datapath, metaContent);
+      }
     }
+
     if (this.verbose) {
-      process.stdout.write(`${chalk.underline(filenameOnly)} `);
+      this.log(`${chalk.underline(filenameOnly)} `, false);
     }
   }
 
@@ -430,6 +368,14 @@ class CampaignInstance {
       "_" +
       ts_hms.getMilliseconds()
     );
+  }
+
+  log(text, newLine = true) {
+    if (newLine) {
+      console.log(text);
+    } else {
+      process.stdout.write(text);
+    }
   }
 }
 

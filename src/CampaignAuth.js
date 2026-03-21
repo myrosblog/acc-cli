@@ -90,7 +90,7 @@ class CampaignAuth {
       this.config.get(`instances.${options.alias}`) || {};
     if (!host || !user || !password) {
       throw new CampaignError(
-        `Authentication with alias "${options.alias}" doesn't exist. Use campaign auth list to see all configured instances or campaign auth init to add a new instance.`,
+        `Authentication with alias "${options.alias}" doesn't exist. Use "acc auth list" to see all configured instances.`,
       );
     }
     console.log(`↔️ Connecting ${user}@${host}...`);

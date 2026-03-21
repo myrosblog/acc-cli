@@ -5,6 +5,7 @@ import { dirname, join } from "path";
 // modules
 import { assert, expect } from "chai";
 import sinon from "sinon";
+// acc sdk
 import sdk from "@adobe/acc-js-sdk";
 const DomUtil = sdk.DomUtil;
 // helpers
@@ -26,7 +27,13 @@ const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 import CampaignInstance from "../src/CampaignInstance.js";
 
 describe("CampaignInstance", function () {
-  let mockClient, instance, pathSimple, optionsSimple, pathFull, optionsFull;
+  let mockClient,
+    instance,
+    pathSimple,
+    optionsSimple,
+    pathFull,
+    optionsFull,
+    logStub;
 
   beforeEach(function () {
     // mock client
@@ -69,6 +76,12 @@ describe("CampaignInstance", function () {
     };
   });
 
+  afterEach(() => {
+    if (logStub) {
+      logStub.restore();
+    }
+  });
+
   describe("Private methods", () => {
     it("_getQueryDefForSchema where.condition.expr", () => {
       instance = new CampaignInstance(
@@ -107,6 +120,37 @@ describe("CampaignInstance", function () {
         select: { node: [] },
         where: { condition: [{ expr: "@builtIn = true" }] },
       });
+    });
+  });
+
+  describe("check", () => {
+    it("should check without error without verbose", async () => {
+      instance = new CampaignInstance(
+        mockClient,
+        configDefaultSimple,
+        optionsSimple,
+      );
+      logStub = sinon.stub(instance, "log"); // mock instance log
+
+      await instance.pull(true, optionsSimple);
+
+      // console.log(
+      //   "Appels à instance.log :",
+      //   logStub.getCalls().map((call) => call.args),
+      // );
+
+      expect(logStub.callCount).to.equal(19);
+
+      // Vérifie que `log` a été appelé avec un texte contenant "Access Management"
+      // const logs = [
+      //   `✅ /Administration/Access Management/Organizational entities/{@name}.xml: 0 nms:localOrgUnit`,
+      // ];
+      // for (let log of logs) {
+      //   // expect(logStub.calledWithMatch(log)).to.be.true;
+      //   expect(logStub).to.have.been.calledWith(
+      //     sinon.match((text) => text.includes(log)),
+      //   );
+      // }
     });
   });
 

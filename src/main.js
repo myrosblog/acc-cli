@@ -146,7 +146,7 @@ program
             campaignConfig,
             options,
           );
-          await instance.check(options);
+          await instance.pull(true);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -184,7 +184,7 @@ program
             campaignConfig,
             options,
           );
-          await instance.pull(options);
+          await instance.pull(false, options);
         } catch (err) {
           handleCampaignError(err);
         }
