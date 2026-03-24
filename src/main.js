@@ -26,11 +26,12 @@ const pathConfig = "config.path";
 console.log(
   `🏠 acc ${vAcc} initialized with Adobe acc-js-sdk ${vSdk} and authentication from ${pathConfig}`,
 );
+const homepage = packageJson.homepage.replace('utm_campaign=package-json', 'utm_campaign=acc-cli')
 
 program
   .name("acc")
   .description(
-    `${packageJson.description}. Documentation on ${packageJson.homepage}`,
+    `${packageJson.description}. Documentation on ${homepage}`,
   )
   .version(vAcc);
 

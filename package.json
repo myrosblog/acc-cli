@@ -1,15 +1,16 @@
 {
   "name": "campaign-cli",
-  "version": "0.7.4",
+  "version": "0.7.6",
   "description": "Save time, reduce risk and improve code health with acc CLI",
   "keywords": [
     "adobe",
     "adobe campaign",
     "adobe campaign classic",
-    "acc"
+    "acc",
+    "devops"
   ],
   "bin": {
-    "acc": "./bin/acc"
+    "acc": "bin/acc"
   },
   "preferGlobal": true,
   "files": [
@@ -45,5 +46,5 @@
   "bugs": {
     "url": "https://github.com/myrosblog/acc-cli/issues"
   },
-  "homepage": "https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=acc-cli"
+  "homepage": "https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=package-json"
 }
