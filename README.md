@@ -20,7 +20,7 @@ Full article in the blog post [Getting started with acc](https://myrosblog.com/a
 ```bash
 $ npm install -g campaign-cli
 
-$ acc auth init --host https://instance.com --user username --password --alias staging
+$ acc auth init --host https://instance.com --user username --pass --alias staging
 
 $ acc instance pull --alias staging
 # Downloaded /Administration/Configuration/Form rendering
