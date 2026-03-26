@@ -118,6 +118,10 @@ program
         defaultConfigPath,
       )
       .option(
+        "--metadata <schemasIds>",
+        "Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation",
+      )
+      .option(
         "--verbose",
         "Verbose output with details on each configuration item. Defaults to false.",
         false,

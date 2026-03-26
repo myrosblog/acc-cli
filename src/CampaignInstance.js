@@ -38,11 +38,12 @@ class CampaignInstance {
    *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
    * ]});
    */
-  constructor(client, accConfig, options = { verbose: false }) {
+  constructor(client, accConfig, options) {
     this.client = client;
     this.accConfig = accConfig;
     this.verbose = options.verbose;
     this.downloadPath = options.path;
+    this.metadata = options.metadata;
     /**
      * Array of schema names to process (excluding default config)
      * @type {string[]}
@@ -99,6 +100,14 @@ class CampaignInstance {
     );
 
     for (const schemaConfig of this.accConfig.schemas) {
+      // skip if metadata option was included and not matching
+      if (this.metadata && !this.metadata.includes(schemaConfig.schemaId)) {
+        if (this.verbose) {
+          this.log(`Skipping ${schemaConfig.schemaId}`);
+        }
+        continue;
+      }
+      // downalod and parse
       const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
