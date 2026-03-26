@@ -22,17 +22,16 @@ const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // defaul
 
 const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
-const pathConfig = "config.path";
-console.log(
-  `🏠 acc ${vAcc} initialized with Adobe acc-js-sdk ${vSdk} and authentication from ${pathConfig}`,
+console.log(`🏠 acc ${vAcc} initialized with @adobe/acc-js-sdk ${vSdk}`);
+// blog post tracking
+const homepage = packageJson.homepage.replace(
+  "utm_campaign=package-json",
+  "utm_campaign=acc-cli",
 );
-const homepage = packageJson.homepage.replace('utm_campaign=package-json', 'utm_campaign=acc-cli')
 
 program
   .name("acc")
-  .description(
-    `${packageJson.description}. Documentation on ${homepage}`,
-  )
+  .description(`${packageJson.description}. Documentation on ${homepage}`)
   .version(vAcc);
 
 // AUTH
@@ -51,7 +50,7 @@ program
         "URL of Adobe Campaign root, e.g. http://localhost:8080",
       )
       .requiredOption("--user <user>", "Operator username")
-      .requiredOption("--password <pwd>", "Operator password")
+      .requiredOption("--pass <pwd>", "Operator password")
       .action(async (options) => {
         try {
           await auth.init(options);

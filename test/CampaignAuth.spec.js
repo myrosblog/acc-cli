@@ -38,7 +38,7 @@ describe("CampaignAuth", function () {
   describe("constructor", function () {
     it("should initialize with SDK and config", function () {
       expect(auth.sdk).to.equal(mockSdk);
-      expect(auth.config).to.equal(mockConfig);
+      expect(auth.auth).to.equal(mockConfig);
       expect(auth.instances).to.deep.equal({});
       expect(auth.instanceIds).to.deep.equal([]);
     });

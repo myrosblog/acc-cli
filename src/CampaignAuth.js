@@ -19,21 +19,21 @@ class CampaignAuth {
    * Creates a new CampaignAuth instance.
    *
    * @param {Object} sdk - ACC JS SDK instance
-   * @param {Object} config - Configstore instance for persistent storage
-   * @throws {CampaignError} Throws if SDK or config parameters are missing
+   * @param {Object} auth - Configstore instance for persistent storage
+   * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *
    * @example
-   * const auth = new CampaignAuth(sdk, config);
+   * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(sdk, config) {
-    if (!sdk || !config) {
+  constructor(sdk, auth) {
+    if (!sdk || !auth) {
       throw new CampaignError(
         "SDK and Configstore instances are required to initialize CampaignAuth.",
       );
     }
     this.sdk = sdk;
-    this.config = config;
-    this.instances = config.get(this.INSTANCES_KEY) || {};
+    this.auth = auth;
+    this.instances = auth.get(this.INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
 
@@ -69,7 +69,7 @@ class CampaignAuth {
       );
     }
     const { alias, host, user, password } = options;
-    this.config.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password });
+    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password });
     console.log(`✅ Instance ${alias} added successfully.`);
     return this.login(options);
   }
@@ -87,7 +87,7 @@ class CampaignAuth {
    */
   async login(options) {
     const { host, user, password } =
-      this.config.get(`instances.${options.alias}`) || {};
+      this.auth.get(`instances.${options.alias}`) || {};
     if (!host || !user || !password) {
       throw new CampaignError(
         `Authentication with alias "${options.alias}" doesn't exist. Use "acc auth list" to see all configured instances.`,
@@ -117,7 +117,8 @@ class CampaignAuth {
    * auth.list(); // Lists all configured instances
    */
   list() {
-    console.log(`📚 Reading ${this.instanceIds.length} instance(s)`);
+    console.log(`📚 Reading from authentication file ${this.auth.path} `);
+    console.log(`📚 Listing ${this.instanceIds.length} instance(s)`);
     if(this.instanceIds.length === 0) {
       console.log(`  No instances configured yet. Use "campaign auth init" to add an instance.`);
       return;
