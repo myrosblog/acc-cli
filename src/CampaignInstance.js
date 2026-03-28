@@ -6,6 +6,8 @@ import ora from "ora";
 // sdk
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
+import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
+import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -111,36 +113,46 @@ class CampaignInstance {
 
     // loop schemas
     for (const schemaConfig of this.accConfig.schemas) {
+      const { schemaId, filename, queryDef } = schemaConfig;
+      const pullLogsForThisSchema = [];
       // skip if metadata option was included and not matching
-      if (this.metadata && !this.metadata.includes(schemaConfig.schemaId)) {
+      if (this.metadata && !this.metadata.includes(schemaId)) {
         if (this.verbose) {
-          this.log(`Skipping ${schemaConfig.schemaId}`);
+          this.log(`Skipping ${schemaId}`);
         }
         continue;
       }
       const spinner = ora(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
       // download and parse
-      const lineCount = schemaConfig.queryDef?.lineCount || 10;
+      const lineCount = queryDef?.lineCount || 10;
       let startLine = 1;
-      let recordsLengthTotal = 0;
-      let currentElementsPulled = [];
+      let recordsExpectedTotal = 0;
+      let recordsParsedTotal = 0;
+      let recordsLengthOfThisBatch = 0;
+      // pagination loop, 1 per batch
       do {
+        const pullLog = new CampaignPullLog(schemaConfig, lineCount, startLine);
+        this.pullLogs.push(pullLog);
+        pullLogsForThisSchema.push(pullLog);
         if (this.verbose) {
           this.log(
             `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
           );
         }
-        currentElementsPulled = await this.downloadAndParse(
+        recordsExpectedTotal++;
+        const elementsForThisBatch = await this.downloadAndParse(
           schemaConfig,
           startLine,
           lineCount,
           isPreview,
+          pullLog,
         );
-        pullLog.elements.push(...currentElementsPulled);
         // increment counters
+        recordsLengthOfThisBatch = elementsForThisBatch.length;
         startLine += lineCount;
-        recordsLengthTotal += currentElementsPulled.length;
+        recordsParsedTotal += recordsLengthOfThisBatch;
         pullLog.endTime = new Date();
+      } while (recordsLengthOfThisBatch >= lineCount);
       const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;
       const errorMsg = errorCount > 0 ? `(⚠️ ${errorCount} errors)` : "";
       spinner.succeed(
@@ -164,7 +176,13 @@ class CampaignInstance {
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
    */
-  async downloadAndParse(schemaConfig, startLine, lineCount, isPreview) {
+  async downloadAndParse(
+    schemaConfig,
+    startLine,
+    lineCount,
+    isPreview,
+    pullLog,
+  ) {
     const { schemaId } = schemaConfig;
     const baseQueryDef = {
       schema: schemaId,
@@ -176,13 +194,15 @@ class CampaignInstance {
       lineCount: lineCount,
     };
     const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
-    // console.log("queryDef", JSON.stringify(queryDef));
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
+    pullLog.queryDefXml = queryDefXml;
+
     let elementDownloaded;
     let elementsParsed = [];
     try {
       elementDownloaded = await this.adapterCreateAndExecuteQuery(queryDefXml); // Element, <srcSchema-collection>
     } catch (err) {
+      pullLog.errors.push(err);
       return elementsParsed;
     }
     elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
@@ -192,36 +212,12 @@ class CampaignInstance {
       );
     }
     for (const element of elementsParsed) {
-      await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
-      const records = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
-      // console.log("records", DomUtil.toXMLString(records));
-      if (this.verbose) {
-        this.log(
-          `Parsing XML Response with ${records.childElementCount} children`,
-        );
-      }
-      var child = DomUtil.getFirstChildElement(records); // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
-      while (child) {
-        elements.push(child);
+      pullLog.elements.push(element);
 
       try {
         this.parse(element, schemaConfig, isPreview);
       } catch (err) {
-        this.parse(child, schemaConfig, isPreview);
-
-        child = DomUtil.getNextSiblingElement(child);
-      }
-
-      message = `${elements.length} saved.`;
-    } catch (err) {
-      message = `⚠️ Error executing query: ${err.message}.`;
-    } finally {
-      if (this.verbose) {
-        this.log(` => ${message}`);
-      }
-    }
-    return elements;
-    return recordsLength;
+        pullLog.errors.push(err);
       }
     }
 
@@ -401,10 +397,37 @@ class CampaignPullLog {
    */
   elements;
 
-  constructor(schemaConfig) {
+  /**
+   * Flat array, not nested for the moment
+   * @param {Array<Error>}
+   */
+  errors;
+
+  /**
+   * Save params
+   * @param {Number}
+   */
+  startLine;
+
+  /**
+   * Save params
+   * @param {Number}
+   */
+  lineCount;
+
+  /**
+   * Save request
+   * @param {Element}
+   */
+  queryDefXml;
+
+  constructor(schemaConfig, lineCount, startLine) {
     this.startTime = new Date();
     this.elements = [];
     this.schemaConfig = schemaConfig;
+    this.errors = [];
+    this.lineCount = lineCount;
+    this.startLine = startLine;
   }
 }
 
