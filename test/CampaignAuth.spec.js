@@ -1,5 +1,8 @@
+// npm
 import { expect } from "chai";
 import sinon from "sinon";
+// acc
+import SdkAdapter from "../src/adapters/SdkAdapter.js";
 import CampaignAuth from "../src/CampaignAuth.js";
 import CampaignError from "../src/CampaignError.js";
 
@@ -11,7 +14,7 @@ describe("CampaignAuth", function () {
     mockSdk = {
       getSDKVersion: sinon.stub().returns({ version: "1.0.0" }),
       ConnectionParameters: {
-        ofUserAndPassword: sinon.stub().returns({})
+        ofUserAndPassword: sinon.stub().returns({}),
       },
       init: sinon.stub().resolves({
         logon: sinon.stub().resolves(),
@@ -19,25 +22,37 @@ describe("CampaignAuth", function () {
           serverInfo: {
             instanceName: "test-instance",
             releaseName: "v1.0",
-            buildNumber: "12345"
-          }
-        })
-      })
+            buildNumber: "12345",
+          },
+        }),
+      }),
+      ip: sinon.stub().returns({
+        ipAddress: "11.11.11.11",
+        continentCode: "EU",
+        continentName: "Europe",
+        countryCode: "FR",
+        countryName: "France",
+        stateProvCode: "ABC",
+        stateProv: "Abc",
+        city: "Def",
+      }),
     };
 
     // Mock Configstore
     mockConfig = {
       path: "test-config-path",
       get: sinon.stub(),
-      set: sinon.stub()
+      set: sinon.stub(),
     };
 
-    auth = new CampaignAuth(mockSdk, mockConfig);
+    const sdkAdapter = new SdkAdapter(mockSdk);
+    auth = new CampaignAuth(sdkAdapter, mockConfig);
   });
 
   describe("constructor", function () {
     it("should initialize with SDK and config", function () {
-      expect(auth.sdk).to.equal(mockSdk);
+      expect(auth.sdk.init).to.exist;
+      expect(auth.sdk.ip).to.exist;
       expect(auth.auth).to.equal(mockConfig);
       expect(auth.instances).to.deep.equal({});
       expect(auth.instanceIds).to.deep.equal([]);
@@ -62,11 +77,15 @@ describe("CampaignAuth", function () {
           return {};
         } else if (key === "instances.test") {
           // This is the second call from login() getting instance data
-          return { host: "http://localhost", user: "testuser", password: "testpass" };
+          return {
+            host: "http://localhost",
+            user: "testuser",
+            password: "testpass",
+          };
         }
         return undefined;
       });
-      
+
       mockConfig.set.callsFake((key, value) => {
         // Update the instances object to simulate config storage
         auth.instances = { test: value };
@@ -77,7 +96,7 @@ describe("CampaignAuth", function () {
         alias: "test",
         host: "http://localhost",
         user: "testuser",
-        password: "testpass"
+        password: "testpass",
       };
 
       await auth.init(options);
@@ -87,7 +106,7 @@ describe("CampaignAuth", function () {
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
         user: "testuser",
-        password: "testpass"
+        password: "testpass",
       });
     });
 
@@ -95,7 +114,12 @@ describe("CampaignAuth", function () {
       auth.instances = { test: {} };
       auth.instanceIds = ["test"];
 
-      const options = { alias: "test", host: "http://localhost", user: "testuser", password: "testpass" };
+      const options = {
+        alias: "test",
+        host: "http://localhost",
+        user: "testuser",
+        password: "testpass",
+      };
 
       try {
         await auth.init(options);
@@ -112,7 +136,7 @@ describe("CampaignAuth", function () {
       mockConfig.get.returns({
         host: "http://localhost",
         user: "testuser",
-        password: "testpass"
+        password: "testpass",
       });
 
       const client = await auth.login({ alias: "test" });
@@ -137,12 +161,12 @@ describe("CampaignAuth", function () {
       mockConfig.get.returns({
         host: "http://localhost",
         user: "testuser",
-        password: "testpass"
+        password: "testpass",
       });
 
       mockSdk.init.resolves({
         logon: sinon.stub().resolves(),
-        getSessionInfo: sinon.stub().returns({ serverInfo: null })
+        getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
       try {
@@ -159,7 +183,7 @@ describe("CampaignAuth", function () {
     it("should list all instances", function () {
       auth.instances = {
         prod: { host: "http://prod", user: "produser" },
-        staging: { host: "http://staging", user: "staginguser" }
+        staging: { host: "http://staging", user: "staginguser" },
       };
       auth.instanceIds = ["prod", "staging"];
 
@@ -172,6 +196,13 @@ describe("CampaignAuth", function () {
       auth.instanceIds = [];
 
       expect(() => auth.list()).to.not.throw();
+    });
+  });
+
+  describe("ip", () => {
+    it("should display ip info", async () => {
+      const ip = await auth.ip();
+      expect(ip).to.deep.equal({});
     });
   });
 });

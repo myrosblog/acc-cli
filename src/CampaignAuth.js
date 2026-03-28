@@ -21,20 +21,20 @@ class CampaignAuth {
   /**
    * Creates a new CampaignAuth instance.
    *
-   * @param {sdk} sdk - ACC JS SDK instance. Uses .init .ip
+   * @param {SdkAdapter} sdkAdapter - ACC JS SDK instance. Uses .init .ip
    * @param {Configstore} auth - Configstore instance for persistent storage
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(sdk, auth) {
-    if (!sdk || !auth) {
+  constructor(sdkAdapter, auth) {
+    if (!sdkAdapter || !auth) {
       throw new CampaignError(
         "SDK and Configstore instances are required to initialize CampaignAuth.",
       );
     }
-    this.sdk = sdk;
+    this.sdk = sdkAdapter;
     this.auth = auth;
     this.instances = auth.get(this.INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
