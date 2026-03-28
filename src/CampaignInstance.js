@@ -22,9 +22,29 @@ const { DomUtil } = sdk;
  * @classdesc Class for managing data operations with ACC instances
  */
 class CampaignInstance {
+  /**
+   * Regular expression to extract config attributes from filename patterns
+   * @type {RegExp}
+   */
   REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
+
+  /**
+   * XPath separator character
+   * @type {string}
+   */
   CONFIG_XPATH_SEP = "/";
+
+  /**
+   * XPath attribute prefix character
+   * @type {string}
+   */
   CONFIG_XPATH_ATTR = "@";
+
+  /**
+   * Logs of downloaded data
+   * @type {Array<CampaignPullLog>}
+   */
+  pullLogs = [];
 
   /**
    * Creates a new CampaignInstance.
@@ -98,6 +118,7 @@ class CampaignInstance {
     this.log(
       `✨ ${isPreview ? "Previewing" : "Pulling"} data to ${this.downloadPath}`,
     );
+    this.pullLogs = [];
 
     for (const schemaConfig of this.accConfig.schemas) {
       // skip if metadata option was included and not matching
@@ -107,26 +128,31 @@ class CampaignInstance {
         }
         continue;
       }
-      // downalod and parse
+      const pullLog = new CampaignPullLog(schemaConfig);
+      this.pullLogs.push(pullLog);
+      // download and parse
       const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
       let recordsLengthTotal = 0;
-      let recordsLengthCurrent = 0;
+      let currentElementsPulled = [];
       do {
         if (this.verbose) {
           this.log(
             `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
           );
         }
-        recordsLengthCurrent = await this.downloadAndParse(
+        currentElementsPulled = await this.downloadAndParse(
           schemaConfig,
           startLine,
           lineCount,
           isPreview,
         );
+        pullLog.elements.push(...currentElementsPulled);
+        // increment counters
         startLine += lineCount;
-        recordsLengthTotal += recordsLengthCurrent;
-      } while (recordsLengthCurrent >= lineCount);
+        recordsLengthTotal += currentElementsPulled.length;
+        pullLog.endTime = new Date();
+      } while (currentElementsPulled.length >= lineCount);
       this.log(
         `✅ ${schemaConfig.filename}: ${chalk.bgCyan(schemaConfig.schemaId)} ${recordsLengthTotal} records`,
       );
@@ -143,7 +169,7 @@ class CampaignInstance {
    * @param {Object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
-   * @returns {Promise<number>} Number of records downloaded
+   * @returns {Promise<Array<Element>>} Number of records downloaded
    *
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
@@ -179,14 +205,14 @@ class CampaignInstance {
       }
       var child = DomUtil.getFirstChildElement(records); // @see https://opensource.adobe.com/acc-js-sdk/domHelper.html
       while (child) {
-        recordsLength++;
+        elements.push(child);
 
         this.parse(child, schemaConfig, isPreview);
 
         child = DomUtil.getNextSiblingElement(child);
       }
 
-      message = `${recordsLength} saved.`;
+      message = `${elements.length} saved.`;
     } catch (err) {
       message = `⚠️ Error executing query: ${err.message}.`;
     } finally {
@@ -194,6 +220,7 @@ class CampaignInstance {
         this.log(` => ${message}`);
       }
     }
+    return elements;
     return recordsLength;
   }
 
@@ -389,6 +416,38 @@ class CampaignInstance {
     } else {
       process.stdout.write(text);
     }
+  }
+}
+
+/**
+ * Log data retrieved by CampaignInstance.pull() for troubleshooting and auditing
+ * @class CampaignPullLog
+ */
+class CampaignPullLog {
+  /**
+   * @type {Object}
+   */
+  schemaConfig;
+
+  /**
+   * @type {Date}
+   */
+  startTime;
+
+  /**
+   * @type {Date}
+   */
+  endTime;
+
+  /**
+   * @type {Array<Element>}
+   */
+  elements;
+
+  constructor(schemaConfig) {
+    this.startTime = new Date();
+    this.elements = [];
+    this.schemaConfig = schemaConfig;
   }
 }
 
