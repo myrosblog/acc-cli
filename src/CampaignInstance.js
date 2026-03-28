@@ -69,18 +69,6 @@ class CampaignInstance {
      * @type {string[]}
      */
     this.schemas = Object.keys(this.accConfig);
-
-    this.client.registerObserver({
-      onSOAPCall: (soapCall, safeRequestData) => {
-        // this.saveArchiveRequest(soapCall.request.data);
-      },
-      onSOAPCallSuccess: (soapCall, safeResponseData) => {
-        // this.saveArchiveResponse(soapCall.response);
-      },
-      onSOAPCallFailure: (soapCall, error) => {
-        // this.saveArchiveResponse(soapCall.response);
-      },
-    });
   }
 
   /**
@@ -346,68 +334,6 @@ class CampaignInstance {
       filename = filename.replace(`{${configAttribute}}`, value);
     }
     return filename;
-  }
-
-  /**
-   * Saves SOAP request to archive file with timestamp.
-   *
-   * @param {string} rawRequest - Raw SOAP request XML
-   * @returns {void}
-   *
-   * @example
-   * instance.saveArchiveRequest('<soap:Envelope>...</soap:Envelope>');
-   */
-  saveArchiveRequest(rawRequest) {
-    const archiveRequest =
-      "archives/" + this.getArchiveDate() + "-CampaignInstance-request.xml";
-    fs.outputFileSync(archiveRequest, rawRequest, function (errFs) {
-      throw errFs;
-    });
-  }
-
-  /**
-   * Saves SOAP response to archive file with timestamp.
-   *
-   * @param {string} rawResponse - Raw SOAP response XML
-   * @returns {void}
-   *
-   * @example
-   * instance.saveArchiveResponse('<soap:Envelope>...</soap:Envelope>');
-   */
-  saveArchiveResponse(rawResponse) {
-    const archiveResponse =
-      "archives/" + this.getArchiveDate() + "-CampaignInstance-response.xml";
-    fs.outputFileSync(archiveResponse, rawResponse, function (errFs) {
-      throw errFs;
-    });
-  }
-
-  /**
-   * Generates timestamp string for archive files in format: YYYY/MM/DD/HH-mm-ss_ms
-   *
-   * @returns {string} Formatted timestamp string
-   *
-   * @example
-   * const timestamp = instance.getArchiveDate(); // "2023/01/15/14-30-45_123"
-   */
-  getArchiveDate() {
-    var ts_hms = new Date();
-
-    return (
-      ts_hms.getFullYear() +
-      "/" +
-      ("0" + (ts_hms.getMonth() + 1)).slice(-2) +
-      "/" +
-      ("0" + ts_hms.getDate()).slice(-2) +
-      "/" +
-      ("0" + ts_hms.getHours()).slice(-2) +
-      "-" +
-      ("0" + ts_hms.getMinutes()).slice(-2) +
-      "-" +
-      ("0" + ts_hms.getSeconds()).slice(-2) +
-      "_" +
-      ts_hms.getMilliseconds()
-    );
   }
 
   log(text, newLine = true) {
