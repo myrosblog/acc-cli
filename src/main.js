@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // Campaign
+import CampaignConfig from "./CampaignConfig.js";
 import CampaignError from "./CampaignError.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignInstance from "./CampaignInstance.js";
@@ -19,6 +20,7 @@ const authFile = new Configstore("campaign-cli.auth");
 const auth = new CampaignAuth(sdk, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
+const config = new CampaignConfig(defaultConfigPath, dirPackage);
 
 const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
@@ -172,20 +174,10 @@ program
 
 program.parse(process.argv);
 
-async function pull(options, isPreview) {
-  // if the config file doesn't exist at the default location, copy the example config there
-  if (options.config == defaultConfigPath && !fs.existsSync(options.config)) {
-    console.log(`🛠️ Config not found, initalializing ${options.config}`);
-    fs.copySync(
-      path.join(dirPackage, "config", "acc.config.json"),
-      options.config,
-    );
-  } else {
-    console.log(`🛠️ Using config ${options.config}`);
-  }
-  const campaignConfig = JSON.parse(fs.readFileSync(options.config));
-  const client = await auth.login({ alias: options.alias });
-  const instance = new CampaignInstance(client, campaignConfig, options);
+async function pull(cliOptions, isPreview) {
+  config.init(cliOptions.config);
+  const client = await auth.login(cliOptions, config.accJsSdkOptions);
+  const instance = new CampaignInstance(client, config, cliOptions);
   await instance.pull(isPreview);
 }
 
