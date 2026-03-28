@@ -3,8 +3,8 @@ import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
 // sdk
-import sdk from "@adobe/acc-js-sdk";
-const { DomUtil } = sdk;
+import { Client } from "@adobe/acc-js-sdk/src/client.js";
+import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -49,8 +49,8 @@ class CampaignInstance {
   /**
    * Creates a new CampaignInstance.
    *
-   * @param {Object} client - Authenticated ACC client
-   * @param {Object} accConfig - Configuration object defining schemas and download options
+   * @param {Client} client - Authenticated ACC client
+   * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
    * @param {Object} [accConfig.*] - Schema-specific configurations
    *
    * @example
@@ -157,7 +157,7 @@ class CampaignInstance {
    * @param {Object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
-   * @returns {Promise<Array<Element>>} Number of records downloaded
+   * @returns {Array<Element>} Number of records downloaded
    *
    * @example
    * const count = await instance.download('nms:recipient', '/path/to/save', 1);
@@ -347,6 +347,7 @@ class CampaignInstance {
 
 /**
  * Log data retrieved by CampaignInstance.pull() for troubleshooting and auditing
+ * 1 instance per batch, i.e. 15 records with lineCount=10 yields 2 CampaignPullLogs
  * @class CampaignPullLog
  */
 class CampaignPullLog {
