@@ -158,9 +158,9 @@ class CampaignInstance {
       spinner.succeed(
         `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
       );
-      // new line when verbose
+      // display errors when verbose
       if (this.verbose) {
-        this.log("");
+        this.log(pullLogsForThisSchema.flatMap((x) => x.errors));
       }
     }
   }

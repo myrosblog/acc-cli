@@ -1,8 +1,6 @@
 {
   "acc-js-sdk": {
-    "connectionParameters": {
-      "traceAPICalls": false
-    }
+    "traceAPICalls": false
   },
   "schemas": [
     {
@@ -213,7 +211,11 @@
       "filename": "/Administration/Production/Objects created automatically/Campaign workflows/{@internalName}.meta.xml",
       "queryDef": {
         "where": {
-          "condition": [{ "expr": "@builtIn = true AND @isModel = false AND [@operation-id] != 0" }]
+          "condition": [
+            {
+              "expr": "@builtIn = true AND @isModel = false AND [@operation-id] != 0"
+            }
+          ]
         }
       }
     },
@@ -222,7 +224,11 @@
       "filename": "/Administration/Production/Technical workflows/{@internalName}.meta.xml",
       "queryDef": {
         "where": {
-          "condition": [{ "expr": "@builtIn = true AND @isModel = false AND [@operation-id] = 0" }]
+          "condition": [
+            {
+              "expr": "@builtIn = true AND @isModel = false AND [@operation-id] = 0"
+            }
+          ]
         }
       }
     },
