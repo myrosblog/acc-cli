@@ -20,7 +20,7 @@ const authFile = new Configstore("campaign-cli.auth");
 const auth = new CampaignAuth(sdk, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
-const config = new CampaignConfig(defaultConfigPath, dirPackage);
+const config = new CampaignConfig(defaultConfigPath);
 
 const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
