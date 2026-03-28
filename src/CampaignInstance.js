@@ -188,7 +188,9 @@ class CampaignInstance {
       schema: schemaId,
       operation: "select",
       select: {
-        node: [{ expr: "data" }],
+        node: [
+          // { expr: "data" }
+        ],
       },
       startLine: startLine,
       lineCount: lineCount,
