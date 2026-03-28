@@ -2,6 +2,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
+import ora from "ora";
 // sdk
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
@@ -108,6 +109,7 @@ class CampaignInstance {
     );
     this.pullLogs = [];
 
+    // loop schemas
     for (const schemaConfig of this.accConfig.schemas) {
       // skip if metadata option was included and not matching
       if (this.metadata && !this.metadata.includes(schemaConfig.schemaId)) {
@@ -116,8 +118,7 @@ class CampaignInstance {
         }
         continue;
       }
-      const pullLog = new CampaignPullLog(schemaConfig);
-      this.pullLogs.push(pullLog);
+      const spinner = ora(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
       // download and parse
       const lineCount = schemaConfig.queryDef?.lineCount || 10;
       let startLine = 1;
@@ -140,9 +141,10 @@ class CampaignInstance {
         startLine += lineCount;
         recordsLengthTotal += currentElementsPulled.length;
         pullLog.endTime = new Date();
-      } while (currentElementsPulled.length >= lineCount);
-      this.log(
-        `✅ ${schemaConfig.filename}: ${chalk.bgCyan(schemaConfig.schemaId)} ${recordsLengthTotal} records`,
+      const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;
+      const errorMsg = errorCount > 0 ? `(⚠️ ${errorCount} errors)` : "";
+      spinner.succeed(
+        `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
       );
       // new line when verbose
       if (this.verbose) {
