@@ -178,13 +178,20 @@ class CampaignInstance {
     const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
     // console.log("queryDef", JSON.stringify(queryDef));
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
-    // console.log("queryDefXml", DomUtil.toXMLString(queryDefXml));
-
-    const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
-
-    let message = "";
-    var recordsLength = 0;
+    let elementDownloaded;
+    let elementsParsed = [];
     try {
+      elementDownloaded = await this.adapterCreateAndExecuteQuery(queryDefXml); // Element, <srcSchema-collection>
+    } catch (err) {
+      return elementsParsed;
+    }
+    elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
+    if (this.verbose) {
+      this.log(
+        `Downloaded XML Response with ${elementsParsed.length} children`,
+      );
+    }
+    for (const element of elementsParsed) {
       await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
       const records = await query.executeQuery(); // DOMElement <srcSchema-collection><srcSchema></srcSchema>...
       // console.log("records", DomUtil.toXMLString(records));
@@ -197,6 +204,9 @@ class CampaignInstance {
       while (child) {
         elements.push(child);
 
+      try {
+        this.parse(element, schemaConfig, isPreview);
+      } catch (err) {
         this.parse(child, schemaConfig, isPreview);
 
         child = DomUtil.getNextSiblingElement(child);
@@ -212,6 +222,24 @@ class CampaignInstance {
     }
     return elements;
     return recordsLength;
+      }
+    }
+
+    return elementsParsed;
+  }
+
+  /**
+   * Adapter of the sdk functions for:
+   * - easier mocking in unit test
+   * - format isolation (XML vs JSON)
+   * @param {Document} queryDefXml created from DomUtil.fromJSON
+   * @returns {Promise<Element>}
+   * @throws {CampaignException}
+   */
+  async adapterCreateAndExecuteQuery(queryDefXml) {
+    const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
+    await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
+    return query.executeQuery(); // Element <srcSchema></srcSchema><srcSchema></srcSchema>...
   }
 
   /**
