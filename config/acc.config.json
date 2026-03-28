@@ -1,4 +1,9 @@
 {
+  "acc-js-sdk": {
+    "connectionParameters": {
+      "traceAPICalls": false
+    }
+  },
   "schemas": [
     {
       "schemaId": "nms:localOrgUnit",

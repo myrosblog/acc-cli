@@ -22,7 +22,7 @@ const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // defaul
 
 const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
-console.log(`🏠 acc ${vAcc} initialized with @adobe/acc-js-sdk ${vSdk}`);
+console.log(`🏠 acc ${vAcc} initialized with Adobe Campaign SDK ${vSdk}`);
 // blog post tracking
 const homepage = packageJson.homepage.replace(
   "utm_campaign=package-json",
@@ -51,9 +51,9 @@ program
       )
       .requiredOption("--user <user>", "Operator username")
       .requiredOption("--pass <pwd>", "Operator password")
-      .action(async (options) => {
+      .action(async (cliOptions) => {
         try {
-          await auth.init(options);
+          await auth.init(cliOptions);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -67,9 +67,9 @@ program
         "--alias <alias>",
         "Local alias for this instance, e.g. prod, staging, local",
       )
-      .action(async (options) => {
+      .action(async (cliOptions) => {
         try {
-          await auth.login(options);
+          await auth.login(cliOptions);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -126,9 +126,9 @@ program
         "Verbose output with details on each configuration item. Defaults to false.",
         false,
       )
-      .action(async (options) => {
+      .action(async (cliOptions) => {
         try {
-          await pull(options, true);
+          await pull(cliOptions, true);
         } catch (err) {
           handleCampaignError(err);
         }
@@ -161,9 +161,9 @@ program
         "Verbose output with details on each configuration item. Defaults to false.",
         false,
       )
-      .action(async (options) => {
+      .action(async (cliOptions) => {
         try {
-          await pull(options, false);
+          await pull(cliOptions, false);
         } catch (err) {
           handleCampaignError(err);
         }

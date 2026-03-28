@@ -1,3 +1,6 @@
+// sdk
+import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
+// acc
 import CampaignError from "./CampaignError.js";
 
 /**
@@ -18,8 +21,8 @@ class CampaignAuth {
   /**
    * Creates a new CampaignAuth instance.
    *
-   * @param {Object} sdk - ACC JS SDK instance
-   * @param {Object} auth - Configstore instance for persistent storage
+   * @param {sdk} sdk - ACC JS SDK instance
+   * @param {Configstore} auth - Configstore instance for persistent storage
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *
    * @example
@@ -37,7 +40,7 @@ class CampaignAuth {
     this.instanceIds = Object.keys(this.instances);
   }
 
-  async ip(){
+  async ip() {
     console.log(`Fetching IP address...`);
     const ip = await this.sdk.ip();
     console.log(ip);
@@ -62,16 +65,16 @@ class CampaignAuth {
    *   password: 'password'
    * });
    */
-  async init(options) {
-    if (this.instanceIds.includes(options.alias)) {
+  async init(authOptions, sdkOptions, cliOptions) {
+    if (this.instanceIds.includes(authOptions.alias)) {
       throw new CampaignError(
-        `Instance with alias ${options.alias} already exists. Please choose a different alias.`,
+        `Instance with alias ${authOptions.alias} already exists. Please choose a different alias.`,
       );
     }
-    const { alias, host, user, password } = options;
+    const { alias, host, user, password } = authOptions;
     this.auth.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password });
     console.log(`✅ Instance ${alias} added successfully.`);
-    return this.login(options);
+    return this.login(authOptions, sdkOptions, cliOptions);
   }
 
   /**
@@ -79,23 +82,31 @@ class CampaignAuth {
    *
    * @param {Object} options - Login options
    * @param {string} options.alias - Alias of the instance to log in to
+   * @param {Object} sdkOptions @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
    * @returns {Promise<Object>} Resolves with the authenticated client
    * @throws {CampaignError} Throws if instance doesn't exist or login fails
    *
    * @example
    * const client = await auth.login({ alias: 'prod' });
    */
-  async login(options) {
+  async login(cliOptions, sdkOptions) {
     const { host, user, password } =
-      this.auth.get(`instances.${options.alias}`) || {};
+      this.auth.get(`instances.${cliOptions.alias}`) || {};
     if (!host || !user || !password) {
       throw new CampaignError(
-        `Authentication with alias "${options.alias}" doesn't exist. Use "acc auth list" to see all configured instances.`,
+        `Authentication with alias "${cliOptions.alias}" doesn't exist. Use "acc auth list" to see all configured instances.`,
       );
     }
     console.log(`↔️ Connecting ${user}@${host}...`);
-    const connectionParameters =
-      this.sdk.ConnectionParameters.ofUserAndPassword(host, user, password);
+    if (cliOptions.verbose) {
+      console.log(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
+    }
+    const connectionParameters = ConnectionParameters.ofUserAndPassword(
+      host,
+      user,
+      password,
+      sdkOptions,
+    );
     const client = await this.sdk.init(connectionParameters);
     await client.logon();
     const serverInfo = client.getSessionInfo().serverInfo;
@@ -119,8 +130,10 @@ class CampaignAuth {
   list() {
     console.log(`📚 Reading from authentication file ${this.auth.path} `);
     console.log(`📚 Listing ${this.instanceIds.length} instance(s)`);
-    if(this.instanceIds.length === 0) {
-      console.log(`  No instances configured yet. Use "campaign auth init" to add an instance.`);
+    if (this.instanceIds.length === 0) {
+      console.log(
+        `  No instances configured yet. Use "campaign auth init" to add an instance.`,
+      );
       return;
     }
     for (const [key, value] of Object.entries(this.instances)) {
