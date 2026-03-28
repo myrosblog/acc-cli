@@ -6,7 +6,6 @@ import fs from "fs-extra";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 // Campaign
-import SdkAdapter from "./adapters/SdkAdapter.js";
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignError from "./CampaignError.js";
 import CampaignAuth from "./CampaignAuth.js";
@@ -17,9 +16,8 @@ const dirPackage = path.resolve(dirMain, "..");
 const packageJsonPath = path.join(dirPackage, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
-const sdkAdapter = new SdkAdapter(sdk);
 const authFile = new Configstore("campaign-cli.auth");
-const auth = new CampaignAuth(sdkAdapter, authFile);
+const auth = new CampaignAuth(sdk, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
 const config = new CampaignConfig(defaultConfigPath, dirPackage);

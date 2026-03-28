@@ -2,6 +2,7 @@
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 // acc
 import CampaignError from "./CampaignError.js";
+import SdkAdapter from "./adapters/SdkAdapter.js";
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
@@ -19,22 +20,27 @@ class CampaignAuth {
   INSTANCES_KEY = "instances";
 
   /**
+   * @type {ConnectionParameters}
+   */
+  connectionParameters;
+
+  /**
    * Creates a new CampaignAuth instance.
    *
-   * @param {SdkAdapter} sdkAdapter - ACC JS SDK instance. Uses .init .ip
+   * @param {Object} sdk - Raw ACC JS SDK instance
    * @param {Configstore} auth - Configstore instance for persistent storage
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(sdkAdapter, auth) {
-    if (!sdkAdapter || !auth) {
+  constructor(sdk, auth) {
+    if (!sdk || !auth) {
       throw new CampaignError(
         "SDK and Configstore instances are required to initialize CampaignAuth.",
       );
     }
-    this.sdk = sdkAdapter;
+    this.sdk = new SdkAdapter(sdk);
     this.auth = auth;
     this.instances = auth.get(this.INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
@@ -44,6 +50,7 @@ class CampaignAuth {
     console.log(`Fetching IP address...`);
     const ip = await this.sdk.ip();
     console.log(ip);
+    return ip;
   }
 
   /**
@@ -101,13 +108,13 @@ class CampaignAuth {
     if (cliOptions.verbose) {
       console.log(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
     }
-    const connectionParameters = ConnectionParameters.ofUserAndPassword(
+    this.connectionParameters = this._prepareConnectionParameters(
       host,
       user,
       password,
       sdkOptions,
     );
-    const client = await this.sdk.init(connectionParameters);
+    const client = await this.sdk.init(this.connectionParameters);
     await client.logon();
     const serverInfo = client.getSessionInfo().serverInfo;
     if (!serverInfo) {
@@ -117,6 +124,15 @@ class CampaignAuth {
       `✅ Logged in to ${serverInfo.instanceName} (${serverInfo.releaseName} build ${serverInfo.buildNumber}) successfully.`,
     );
     return client;
+  }
+
+  _prepareConnectionParameters(host, user, password, sdkOptions) {
+    return ConnectionParameters.ofUserAndPassword(
+      host,
+      user,
+      password,
+      sdkOptions,
+    );
   }
 
   /**

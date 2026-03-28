@@ -2,12 +2,16 @@
 import { expect } from "chai";
 import sinon from "sinon";
 // acc
-import SdkAdapter from "../src/adapters/SdkAdapter.js";
 import CampaignAuth from "../src/CampaignAuth.js";
 import CampaignError from "../src/CampaignError.js";
+import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 
 describe("CampaignAuth", function () {
-  let mockSdk, mockConfig, auth;
+  let mockSdk, mockConfig;
+  /**
+   * @type {CampaignAuth}
+   */
+  let auth;
 
   beforeEach(function () {
     // Mock SDK
@@ -26,7 +30,7 @@ describe("CampaignAuth", function () {
           },
         }),
       }),
-      ip: sinon.stub().returns({
+      ip: sinon.stub().resolves({
         ipAddress: "11.11.11.11",
         continentCode: "EU",
         continentName: "Europe",
@@ -45,8 +49,8 @@ describe("CampaignAuth", function () {
       set: sinon.stub(),
     };
 
-    const sdkAdapter = new SdkAdapter(mockSdk);
-    auth = new CampaignAuth(sdkAdapter, mockConfig);
+    // CampaignAuth now creates the adapter internally
+    auth = new CampaignAuth(mockSdk, mockConfig);
   });
 
   describe("constructor", function () {
@@ -177,6 +181,19 @@ describe("CampaignAuth", function () {
         expect(err.message).to.include("Unable to get server info");
       }
     });
+
+    it("should prepare connection with sdkOptions", async () => {
+      let actual;
+      actual = auth._prepareConnectionParameters("host", "user", "pass", null);
+      expect(actual).to.be.an.instanceof(ConnectionParameters);
+      expect(actual._options.traceAPICalls).to.equal(false);
+      actual = auth._prepareConnectionParameters("host", "user", "pass", {});
+      expect(actual).to.be.an.instanceof(ConnectionParameters);
+      expect(actual._options.traceAPICalls).to.equal(false);
+      actual = auth._prepareConnectionParameters("host", "user", "pass", {traceAPICalls:true});
+      expect(actual).to.be.an.instanceof(ConnectionParameters);
+      expect(actual._options.traceAPICalls).to.equal(true);
+    });
   });
 
   describe("list", function () {
@@ -202,7 +219,16 @@ describe("CampaignAuth", function () {
   describe("ip", () => {
     it("should display ip info", async () => {
       const ip = await auth.ip();
-      expect(ip).to.deep.equal({});
+      expect(ip).to.deep.equal({
+        ipAddress: "11.11.11.11",
+        continentCode: "EU",
+        continentName: "Europe",
+        countryCode: "FR",
+        countryName: "France",
+        stateProvCode: "ABC",
+        stateProv: "Abc",
+        city: "Def"
+      });
     });
   });
 });
