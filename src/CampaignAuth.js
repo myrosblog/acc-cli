@@ -21,7 +21,7 @@ class CampaignAuth {
   /**
    * Creates a new CampaignAuth instance.
    *
-   * @param {sdk} sdk - ACC JS SDK instance
+   * @param {sdk} sdk - ACC JS SDK instance. Uses .init .ip
    * @param {Configstore} auth - Configstore instance for persistent storage
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *

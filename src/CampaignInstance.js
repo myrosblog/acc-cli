@@ -15,9 +15,9 @@ import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
  * - pull():
  *   - paginates by batch of 10 (startLine, lineCount)
  *   - download()
- *     - sdk.xml.xtkQueryDef.create(schema)
- *     - sdk.xml.xtkQueryDef.selectAll()
- *     - sdk.xml.xtkQueryDef.executeQuery()
+ *     - NLWS.xml.xtkQueryDef.create(schema)
+ *     - NLWS.xml.xtkQueryDef.selectAll()
+ *     - NLWS.xml.xtkQueryDef.executeQuery()
  *     - for each XML record:
  *       - parse()
  *

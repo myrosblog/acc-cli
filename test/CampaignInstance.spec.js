@@ -3,18 +3,22 @@ import fs from "fs-extra";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 // modules
-import { assert, expect } from "chai";
+import { expect } from "chai";
 import sinon from "sinon";
+import _ from "lodash";
+
 // acc sdk
-import sdk from "@adobe/acc-js-sdk";
-const DomUtil = sdk.DomUtil;
+import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const configPathJson = join(__dirname, "mocks/config/");
 const loadJson = (file) => JSON.parse(fs.readFileSync(configPathJson + file));
 const configPathXml = join(__dirname, "mocks/acc-js-sdk-xml/");
-const loadXml = (file) => DomUtil.parse(fs.readFileSync(configPathXml + file));
+const loadXml = (file) =>
+  DomUtil.getFirstChildElement(
+    DomUtil.parse(fs.readFileSync(configPathXml + file)),
+  ); // DomUtil.parse returns DOMDocument, but all methods use DOMElement, hence the conversion
 // mocks
 const configDefaultFull = loadJson("../../../config/acc.config.json");
 const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
@@ -22,6 +26,9 @@ const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const nmsDelivery554 = loadXml("nms/delivery/DM554.xml");
 const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
+const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
+  "nms/deliveryMapping/recipientAndSubscribe.xml",
+);
 
 // acc
 import CampaignInstance from "../src/CampaignInstance.js";
@@ -33,35 +40,12 @@ describe("CampaignInstance", function () {
     optionsSimple,
     pathFull,
     optionsFull,
-    logStub;
+    logStub,
+    adapterExecuteQueryStub;
 
   beforeEach(function () {
     // mock client
     mockClient = {
-      registerObserver: sinon.stub(),
-      NLWS: {
-        xtkQueryDef: {
-          create: sinon.stub().returns({
-            executeQuery: sinon.stub().resolves({ count: 10 }),
-            selectAll: sinon.stub().resolves(),
-            executeQuery: sinon.stub().resolves({
-              // Mock DOMDocument
-              childNodes: [],
-            }),
-          }),
-        },
-        xml: {
-          xtkQueryDef: {
-            create: sinon.stub().returns({
-              selectAll: sinon.stub().resolves(),
-              executeQuery: sinon.stub().resolves({
-                // Mock DOMDocument
-                childNodes: [],
-              }),
-            }),
-          },
-        },
-      },
       DomUtil: DomUtil,
     };
 
@@ -77,9 +61,7 @@ describe("CampaignInstance", function () {
   });
 
   afterEach(() => {
-    if (logStub) {
-      logStub.restore();
-    }
+    sinon.restore();
   });
 
   describe("Private methods", () => {
@@ -129,17 +111,49 @@ describe("CampaignInstance", function () {
   });
 
   describe("check", () => {
-    it("should check without error", async () => {
-      instance = new CampaignInstance(
-        mockClient,
-        configDefaultSimple,
-        optionsSimple,
+    // it("should check with logs (nms:localOrgUnit)", async () => {
+    //   instance = new CampaignInstance(
+    //     mockClient,
+    //     configDefaultSimple,
+    //     optionsSimple,
+    //   );
+    //   logStub = sinon.stub(instance, "log"); // mock instance log
+    //   adapterExecuteQueryStub = sinon.stub(instance, "adapterCreateAndExecuteQuery");
+    //   // mock query
+    //   adapterExecuteQueryStub.resolves();
+    //   await instance.pull(true);
+
+    //   expect(instance.pullLogs.length).to.equal(18);
+
+    //   const log = instance.pullLogs.find(
+    //     (x) => x.schemaConfig.schemaId == "nms:localOrgUnit",
+    //   );
+    //   expect(log.startTime).to.be.lessThan(log.endTime);
+    // });
+
+    it("should check with basic config (nms:deliveryMapping)", async () => {
+      // only keep nms:deliveryMapping
+      const config = _.clone(configDefaultFull);
+      config.schemas = config.schemas.filter(
+        (x) => x.schemaId == "nms:deliveryMapping",
       );
+      // init
+      instance = new CampaignInstance(mockClient, config, optionsSimple);
       logStub = sinon.stub(instance, "log"); // mock instance log
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      // mock query
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      );
+      // go
+      await instance.pull(true);
 
-      await instance.pull(true, optionsSimple);
+      expect(instance.pullLogs.length).to.equal(1);
 
-      expect(logStub.callCount).to.equal(19);
+      expect(instance.pullLogs[0].elements).to.be.of.length(2);
     });
   });
 
@@ -151,11 +165,10 @@ describe("CampaignInstance", function () {
           configDefaultSimple,
           optionsSimple,
         );
-        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "xtk:sql",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(xtkSqlCreatedb, schemaConfig);
 
         const fileRaw = join(
           pathSimple,
@@ -179,11 +192,10 @@ describe("CampaignInstance", function () {
           configDefaultSimple,
           optionsSimple,
         );
-        const child = DomUtil.getFirstChildElement(nmsDelivery554);
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "nms:delivery",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(nmsDelivery554, schemaConfig);
 
         const fileRaw = join(
           pathSimple,
@@ -207,11 +219,10 @@ describe("CampaignInstance", function () {
           configDefaultSimple,
           optionsSimple,
         );
-        const child = DomUtil.getFirstChildElement(xtkSchemaDelivery);
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "xtk:srcSchema",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(xtkSchemaDelivery, schemaConfig);
 
         const fileRaw = join(
           pathSimple,
@@ -234,11 +245,10 @@ describe("CampaignInstance", function () {
           configDefaultFull,
           optionsFull,
         );
-        const child = DomUtil.getFirstChildElement(xtkSqlCreatedb);
         const schemaConfig = configDefaultFull.schemas.find(
           (x) => x.schemaId == "xtk:sql",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(xtkSqlCreatedb, schemaConfig);
 
         const fileSql = join(
           pathFull,
@@ -273,11 +283,10 @@ describe("CampaignInstance", function () {
           configDefaultFull,
           optionsFull,
         );
-        const child = DomUtil.getFirstChildElement(nmsDelivery554);
         const schemaConfig = configDefaultFull.schemas.find(
           (x) => x.schemaId == "nms:delivery",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(nmsDelivery554, schemaConfig);
 
         // html
         const basename = "Campaign Management/Deliveries/DM554";
@@ -324,11 +333,10 @@ describe("CampaignInstance", function () {
           configDefaultFull,
           optionsFull,
         );
-        const child = DomUtil.getFirstChildElement(nmsViewSubscription);
         const schemaConfig = configDefaultFull.schemas.find(
           (x) => x.schemaId == "nms:includeView",
         );
-        instance.parse(child, schemaConfig);
+        instance.parse(nmsViewSubscription, schemaConfig);
 
         const basename =
           "Resources/Campaign Management/Personalization blocks/SubscriptionLink";
