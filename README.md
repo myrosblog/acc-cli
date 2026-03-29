@@ -37,6 +37,18 @@ acc instance pull --alias staging
 
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
+## Roadmap
+
+Read the [Project Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).
+
+## 🔒 Architecture & Security
+
+Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
+
+## Changelog
+
+Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please open a Github Pull Request!
@@ -48,15 +60,3 @@ Contributions are welcome! Please open a Github Pull Request!
 git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
 npm install && npm test
 ```
-
-## Roadmap
-
-- `acc instance push`
-
-## 🔒 Architecture & Security
-
-Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
-
-## Changelog
-
-Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
