@@ -69,7 +69,7 @@ class CampaignAuth {
    *   alias: 'prod',
    *   host: 'http://localhost:8080',
    *   user: 'admin',
-   *   password: 'password'
+   *   pass: 'password'
    * });
    */
   async init(authOptions, sdkOptions, cliOptions) {
@@ -78,8 +78,8 @@ class CampaignAuth {
         `Instance with alias ${authOptions.alias} already exists. Please choose a different alias.`,
       );
     }
-    const { alias, host, user, password } = authOptions;
-    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password });
+    const { alias, host, user, pass } = authOptions;
+    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password: pass });
     console.log(`✅ Instance ${alias} added successfully.`);
     return this.login(authOptions, sdkOptions, cliOptions);
   }
@@ -97,11 +97,29 @@ class CampaignAuth {
    * const client = await auth.login({ alias: 'prod' });
    */
   async login(cliOptions, sdkOptions) {
-    const { host, user, password } =
-      this.auth.get(`instances.${cliOptions.alias}`) || {};
-    if (!host || !user || !password) {
+    let auth;
+    try {
+      auth = this.auth.get(`instances.${cliOptions.alias}`);
+    } catch (error) {
+      if(cliOptions.verbose) {
+        console.log(error);
+      }
       throw new CampaignError(
-        `Authentication with alias "${cliOptions.alias}" doesn't exist. Use "acc auth list" to see all configured instances.`,
+        `Login failed: alias "${cliOptions.alias}" not found. Use "acc auth list" to see all configured instances.`,
+      );
+    }
+    if(!auth) {
+      throw new CampaignError(
+        `Login failed: alias "${cliOptions.alias}" empty. Use "acc auth list" to see all configured instances.`,
+      );
+    }
+    let { host, user, password } = auth;
+    if (!host || !user || !password) {
+      if(cliOptions.verbose) {
+        console.log(error);
+      }
+      throw new CampaignError(
+        `Login failed: alias "${cliOptions.alias}" is misconfigured. Use "acc auth list" to see all configured instances.`,
       );
     }
     console.log(`↔️ Connecting ${user}@${host}...`);

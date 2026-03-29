@@ -100,7 +100,7 @@ describe("CampaignAuth", function () {
         alias: "test",
         host: "http://localhost",
         user: "testuser",
-        password: "testpass",
+        pass: "testpass",
       };
 
       await auth.init(options);
@@ -157,7 +157,7 @@ describe("CampaignAuth", function () {
         expect.fail("Should have thrown CampaignError");
       } catch (err) {
         expect(err).to.be.instanceOf(CampaignError);
-        expect(err.message).to.include("doesn't exist");
+        expect(err.message).to.include("empty");
       }
     });
 
