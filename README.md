@@ -27,8 +27,10 @@ npm install -g campaign-cli
 acc auth init --host https://instance.com --user username --pass --alias staging
 
 acc instance pull --alias staging
-# Downloaded /Administration/Configuration/Form rendering
-# Doanloaded /Administration/Configuration/Dynamic Javascript pages
+# Downloading
+# ✔ /Administration/Configuration/Form rendering: xtk:formRendering
+# ✔ /Administration/Configuration/Javascript codes: xtk:javascript
+# ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
 ```
 
 ### 🔧 Advanced Configuration
@@ -54,3 +56,7 @@ npm install && npm test
 ## 🔒 Architecture & Security
 
 Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
+
+## Changelog
+
+Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
