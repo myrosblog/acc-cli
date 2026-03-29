@@ -59,4 +59,4 @@ Read the [Architecture & Security documentation](https://myrosblog.com/adobe-cam
 
 ## Changelog
 
-Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
+Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
