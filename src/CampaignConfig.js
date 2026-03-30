@@ -19,6 +19,11 @@ class CampaignConfig {
   accJsSdkOptions;
 
   /**
+   * @type {String}
+   */
+  templateDir = path.join(__dirname, "..", "templates");
+
+  /**
    *
    * @param {*} defaultConfigPath
    */
@@ -40,10 +45,7 @@ class CampaignConfig {
       !this.fileExists(this.defaultConfigPath)
     ) {
       console.log(`🛠️ Config not found, initializing ${configPath}`);
-      fs.copySync(
-        path.join(__dirname, "..", "config", "acc.config.json"),
-        this.defaultConfigPath,
-      );
+      this.copyTemplateTo("acc.config.json", this.defaultConfigPath);
     } else {
       console.log(`🛠️ Using config ${configPath}`);
     }
@@ -73,6 +75,26 @@ class CampaignConfig {
   fileExists(path) {
     return fs.existsSync(path);
   }
+
+  /**
+   * Copy template file from /tenplates/ to destination path
+   * @param {String} filename
+   * @param {String} destinationPath
+   */
+  copyTemplateTo(filename, destinationPath) {
+    fs.copySync(path.join(templateDir, filename), destinationPath);
+  }
+
+  /**
+   * Controller for "acc instance template"
+   * Currently only supports returning the content of the input file
+   * @returns 
+   */
+  template() {
+    console.log(`📄 Returning template content for acc.config.json from ${this.templateDir}`);
+    const filename = "acc.config.json";
+    const content = fs.readFileSync(path.join(this.templateDir, filename));
+    console.log(content.toString());}
 }
 
 export default CampaignConfig;

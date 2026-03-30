@@ -101,6 +101,10 @@ program
 // INSTANCE
 program
   .command("instance")
+  // TEMPLATE
+  .addCommand(new Command().name("template").action(async () => {
+    config.template();
+  }))
   // CHECK
   .addCommand(
     new Command()
