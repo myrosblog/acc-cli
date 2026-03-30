@@ -131,6 +131,7 @@ class CampaignInstance {
       let recordsLengthOfThisBatch = 0;
       // pagination loop, 1 per batch
       do {
+        spinner.text = `${filename}: ${chalk.bgCyan(schemaId)} parsed ${recordsParsedTotal}. Downloading next ${lineCount}`;
         const pullLog = new CampaignPullLog(schemaConfig, lineCount, startLine);
         this.pullLogs.push(pullLog);
         pullLogsForThisSchema.push(pullLog);
