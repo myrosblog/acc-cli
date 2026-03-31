@@ -82,7 +82,7 @@ class CampaignConfig {
    * @param {String} destinationPath
    */
   copyTemplateTo(filename, destinationPath) {
-    fs.copySync(path.join(templateDir, filename), destinationPath);
+    fs.copySync(path.join(this.templateDir, filename), destinationPath);
   }
 
   /**
