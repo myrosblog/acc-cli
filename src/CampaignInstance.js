@@ -6,8 +6,10 @@ import ora from "ora";
 // sdk
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
+import { DomUtil, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
+// acc
+import DomUtilAcc from "./helpers/DomUtilAcc.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -257,26 +259,6 @@ class CampaignInstance {
   }
 
   /**
-   * manual xpath to return the last Element
-   * - abc/def => def
-   * - abc/def/@ghi => def
-   *
-   * @param {Element} element
-   * @param {string} xpath
-   * @return Element
-   */
-  _getLastElement(element, xpath) {
-    let childTraverse = element;
-    xpath.split(this.CONFIG_XPATH_SEP).forEach((xp) => {
-      if (xp.startsWith(this.CONFIG_XPATH_ATTR)) {
-        return;
-      }
-      childTraverse = DomUtil.getFirstChildElement(childTraverse, xp);
-    });
-    return childTraverse;
-  }
-
-  /**
    *
    * @param {Element} childElement
    * @param {*} schemaConfig
@@ -298,25 +280,23 @@ class CampaignInstance {
 
     // prepare XML by removing excluded attributes
     if (excludeXPaths) {
-      for (let xpath of excludeXPaths) {
-        const chunks = xpath.split(this.CONFIG_XPATH_SEP);
-        const childTraverse = this._getLastElement(childElement, xpath);
+      for (let xpathString of excludeXPaths) {
+        const xpath = new XPath(xpathString);
+        const xpathElements = xpath.getElements();
+        const lastXpathElement = xpathElements[xpathElements.length - 1];
+        const lastNode = DomUtilAcc.findLastElement(childElement, xpathString);
 
-        // remove attribute
-        if (xpath.includes(this.CONFIG_XPATH_ATTR)) {
-          const attribute = chunks[chunks.length - 1];
-          const attributeName = attribute.replace(this.CONFIG_XPATH_ATTR, "");
-          if (!childTraverse.hasAttribute(attributeName)) {
-            continue;
-          }
-          childTraverse.setAttribute(attributeName, "");
+        // if attribute, set it to blank
+        if (DomUtilAcc.xpathElementIsAttribute(lastXpathElement)) {
+          const attributeName =
+            DomUtilAcc.getXpathAttributeName(lastXpathElement);
+          lastNode.setAttribute(attributeName, "");
         }
-        // remove element
+        // if element, empty its textContent
         else {
+          lastNode.textContent = "";
         }
       }
-
-      return filenameOnly;
     }
 
     // no decomposition: save raw XML
