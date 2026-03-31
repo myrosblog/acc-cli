@@ -20,7 +20,7 @@ const loadXml = (file) =>
     DomUtil.parse(fs.readFileSync(configPathXml + file)),
   ); // DomUtil.parse returns DOMDocument, but all methods use DOMElement, hence the conversion
 // mocks
-const configDefaultFull = loadJson("../../../config/acc.config.json");
+const configDefaultFull = loadJson("../../../templates/acc.config.json");
 const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
