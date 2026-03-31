@@ -309,7 +309,7 @@ class CampaignInstance {
     // with decomposition: save each xpath, then save the clean meta
     else {
       // 1. save each xpath + removeElement
-      for (const [xpath, filenameTemplate] of Object.entries(decompose)) {
+      for (const [xpathString, filenameTemplate] of Object.entries(decompose)) {
         try {
           // compute filename
           const decomposedFilename = this._computeFilename(
@@ -318,8 +318,11 @@ class CampaignInstance {
             childElement,
           );
           // then traverse xpath
-          let childTraverse = this._getLastElement(childElement, xpath);
-          const elementValue = DomUtil.elementValue(childTraverse);
+          const lastNode = DomUtilAcc.findLastElement(
+            childElement,
+            xpathString,
+          );
+          const elementValue = DomUtil.elementValue(lastNode);
           // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);
           if (!isPreview) {
@@ -329,10 +332,8 @@ class CampaignInstance {
           if (this.verbose) {
             this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
           }
-          // removeElement
-          if (childTraverse) {
-            childTraverse.textContent = ""; // @since 0.5.1, instead of removeChild that removed attributes
-          }
+          // empty element
+          lastNode.textContent = "";
         } catch (err) {
           this.log(`(⚠️ warning:parse ${err.message})`);
         }
