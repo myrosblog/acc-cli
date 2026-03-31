@@ -21,7 +21,7 @@ class CampaignConfig {
   /**
    * @type {String}
    */
-  templateDir = path.join(__dirname, "..", "templates");
+  templateDir = path.join(__dirname, "templates");
 
   /**
    *
