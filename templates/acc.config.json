@@ -334,6 +334,21 @@
       }
     },
     {
+      "schemaId": "nms:service",
+      "filename": "/Profiles and Targets/Services and Subscriptions/{@name}.meta.xml",
+      "excludeXPaths": [
+        "social/@accessToken",
+        "social/@accessTokenSecret",
+        "social/@consumerKey",
+        "social/@consumerSecret"
+      ],
+      "queryDef": {
+        "where": {
+          "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]
+        }
+      }
+    },
+    {
       "schemaId": "xtk:folder",
       "filename": "/Explorer/{@name}.meta.xml",
       "queryDef": {
