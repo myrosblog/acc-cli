@@ -1,6 +1,6 @@
 {
   "name": "campaign-cli",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Save time, reduce risk and improve code health with acc CLI",
   "keywords": [
     "adobe",
@@ -15,8 +15,7 @@
   "preferGlobal": true,
   "files": [
     "bin/",
-    "src/",
-    "config/"
+    "src/"
   ],
   "scripts": {
     "init": "node src/main.js",
