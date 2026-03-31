@@ -161,7 +161,10 @@ class CampaignInstance {
       );
       // display errors when verbose
       if (this.verbose) {
-        this.log(pullLogsForThisSchema.flatMap((x) => x.errors));
+        const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
+        if (flatErrors.length > 0) {
+          this.log(flatErrors);
+        }
       }
     }
   }
@@ -214,14 +217,26 @@ class CampaignInstance {
         `Downloaded XML Response with ${elementsParsed.length} children`,
       );
     }
+    const filenamesForThisBatch = [];
     for (const element of elementsParsed) {
       pullLog.elements.push(element);
 
       try {
-        this.parse(element, schemaConfig, isPreview);
+        const filenameOnly = this.parse(
+          element,
+          schemaConfig,
+          isPreview,
+          pullLog,
+        );
+        pullLog.parsedFilenames.push(filenameOnly);
+        filenamesForThisBatch.push(`${chalk.underline(filenameOnly)}`);
       } catch (err) {
         pullLog.errors.push(err);
       }
+    }
+
+    if (filenamesForThisBatch.length > 0) {
+      this.log(filenamesForThisBatch.join(", "));
     }
 
     return elementsParsed;
@@ -261,6 +276,13 @@ class CampaignInstance {
     return childTraverse;
   }
 
+  /**
+   *
+   * @param {Element} childElement
+   * @param {*} schemaConfig
+   * @param {boolean} isPreview
+   * @return string filenameOnly
+   */
   parse(childElement, schemaConfig, isPreview) {
     // console.log(`>>> parse with isPreview:${isPreview}`);
     const { filename, decompose, excludeXPaths } = schemaConfig;
@@ -293,6 +315,8 @@ class CampaignInstance {
         else {
         }
       }
+
+      return filenameOnly;
     }
 
     // no decomposition: save raw XML
@@ -340,9 +364,7 @@ class CampaignInstance {
       }
     }
 
-    if (this.verbose) {
-      this.log(`${chalk.underline(filenameOnly)} `, false);
-    }
+    return filenameOnly;
   }
 
   _getAttributesFromSchemaConfig(schemaConfig) {
@@ -402,27 +424,32 @@ class CampaignPullLog {
 
   /**
    * Flat array, not nested for the moment
-   * @param {Array<Error>}
+   * @type {Array<Error>}
    */
   errors;
 
   /**
    * Save params
-   * @param {Number}
+   * @type {Number}
    */
   startLine;
 
   /**
    * Save params
-   * @param {Number}
+   * @type {Number}
    */
   lineCount;
 
   /**
    * Save request
-   * @param {Element}
+   * @type {Element}
    */
   queryDefXml;
+
+  /**
+   * @type {Array<string>}
+   */
+  parsedFilenames = [];
 
   constructor(schemaConfig, lineCount, startLine) {
     this.startTime = new Date();
