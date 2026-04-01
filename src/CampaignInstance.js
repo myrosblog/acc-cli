@@ -236,7 +236,7 @@ class CampaignInstance {
       }
     }
 
-    if (filenamesForThisBatch.length > 0) {
+    if (this.verbose && filenamesForThisBatch.length > 0) {
       this.log(filenamesForThisBatch.join(", "));
     }
 
