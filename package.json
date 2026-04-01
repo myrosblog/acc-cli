@@ -1,13 +1,16 @@
 {
   "name": "campaign-cli",
   "version": "0.8.4",
-  "description": "Save time, reduce risk and improve code health with acc CLI",
+  "description": "Save time, reduce risk and improve code health in Adobe Campaign with acc CLI",
   "keywords": [
     "adobe",
     "adobe campaign",
     "adobe campaign classic",
     "acc",
-    "devops"
+    "acc cli",
+    "devops",
+    "adobe devops",
+    "neolane"
   ],
   "bin": {
     "acc": "bin/acc"
