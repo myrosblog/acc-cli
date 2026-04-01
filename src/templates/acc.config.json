@@ -27,6 +27,9 @@
     {
       "schemaId": "nms:typologyRule",
       "filename": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.meta.xml",
+      "decompose": {
+        "code": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.js"
+      },
       "queryDef": {
         "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
       }
