@@ -118,11 +118,14 @@ class CampaignInstance {
       const { schemaId, filename, queryDef } = schemaConfig;
       const pullLogsForThisSchema = [];
       // skip if metadata option was included and not matching
-      if (this.metadata && !this.metadata.includes(schemaId)) {
-        if (this.verbose) {
-          this.log(`Skipping ${schemaId}`);
+      if (this.metadata) {
+        const metadata = this.metadata.split(',').map(id => id.trim());
+        if (!metadata.includes(schemaId)) {
+          if (this.verbose) {
+            this.log(`Skipping ${schemaId}`);
+          }
+          continue;
         }
-        continue;
       }
       const spinner = ora(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
       // download and parse
