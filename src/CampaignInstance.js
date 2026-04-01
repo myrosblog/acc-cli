@@ -134,7 +134,7 @@ class CampaignInstance {
       // pagination loop, 1 per batch
       do {
         spinner.text = `${filename}: ${chalk.bgCyan(schemaId)} parsed ${recordsParsedTotal}. Downloading next ${lineCount}`;
-        const pullLog = new CampaignPullLog(schemaConfig, lineCount, startLine);
+        const pullLog = new CampaignPullLog(schemaConfig);
         this.pullLogs.push(pullLog);
         pullLogsForThisSchema.push(pullLog);
         if (this.verbose) {
@@ -194,14 +194,13 @@ class CampaignInstance {
       schema: schemaId,
       operation: "select",
       select: {
-        node: [
-          // { expr: "data" }
-        ],
+        node: [],
       },
       startLine: startLine,
       lineCount: lineCount,
     };
     const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
+    pullLog.queryDef = queryDef;
     const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
     pullLog.queryDefXml = queryDefXml;
 
@@ -410,19 +409,13 @@ class CampaignPullLog {
   errors;
 
   /**
-   * Save params
-   * @type {Number}
+   * Save request as JSON
+   * @type {Object}
    */
-  startLine;
+  queryDef;
 
   /**
-   * Save params
-   * @type {Number}
-   */
-  lineCount;
-
-  /**
-   * Save request
+   * Save request as XML, converted from this.queryDef by DomUtil.fromJSON
    * @type {Element}
    */
   queryDefXml;
@@ -437,8 +430,6 @@ class CampaignPullLog {
     this.elements = [];
     this.schemaConfig = schemaConfig;
     this.errors = [];
-    this.lineCount = lineCount;
-    this.startLine = startLine;
   }
 }
 
