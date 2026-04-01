@@ -334,7 +334,9 @@ class CampaignInstance {
           // empty element
           lastNode.textContent = "";
         } catch (err) {
-          this.log(`(⚠️ warning:parse ${err.message})`);
+          if (this.verbose) {
+            this.log(`(⚠️ warning:parse ${err.message})`);
+          }
         }
       }
       // 2. save meta
