@@ -1,0 +1,10 @@
+<olapCube-collection>
+    <olapCube _cs="Delivery and tracking statistics (deliveryLogStats)" id="1527"
+        name="deliveryLogStats" timezone="_inherit_">
+        <fact schema="nms:deliveryLogStats" />
+    </olapCube>
+    <olapCube _cs="Recipients (recipient)" id="1966" name="recipient"
+        timezone="_inherit_">
+        <fact schema="nms:recipient" />
+    </olapCube>
+</olapCube-collection>

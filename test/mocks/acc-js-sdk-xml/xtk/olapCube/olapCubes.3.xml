@@ -1,0 +1,6 @@
+<olapCube-collection>
+    <olapCube _cs="Message Center (messageCenter)" id="5134" name="messageCenter"
+        timezone="_inherit_">
+        <fact schema="nms:eventHisto" />
+    </olapCube>
+</olapCube-collection>

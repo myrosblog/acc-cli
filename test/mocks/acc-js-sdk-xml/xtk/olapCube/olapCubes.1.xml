@@ -1,0 +1,19 @@
+<olapCube-collection>
+    <olapCube _cs="Tracking logs (trackinglogrcp)" id="1495" name="trackinglogrcp"
+        timezone="_inherit_">
+        <fact schema="nms:trackingLogRcp">
+            <where>
+                <condition expr="[broadLog/@seedMember] = 0" internalId="1309784139" />
+            </where>
+        </fact>
+    </olapCube>
+    <olapCube _cs="Consolidated tracking (trackingStats)" id="1521"
+        name="trackingStats" timezone="_inherit_">
+        <fact schema="nms:trackingStats">
+            <where>
+                <condition boolOperator="AND" expr="@id &lt;&gt; 0"
+                    internalId="1313656119" />
+            </where>
+        </fact>
+    </olapCube>
+</olapCube-collection>

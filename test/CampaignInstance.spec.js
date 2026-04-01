@@ -2,11 +2,10 @@
 import fs from "fs-extra";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-// modules
+// npm
 import { expect } from "chai";
 import sinon from "sinon";
 import _ from "lodash";
-
 // acc sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
@@ -18,12 +17,15 @@ const configPathXml = join(__dirname, "mocks/acc-js-sdk-xml/");
 const loadXml = (file) =>
   DomUtil.getFirstChildElement(
     DomUtil.parse(fs.readFileSync(configPathXml + file)),
-  ); // DomUtil.parse returns DOMDocument, but all methods use DOMElement, hence the conversion
+  ); // DomUtil.parse returns Document, but all methods use Element, hence the conversion
 // mocks
 const configDefaultFull = loadJson("../../../src/templates/acc.config.json");
 const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
+const xtkOlapCubes1 = loadXml("xtk/olapCube/olapCubes.1.xml");
+const xtkOlapCubes2 = loadXml("xtk/olapCube/olapCubes.2.xml");
+const xtkOlapCubes3 = loadXml("xtk/olapCube/olapCubes.3.xml");
 const nmsDelivery554 = loadXml("nms/delivery/DM554.xml");
 const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
@@ -111,28 +113,8 @@ describe("CampaignInstance", function () {
   });
 
   describe("check", () => {
-    // it("should check with logs (nms:localOrgUnit)", async () => {
-    //   instance = new CampaignInstance(
-    //     mockClient,
-    //     configDefaultSimple,
-    //     optionsSimple,
-    //   );
-    //   logStub = sinon.stub(instance, "log"); // mock instance log
-    //   adapterExecuteQueryStub = sinon.stub(instance, "adapterCreateAndExecuteQuery");
-    //   // mock query
-    //   adapterExecuteQueryStub.resolves();
-    //   await instance.pull(true);
-
-    //   expect(instance.pullLogs.length).to.equal(18);
-
-    //   const log = instance.pullLogs.find(
-    //     (x) => x.schemaConfig.schemaId == "nms:localOrgUnit",
-    //   );
-    //   expect(log.startTime).to.be.lessThan(log.endTime);
-    // });
-
-    it("should check with basic config (nms:deliveryMapping)", async () => {
-      // only keep nms:deliveryMapping
+    it("should check with basic config (2 nms:deliveryMapping)", async () => {
+      // keep only nms:deliveryMapping
       const config = _.clone(configDefaultFull);
       config.schemas = config.schemas.filter(
         (x) => x.schemaId == "nms:deliveryMapping",
@@ -152,8 +134,96 @@ describe("CampaignInstance", function () {
       await instance.pull(true);
 
       expect(instance.pullLogs.length).to.equal(1);
+      const pullLog = instance.pullLogs[0];
+      expect(pullLog.elements).to.be.of.length(2);
+      expect(pullLog.errors).to.be.of.length(0);
+      expect(pullLog.parsedFilenames).to.deep.equal([
+        "mapRecipient.meta.xml",
+        "mapSubscribe.meta.xml",
+      ]);
+      expect(pullLog.queryDef).to.deep.equal({
+        schema: "nms:deliveryMapping",
+        operation: "select",
+        select: { node: [] },
+        lineCount: 10,
+        startLine: 1,
+        where: { condition: [{ expr: "@builtIn = false" }] },
+      });
+      expect(pullLog.startTime).to.be.lessThan(pullLog.endTime);
+    });
 
-      expect(instance.pullLogs[0].elements).to.be.of.length(2);
+    it("should check with custom lineCount=2 in 3 batches (5 xtk:olapCube)", async () => {
+      // keep only nms:deliveryMapping
+      const config = _.clone(configDefaultFull);
+      config.schemas = config.schemas.filter(
+        (x) => x.schemaId == "xtk:olapCube",
+      );
+      config.schemas[0].queryDef.lineCount = 2; // force lineCount to 2 to test batching on 5 elements
+      // init
+      instance = new CampaignInstance(mockClient, config, optionsSimple);
+      logStub = sinon.stub(instance, "log"); // mock instance log
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      // mock query
+      adapterExecuteQueryStub.onFirstCall().resolves(xtkOlapCubes1);
+      adapterExecuteQueryStub.onSecondCall().resolves(xtkOlapCubes2);
+      adapterExecuteQueryStub.onThirdCall().resolves(xtkOlapCubes3);
+      // go
+      await instance.pull(true);
+
+      expect(instance.pullLogs.length).to.equal(3);
+      // log 1
+      const pullLog1 = instance.pullLogs[0];
+      expect(pullLog1.elements).to.be.of.length(2);
+      expect(pullLog1.errors).to.be.of.length(0);
+      expect(pullLog1.parsedFilenames).to.deep.equal([
+        "trackinglogrcp.meta.xml",
+        "trackingStats.meta.xml",
+      ]);
+      expect(pullLog1.queryDef).to.deep.equal({
+        schema: "xtk:olapCube",
+        operation: "select",
+        select: { node: [] },
+        where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
+        startLine: 1,
+        lineCount: 2,
+      });
+      expect(pullLog1.startTime).to.be.lessThan(pullLog1.endTime);
+      // log 2
+      const pullLog2 = instance.pullLogs[1];
+      expect(pullLog2.elements).to.be.of.length(2);
+      expect(pullLog2.errors).to.be.of.length(0);
+      expect(pullLog2.parsedFilenames).to.deep.equal([
+        "deliveryLogStats.meta.xml",
+        "recipient.meta.xml",
+      ]);
+      expect(pullLog2.queryDef).to.deep.equal({
+        schema: "xtk:olapCube",
+        operation: "select",
+        select: { node: [] },
+        where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
+        startLine: 3,
+        lineCount: 2,
+      });
+      expect(pullLog2.startTime).to.be.lessThan(pullLog2.endTime);
+      // log 3
+      const pullLog3 = instance.pullLogs[2];
+      expect(pullLog3.elements).to.be.of.length(1);
+      expect(pullLog3.errors).to.be.of.length(0);
+      expect(pullLog3.parsedFilenames).to.deep.equal([
+        "messageCenter.meta.xml",
+      ]);
+      expect(pullLog3.queryDef).to.deep.equal({
+        schema: "xtk:olapCube",
+        operation: "select",
+        select: { node: [] },
+        where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
+        startLine: 5,
+        lineCount: 2,
+      });
+      expect(pullLog3.startTime).to.be.lessThan(pullLog3.endTime);
     });
   });
 
