@@ -289,11 +289,15 @@ class CampaignInstance {
         if (DomUtilAcc.xpathElementIsAttribute(lastXpathElement)) {
           const attributeName =
             DomUtilAcc.getXpathAttributeName(lastXpathElement);
-          lastNode.setAttribute(attributeName, "");
+          if (lastNode.hasAttribute(attributeName)) {
+            lastNode.setAttribute(attributeName, "");
+          }
         }
         // if element, empty its textContent
         else {
-          lastNode.textContent = "";
+          if (lastNode) {
+            lastNode.textContent = "";
+          }
         }
       }
     }
@@ -321,6 +325,9 @@ class CampaignInstance {
             childElement,
             xpathString,
           );
+          if (!lastNode) {
+            continue; // if xpath not found, skip to next one without throwing error as it can be optional
+          }
           const elementValue = DomUtil.elementValue(lastNode);
           // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);
