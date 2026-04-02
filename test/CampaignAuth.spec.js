@@ -1,6 +1,9 @@
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
+// sdk
+import AioLogger from '@adobe/aio-lib-core-logging';
+const logger = AioLogger('CampaignAuth.spec');
 // acc
 import CampaignAuth from "../src/CampaignAuth.js";
 import CampaignError from "../src/CampaignError.js";
@@ -50,7 +53,7 @@ describe("CampaignAuth", function () {
     };
 
     // CampaignAuth now creates the adapter internally
-    auth = new CampaignAuth(mockSdk, mockConfig);
+    auth = new CampaignAuth(logger, mockSdk, mockConfig);
   });
 
   describe("constructor", function () {
@@ -63,11 +66,11 @@ describe("CampaignAuth", function () {
     });
 
     it("should throw CampaignError when SDK is missing", function () {
-      expect(() => new CampaignAuth(null, mockConfig)).to.throw(CampaignError);
+      expect(() => new CampaignAuth(logger, null, mockConfig)).to.throw(CampaignError);
     });
 
     it("should throw CampaignError when config is missing", function () {
-      expect(() => new CampaignAuth(mockSdk, null)).to.throw(CampaignError);
+      expect(() => new CampaignAuth(logger, mockSdk, null)).to.throw(CampaignError);
     });
   });
 
@@ -204,7 +207,7 @@ describe("CampaignAuth", function () {
       };
       auth.instanceIds = ["prod", "staging"];
 
-      // This is a console.log test, so we'll just verify it doesn't throw
+      // This is a console . log test, so we'll just verify it doesn't throw
       expect(() => auth.list()).to.not.throw();
     });
 

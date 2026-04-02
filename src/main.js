@@ -1,10 +1,13 @@
 // packages
 import { program, Command } from "commander";
-import sdk from "@adobe/acc-js-sdk";
 import Configstore from "configstore";
 import fs from "fs-extra";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// sdk
+import sdk from "@adobe/acc-js-sdk";
+import AioLogger from "@adobe/aio-lib-core-logging";
+const logger = AioLogger("acc");
 // Campaign
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignError from "./CampaignError.js";
@@ -17,14 +20,14 @@ const packageJsonPath = path.join(dirPackage, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
 const authFile = new Configstore("campaign-cli.auth");
-const auth = new CampaignAuth(sdk, authFile);
+const auth = new CampaignAuth(logger, sdk, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
-const config = new CampaignConfig(defaultConfigPath);
+const config = new CampaignConfig(logger, defaultConfigPath);
 
 const vAcc = packageJson.version;
 const vSdk = sdk.getSDKVersion().version;
-console.log(`🏠 acc ${vAcc} initialized with Adobe Campaign SDK ${vSdk}`);
+logger.info(`🏠 acc ${vAcc} initialized with Adobe Campaign SDK ${vSdk}`);
 // blog post tracking
 const homepage = packageJson.homepage.replace(
   "utm_campaign=package-json",
@@ -57,7 +60,7 @@ program
         try {
           await auth.init(cliOptions);
         } catch (err) {
-          handleCampaignError(err);
+          handleCampaignError(err, logger);
         }
       }),
   )
@@ -102,9 +105,11 @@ program
 program
   .command("instance")
   // TEMPLATE
-  .addCommand(new Command().name("template").action(async () => {
-    config.template();
-  }))
+  .addCommand(
+    new Command().name("template").action(async () => {
+      config.template();
+    }),
+  )
   // CHECK
   .addCommand(
     new Command()
@@ -181,7 +186,7 @@ program.parse(process.argv);
 async function pull(cliOptions, isPreview) {
   config.init(cliOptions.config);
   const client = await auth.login(cliOptions, config.accJsSdkOptions);
-  const instance = new CampaignInstance(client, config, cliOptions);
+  const instance = new CampaignInstance(logger, client, config, cliOptions);
   await instance.pull(isPreview);
 }
 
@@ -199,9 +204,10 @@ async function pull(cliOptions, isPreview) {
  *   handleCampaignError(err);
  * }
  */
-function handleCampaignError(err) {
+function handleCampaignError(err, logger) {
   if (err instanceof CampaignError) {
-    console.error(`⚠️ Campaign warning: ${err.message}`);
+    logger.error(`${err.message}`);
+    logger.debug(err);
   } else {
     throw err;
   }

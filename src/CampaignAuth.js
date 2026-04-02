@@ -1,5 +1,6 @@
 // sdk
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
+import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import CampaignError from "./CampaignError.js";
 import SdkAdapter from "./adapters/SdkAdapter.js";
@@ -25,8 +26,14 @@ class CampaignAuth {
   connectionParameters;
 
   /**
+   * @type {AioLogger}
+   */
+  logger;
+
+  /**
    * Creates a new CampaignAuth instance.
    *
+   * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Object} sdk - Raw ACC JS SDK instance
    * @param {Configstore} auth - Configstore instance for persistent storage
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
@@ -34,12 +41,13 @@ class CampaignAuth {
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(sdk, auth) {
+  constructor(logger, sdk, auth) {
     if (!sdk || !auth) {
       throw new CampaignError(
         "SDK and Configstore instances are required to initialize CampaignAuth.",
       );
     }
+    this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
     this.auth = auth;
     this.instances = auth.get(this.INSTANCES_KEY) || {};
@@ -47,9 +55,9 @@ class CampaignAuth {
   }
 
   async ip() {
-    console.log(`Fetching IP address...`);
+    this.logger.info(`Fetching IP address...`);
     const ip = await this.sdk.ip();
-    console.log(ip);
+    this.logger.info(ip);
     return ip;
   }
 
@@ -79,8 +87,12 @@ class CampaignAuth {
       );
     }
     const { alias, host, user, pass } = authOptions;
-    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, { host, user, password: pass });
-    console.log(`✅ Instance ${alias} added successfully.`);
+    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, {
+      host,
+      user,
+      password: pass,
+    });
+    this.logger.info(`✅ Instance ${alias} added successfully.`);
     return this.login(authOptions, sdkOptions, cliOptions);
   }
 
@@ -101,31 +113,25 @@ class CampaignAuth {
     try {
       auth = this.auth.get(`instances.${cliOptions.alias}`);
     } catch (error) {
-      if(cliOptions.verbose) {
-        console.log(error);
-      }
+      this.logger.verbose(error);
       throw new CampaignError(
         `Login failed: alias "${cliOptions.alias}" not found. Use "acc auth list" to see all configured instances.`,
       );
     }
-    if(!auth) {
+    if (!auth) {
       throw new CampaignError(
         `Login failed: alias "${cliOptions.alias}" empty. Use "acc auth list" to see all configured instances.`,
       );
     }
     let { host, user, password } = auth;
     if (!host || !user || !password) {
-      if(cliOptions.verbose) {
-        console.log(error);
-      }
+      this.logger.verbose(error);
       throw new CampaignError(
         `Login failed: alias "${cliOptions.alias}" is misconfigured. Use "acc auth list" to see all configured instances.`,
       );
     }
-    console.log(`↔️ Connecting ${user}@${host}...`);
-    if (cliOptions.verbose) {
-      console.log(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
-    }
+    this.logger.info(`↔️ Connecting ${user}@${host}...`);
+    this.logger.verbose(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
     this.connectionParameters = this._prepareConnectionParameters(
       host,
       user,
@@ -138,7 +144,7 @@ class CampaignAuth {
     if (!serverInfo) {
       throw new CampaignError(`Unable to get server info.`);
     }
-    console.log(
+    this.logger.info(
       `✅ Logged in to ${serverInfo.instanceName} (${serverInfo.releaseName} build ${serverInfo.buildNumber}) successfully.`,
     );
     return client;
@@ -156,22 +162,22 @@ class CampaignAuth {
   /**
    * Lists all configured ACC instances.
    *
-   * @returns {void} Outputs list of instances to console
+   * @returns {void} Outputs list of instances
    *
    * @example
    * auth.list(); // Lists all configured instances
    */
   list() {
-    console.log(`📚 Reading from authentication file ${this.auth.path} `);
-    console.log(`📚 Listing ${this.instanceIds.length} instance(s)`);
+    this.logger.info(`📚 Reading from authentication file ${this.auth.path} `);
+    this.logger.info(`📚 Listing ${this.instanceIds.length} instance(s)`);
     if (this.instanceIds.length === 0) {
-      console.log(
+      this.logger.info(
         `  No instances configured yet. Use "campaign auth init" to add an instance.`,
       );
       return;
     }
     for (const [key, value] of Object.entries(this.instances)) {
-      console.log(`  - "${key}": ${value.user}@${value.host}`);
+      this.logger.info(`  - "${key}": ${value.user}@${value.host}`);
     }
   }
 }

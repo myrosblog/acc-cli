@@ -8,6 +8,7 @@ import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
 import { DomUtil, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
+import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 
@@ -52,8 +53,14 @@ class CampaignInstance {
   pullLogs = [];
 
   /**
+   * @type {AioLogger}
+   */
+  logger;
+
+  /**
    * Creates a new CampaignInstance.
    *
+   * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
    * @param {Object} [accConfig.*] - Schema-specific configurations
@@ -63,7 +70,8 @@ class CampaignInstance {
    *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
    * ]});
    */
-  constructor(client, accConfig, options) {
+  constructor(logger, client, accConfig, options) {
+    this.logger = logger;
     this.client = client;
     this.accConfig = accConfig;
     this.verbose = options.verbose;
@@ -108,7 +116,7 @@ class CampaignInstance {
    * await instance.pull('/path/to/download');
    */
   async pull(isPreview) {
-    this.log(
+    this.logger.info(
       `✨ ${isPreview ? "Previewing" : "Pulling"} data to ${this.downloadPath}`,
     );
     this.pullLogs = [];
@@ -119,11 +127,9 @@ class CampaignInstance {
       const pullLogsForThisSchema = [];
       // skip if metadata option was included and not matching
       if (this.metadata) {
-        const metadata = this.metadata.split(',').map(id => id.trim());
+        const metadata = this.metadata.split(",").map((id) => id.trim());
         if (!metadata.includes(schemaId)) {
-          if (this.verbose) {
-            this.log(`Skipping ${schemaId}`);
-          }
+          this.logger.verbose(`Skipping ${schemaId}`);
           continue;
         }
       }
@@ -140,11 +146,9 @@ class CampaignInstance {
         const pullLog = new CampaignPullLog(schemaConfig);
         this.pullLogs.push(pullLog);
         pullLogsForThisSchema.push(pullLog);
-        if (this.verbose) {
-          this.log(
-            `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
-          );
-        }
+        this.logger.verbose(
+          `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
+        );
         recordsExpectedTotal++;
         const elementsForThisBatch = await this.downloadAndParse(
           schemaConfig,
@@ -165,11 +169,9 @@ class CampaignInstance {
         `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
       );
       // display errors when verbose
-      if (this.verbose) {
-        const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
-        if (flatErrors.length > 0) {
-          this.log(flatErrors);
-        }
+      const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
+      if (flatErrors.length > 0) {
+        this.logger.verbose(flatErrors);
       }
     }
   }
@@ -216,11 +218,9 @@ class CampaignInstance {
       return elementsParsed;
     }
     elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
-    if (this.verbose) {
-      this.log(
-        `Downloaded XML Response with ${elementsParsed.length} children`,
-      );
-    }
+    this.logger.verbose(
+      `Downloaded XML Response with ${elementsParsed.length} children`,
+    );
     const filenamesForThisBatch = [];
     for (const element of elementsParsed) {
       pullLog.elements.push(element);
@@ -239,8 +239,8 @@ class CampaignInstance {
       }
     }
 
-    if (this.verbose && filenamesForThisBatch.length > 0) {
-      this.log(filenamesForThisBatch.join(", "));
+    if (filenamesForThisBatch.length > 0) {
+      this.logger.verbose(filenamesForThisBatch.join(", "));
     }
 
     return elementsParsed;
@@ -268,7 +268,6 @@ class CampaignInstance {
    * @return string filenameOnly
    */
   parse(childElement, schemaConfig, isPreview) {
-    // console.log(`>>> parse with isPreview:${isPreview}`);
     const { filename, decompose, excludeXPaths } = schemaConfig;
     const configAttributes = this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
 
@@ -338,15 +337,13 @@ class CampaignInstance {
             fs.outputFileSync(datapath, elementValue);
           }
           const decomposedFilenameOnly = path.basename(decomposedFilename);
-          if (this.verbose) {
-            this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
-          }
+          // if (this.verbose) {
+          //   this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
+          // }
           // empty element
           lastNode.textContent = "";
         } catch (err) {
-          if (this.verbose) {
-            this.log(`(⚠️ warning:parse ${err.message})`);
-          }
+          this.logger.verbose(`(⚠️ warning:parse ${err.message})`);
         }
       }
       // 2. save meta
@@ -377,14 +374,6 @@ class CampaignInstance {
       filename = filename.replace(`{${configAttribute}}`, value);
     }
     return filename;
-  }
-
-  log(text, newLine = true) {
-    if (newLine) {
-      console.log(text);
-    } else {
-      process.stdout.write(text);
-    }
   }
 }
 

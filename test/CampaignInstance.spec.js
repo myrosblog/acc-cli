@@ -6,8 +6,10 @@ import { dirname, join } from "path";
 import { expect } from "chai";
 import sinon from "sinon";
 import _ from "lodash";
-// acc sdk
+// sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
+import AioLogger from "@adobe/aio-lib-core-logging";
+const logger = AioLogger("CampaignAuth.spec");
 // helpers
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -69,6 +71,7 @@ describe("CampaignInstance", function () {
   describe("Private methods", () => {
     it("_getQueryDefForSchema where.condition.expr", () => {
       instance = new CampaignInstance(
+        logger,
         mockClient,
         configDefaultSimple,
         optionsSimple,
@@ -120,7 +123,12 @@ describe("CampaignInstance", function () {
         (x) => x.schemaId == "nms:deliveryMapping",
       );
       // init
-      instance = new CampaignInstance(mockClient, config, optionsSimple);
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
       logStub = sinon.stub(instance, "log"); // mock instance log
       adapterExecuteQueryStub = sinon.stub(
         instance,
@@ -160,7 +168,12 @@ describe("CampaignInstance", function () {
       );
       config.schemas[0].queryDef.lineCount = 2; // force lineCount to 2 to test batching on 5 elements
       // init
-      instance = new CampaignInstance(mockClient, config, optionsSimple);
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
       logStub = sinon.stub(instance, "log"); // mock instance log
       adapterExecuteQueryStub = sinon.stub(
         instance,
@@ -231,6 +244,7 @@ describe("CampaignInstance", function () {
     describe("should parse with simple config", () => {
       it("xtk:sql", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultSimple,
           optionsSimple,
@@ -258,6 +272,7 @@ describe("CampaignInstance", function () {
 
       it("nms:delivery", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultSimple,
           optionsSimple,
@@ -285,6 +300,7 @@ describe("CampaignInstance", function () {
 
       it("xtk:srcSchema", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultSimple,
           optionsSimple,
@@ -311,6 +327,7 @@ describe("CampaignInstance", function () {
     describe("should parse with full config", () => {
       it("xtk:sql (meta)", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultFull,
           optionsFull,
@@ -349,6 +366,7 @@ describe("CampaignInstance", function () {
 
       it("nms:delivery (meta)", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultFull,
           optionsFull,
@@ -399,6 +417,7 @@ describe("CampaignInstance", function () {
 
       it("nms:includeView (meta)", async () => {
         instance = new CampaignInstance(
+          logger,
           mockClient,
           configDefaultFull,
           optionsFull,

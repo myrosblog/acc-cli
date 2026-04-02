@@ -4,6 +4,8 @@ import path from "node:path";
 import Ajv from "ajv";
 import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// sdk
+import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import CampaignError from "./CampaignError.js";
 
@@ -24,15 +26,21 @@ class CampaignConfig {
   templateDir = path.join(__dirname, "templates");
 
   /**
+   * @type {AioLogger}
+   */
+  logger;
+
+  /**
    *
    * @param {*} defaultConfigPath
    */
-  constructor(defaultConfigPath) {
+  constructor(logger, defaultConfigPath) {
     if (!defaultConfigPath || typeof defaultConfigPath !== "string") {
       throw new CampaignError(
         "defaultConfigPath is required for new CampaignAuth().",
       );
     }
+    this.logger = logger;
     this.defaultConfigPath = defaultConfigPath;
   }
 
@@ -44,10 +52,10 @@ class CampaignConfig {
       configPath == this.defaultConfigPath &&
       !this.fileExists(this.defaultConfigPath)
     ) {
-      console.log(`🛠️ Config not found, initializing ${configPath}`);
+      this.logger.info(`🛠️ Config not found, initializing ${configPath}`);
       this.copyTemplateTo("acc.config.json", this.defaultConfigPath);
     } else {
-      console.log(`🛠️ Using config ${configPath}`);
+      this.logger.info(`🛠️ Using config ${configPath}`);
     }
     const configJson = JSON.parse(fs.readFileSync(configPath));
     this.schemas = configJson.schemas || [];
@@ -88,13 +96,16 @@ class CampaignConfig {
   /**
    * Controller for "acc instance template"
    * Currently only supports returning the content of the input file
-   * @returns 
+   * @returns
    */
   template() {
-    console.log(`📄 Returning template content for acc.config.json from ${this.templateDir}`);
+    this.logger.info(
+      `📄 Returning template content for acc.config.json from ${this.templateDir}`,
+    );
     const filename = "acc.config.json";
     const content = fs.readFileSync(path.join(this.templateDir, filename));
-    console.log(content.toString());}
+    this.logger.info(content.toString());
+  }
 }
 
 export default CampaignConfig;
