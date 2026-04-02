@@ -57,7 +57,7 @@
     },
     {
       "schemaId": "xtk:enum",
-      "filename": "/Administration/Platform/Enumerations/{@name}.xml",
+      "filename": "/Administration/Platform/Enumerations/{@name}.meta.xml",
       "queryDef": {
         "where": {
           "condition": [
