@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import sdk from "@adobe/acc-js-sdk";
 import AioLogger from "@adobe/aio-lib-core-logging";
 const logger = AioLogger("acc");
+import Config from "@adobe/aio-lib-core-config/src/Config.js";
+const aioConfig = new Config();
 // Campaign
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignError from "./CampaignError.js";
