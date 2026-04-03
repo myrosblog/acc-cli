@@ -1,4 +1,7 @@
-**acc, the command line interface for Adobe Campaign developers**
+![Downloads](https://img.shields.io/npm/dm/campaign-cli)
+![Code Coverage](https://img.shields.io/codecov/c/github/myrosblog/acc-cli)
+
+# acc, the command line interface for Adobe Campaign developers
 
 Save time, reduce risk, and improve code health with `acc`! This CLI tool helps you build on Adobe Campaign Classic platform. It quickly downloads Adobe Campaign **configuration, campaigns and online resources**. You can also use it to automate many common development tasks.
 
