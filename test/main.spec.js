@@ -3,11 +3,11 @@ import sinon from "sinon";
 
 describe("Main CLI", function () {
   describe("Error Handling", function () {
-    it("should handle CampaignError gracefully", function () {
+    it("should handle AccError gracefully", function () {
       // Import the main module to test the error handler
       import("../src/main.js")
         .then(() => {
-          // The main.js has a handleCampaignError function that should be tested
+          // The main.js has a handleAccError function that should be tested
           expect(true).to.be.true; // Placeholder - actual implementation would require more complex setup
         })
         .catch(() => {

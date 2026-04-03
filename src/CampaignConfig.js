@@ -7,7 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // sdk
 import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
-import CampaignError from "./CampaignError.js";
+import { codes } from "./helpers/AccErrors.js";
+const {
+  CONFIG_CONSTR_DEFAULT_PATH_MISSING,
+  CONFIG_INIT_CONFIG_PATH_MISSING,
+  CONFIG_VALIDATE_ERRORS,
+} = codes;
 
 class CampaignConfig {
   /**
@@ -33,12 +38,11 @@ class CampaignConfig {
   /**
    *
    * @param {*} defaultConfigPath
+   * @throws {CONFIG_CONSTR_DEFAULT_PATH_MISSING}
    */
   constructor(logger, defaultConfigPath) {
     if (!defaultConfigPath || typeof defaultConfigPath !== "string") {
-      throw new CampaignError(
-        "defaultConfigPath is required for new CampaignAuth().",
-      );
+      throw new CONFIG_CONSTR_DEFAULT_PATH_MISSING();
     }
     this.logger = logger;
     this.defaultConfigPath = defaultConfigPath;
@@ -46,7 +50,7 @@ class CampaignConfig {
 
   init(configPath) {
     if (!configPath) {
-      throw new CampaignError("configPath required for CampaignConfig.init");
+      throw new CONFIG_INIT_CONFIG_PATH_MISSING();
     }
     if (
       configPath == this.defaultConfigPath &&
@@ -63,7 +67,7 @@ class CampaignConfig {
   }
 
   /**
-   * @throws {CampaignError} when not valid
+   * @throws {CONFIG_VALIDATE_ERRORS} when not valid
    */
   validate() {
     const ajv = new Ajv();
@@ -74,9 +78,9 @@ class CampaignConfig {
     const validate = ajv.compile(validatorAccConfig);
     const isValid = validate(this);
     if (!isValid) {
-      throw new Error(
-        `Invalid config for "schemas": ${ajv.errorsText(validate.errors)}`,
-      );
+      throw new CONFIG_VALIDATE_ERRORS({
+        messageValues: [ajv.errorsText(validate.errors)],
+      });
     }
   }
 

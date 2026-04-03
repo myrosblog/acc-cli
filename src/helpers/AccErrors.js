@@ -1,0 +1,77 @@
+import { AioCoreSDKErrorWrapper } from "@adobe/aio-lib-core-errors";
+const { ErrorWrapper, createUpdater } = AioCoreSDKErrorWrapper;
+
+const codes = {};
+const messages = new Map();
+
+/**
+ * Create an Updater for the Error wrapper
+ */
+const Updater = createUpdater(codes, messages);
+
+/**
+ * Custom error
+ */
+const AccError = ErrorWrapper(
+  // The class name for your SDK Error. Your Error objects will be these objects
+  "AccError",
+  // The name of your SDK. This will be a property in your Error objects
+  "acc",
+  // the object returned from the CreateUpdater call above
+  Updater,
+  // the base class that your Error class is extending. AioCoreSDKError is the default
+  /* , AioCoreSDKError */
+);
+
+/**
+ * Provides a wrapper to easily create classes of a certain name, and values
+ * @param {} code
+ * @param {*} message
+ * @returns
+ */
+const E = (code, message) => {
+  messages.set(code, message);
+  return (...args) => new AccError(code, ...args);
+};
+
+// Define your error codes with the wrapper
+// E('UNKNOWN_THING_ID', 'There was a problem with that thing')
+// E('UNKNOWN_ORDER_ID', 'There was a problem with that order id: %s.')
+// AUTH
+E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize CampaignAuth.");
+E(
+  "AUTH_INIT_EXISTING_ALIAS",
+  "Instance with alias already exists. Use 'acc auth list' to see all configured instances.",
+);
+E(
+  "AUTH_LOGIN_ALIAS_MISSING",
+  "Instance with alias not found. Use 'acc auth list' to see all configured instances.",
+);
+E(
+  "AUTH_LOGIN_ALIAS_EMPTY",
+  "Login failed: alias empty. Use 'acc auth list' to see the path to the authentication file.",
+);
+E(
+  "AUTH_LOGIN_ALIAS_INVALID",
+  "Login failed: alias invalid. Use 'acc auth list' to see the path to the authentication file.",
+);
+E(
+  "AUTH_LOGIN_SDK_INIT_FAILED",
+  "Login failed: SDK initialization error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "AUTH_LOGIN_SDK_SERVERINFO_FAILED",
+  "Login failed: Getting server info error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+// CONFIG
+E(
+  "CONFIG_CONSTR_DEFAULT_PATH_MISSING",
+  "defaultConfigPath is required for new CampaignConfig().",
+);
+E(
+  "CONFIG_INIT_CONFIG_PATH_MISSING",
+  "configPath is required for CampaignConfig.init().",
+);
+E("CONFIG_VALIDATE_ERRORS", "Invalid config: %s");
+
+export { AccError, codes, messages };

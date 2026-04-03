@@ -6,7 +6,6 @@ chai.use(sinonChai);
 global.expect = chai.expect;
 
 // Import all test files
-import "./CampaignError.spec.js";
 import "./CampaignConfig.spec.js";
 import "./CampaignAuth.spec.js";
 import "./CampaignInstance.spec.js";

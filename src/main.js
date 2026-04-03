@@ -12,7 +12,7 @@ import Config from "@adobe/aio-lib-core-config/src/Config.js";
 const aioConfig = new Config();
 // Campaign
 import CampaignConfig from "./CampaignConfig.js";
-import CampaignError from "./CampaignError.js";
+import { AccError } from "./helpers/AccErrors.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignInstance from "./CampaignInstance.js";
 
@@ -62,7 +62,7 @@ program
         try {
           await auth.init(cliOptions);
         } catch (err) {
-          handleCampaignError(err, logger);
+          handleAccError(err, logger);
         }
       }),
   )
@@ -78,7 +78,7 @@ program
         try {
           await auth.login(cliOptions);
         } catch (err) {
-          handleCampaignError(err);
+          handleAccError(err);
         }
       }),
   )
@@ -88,7 +88,7 @@ program
       try {
         auth.list();
       } catch (err) {
-        handleCampaignError(err);
+        handleAccError(err);
       }
     }),
   )
@@ -98,7 +98,7 @@ program
       try {
         await auth.ip();
       } catch (err) {
-        handleCampaignError(err);
+        handleAccError(err);
       }
     }),
   );
@@ -143,7 +143,7 @@ program
         try {
           await pull(cliOptions, true);
         } catch (err) {
-          handleCampaignError(err);
+          handleAccError(err);
         }
       }),
   )
@@ -178,7 +178,7 @@ program
         try {
           await pull(cliOptions, false);
         } catch (err) {
-          handleCampaignError(err);
+          handleAccError(err);
         }
       }),
   );
@@ -194,7 +194,7 @@ async function pull(cliOptions, isPreview) {
 
 /**
  * Handles errors from Campaign CLI operations.
- * Distinguishes between CampaignError and other errors for appropriate handling.
+ * Distinguishes between AccError and other errors for appropriate handling.
  *
  * @param {Error} err - The error to handle
  * @returns {void}
@@ -203,12 +203,12 @@ async function pull(cliOptions, isPreview) {
  * try {
  *   await auth.login({ alias: 'prod' });
  * } catch (err) {
- *   handleCampaignError(err);
+ *   handleAccError(err);
  * }
  */
-function handleCampaignError(err, logger) {
-  if (err instanceof CampaignError) {
-    logger.error(`${err.message}`);
+function handleAccError(err, logger) {
+  if (err instanceof AccError) {
+    logger.error(err.message);
     logger.debug(err);
   } else {
     throw err;

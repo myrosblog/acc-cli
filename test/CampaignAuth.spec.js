@@ -2,11 +2,20 @@
 import { expect } from "chai";
 import sinon from "sinon";
 // sdk
-import AioLogger from '@adobe/aio-lib-core-logging';
-const logger = AioLogger('CampaignAuth.spec');
+import AioLogger from "@adobe/aio-lib-core-logging";
+const logger = AioLogger("CampaignAuth.spec");
 // acc
 import CampaignAuth from "../src/CampaignAuth.js";
-import CampaignError from "../src/CampaignError.js";
+import { codes } from "../src/helpers/AccErrors.js";
+const {
+  AUTH_CONSTR_SDK_MISSING,
+  AUTH_INIT_EXISTING_ALIAS,
+  AUTH_LOGIN_ALIAS_MISSING,
+  AUTH_LOGIN_ALIAS_EMPTY,
+  AUTH_LOGIN_ALIAS_INVALID,
+  AUTH_LOGIN_SDK_INIT_FAILED,
+  AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+} = codes;
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 
 describe("CampaignAuth", function () {
@@ -65,8 +74,10 @@ describe("CampaignAuth", function () {
       expect(auth.instanceIds).to.be.an("array");
     });
 
-    it("should throw CampaignError when SDK is missing", function () {
-      expect(() => new CampaignAuth(logger, null, mockConfig)).to.throw(CampaignError);
+    it("should throw AUTH_CONSTR_SDK_MISSING when SDK is missing", function () {
+      expect(() => new CampaignAuth(logger, null, mockConfig)).to.throw(
+        AUTH_CONSTR_SDK_MISSING,
+      );
     });
   });
 
@@ -113,7 +124,7 @@ describe("CampaignAuth", function () {
       });
     });
 
-    it("should throw CampaignError when instance already exists", async function () {
+    it("should throw AUTH_INIT_EXISTING_ALIAS when instance already exists", async function () {
       auth.instances = { test: {} };
       auth.instanceIds = ["test"];
 
@@ -124,13 +135,9 @@ describe("CampaignAuth", function () {
         password: "testpass",
       };
 
-      try {
-        await auth.init(options);
-        expect.fail("Should have thrown CampaignError");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CampaignError);
-        expect(err.message).to.include("already exists");
-      }
+      await expect(auth.init(options)).to.be.rejectedWith(
+        AUTH_INIT_EXISTING_ALIAS,
+      );
     });
   });
 
@@ -148,19 +155,15 @@ describe("CampaignAuth", function () {
       expect(mockSdk.init.calledOnce).to.be.true;
     });
 
-    it("should throw CampaignError when instance doesn't exist", async function () {
+    it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist", async function () {
       mockConfig.get.returns(null);
 
-      try {
-        await auth.login({ alias: "nonexistent" });
-        expect.fail("Should have thrown CampaignError");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CampaignError);
-        expect(err.message).to.include("empty");
-      }
+      await expect(auth.login({ alias: "nonexistent" })).to.be.rejectedWith(
+        AUTH_LOGIN_ALIAS_MISSING,
+      );
     });
 
-    it("should throw CampaignError when server info is unavailable", async function () {
+    it("should throw AUTH_LOGIN_SDK_SERVERINFO_FAILED when server info is unavailable", async function () {
       mockConfig.get.returns({
         host: "http://localhost",
         user: "testuser",
@@ -172,13 +175,9 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      try {
-        await auth.login({ alias: "test" });
-        expect.fail("Should have thrown CampaignError");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CampaignError);
-        expect(err.message).to.include("Unable to get server info");
-      }
+      await expect(auth.login({ alias: "test" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+      );
     });
 
     it("should prepare connection with sdkOptions", async () => {
@@ -189,7 +188,9 @@ describe("CampaignAuth", function () {
       actual = auth._prepareConnectionParameters("host", "user", "pass", {});
       expect(actual).to.be.an.instanceof(ConnectionParameters);
       expect(actual._options.traceAPICalls).to.equal(false);
-      actual = auth._prepareConnectionParameters("host", "user", "pass", {traceAPICalls:true});
+      actual = auth._prepareConnectionParameters("host", "user", "pass", {
+        traceAPICalls: true,
+      });
       expect(actual).to.be.an.instanceof(ConnectionParameters);
       expect(actual._options.traceAPICalls).to.equal(true);
     });
@@ -226,7 +227,7 @@ describe("CampaignAuth", function () {
         countryName: "France",
         stateProvCode: "ABC",
         stateProv: "Abc",
-        city: "Def"
+        city: "Def",
       });
     });
   });
