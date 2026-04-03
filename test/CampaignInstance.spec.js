@@ -44,7 +44,6 @@ describe("CampaignInstance", function () {
     optionsSimple,
     pathFull,
     optionsFull,
-    logStub,
     adapterExecuteQueryStub;
 
   beforeEach(function () {
@@ -129,7 +128,6 @@ describe("CampaignInstance", function () {
         config,
         optionsSimple,
       );
-      logStub = sinon.stub(instance, "log"); // mock instance log
       adapterExecuteQueryStub = sinon.stub(
         instance,
         "adapterCreateAndExecuteQuery",
@@ -174,7 +172,6 @@ describe("CampaignInstance", function () {
         config,
         optionsSimple,
       );
-      logStub = sinon.stub(instance, "log"); // mock instance log
       adapterExecuteQueryStub = sinon.stub(
         instance,
         "adapterCreateAndExecuteQuery",
