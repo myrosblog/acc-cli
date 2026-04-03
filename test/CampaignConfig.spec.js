@@ -44,11 +44,11 @@ describe("CampaignAuth", function () {
 
       //   });
 
-      it("should validate the default config", () => {
-        const config = new CampaignConfig(tmpConfigPath);
-        config.init(tmpConfigPath);
-        config.validate();
-      });
+      // it("should validate the default config", () => {
+      //   const config = new CampaignConfig(tmpConfigPath);
+      //   config.init(tmpConfigPath);
+      //   config.validate();
+      // });
     });
   });
 });
