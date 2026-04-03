@@ -4,6 +4,7 @@ import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import CampaignError from "./CampaignError.js";
 import SdkAdapter from "./adapters/SdkAdapter.js";
+import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
@@ -13,6 +14,11 @@ import SdkAdapter from "./adapters/SdkAdapter.js";
  * @classdesc Main class for interacting with ACC instances
  */
 class CampaignAuth {
+  /**
+   * @type {string}
+   */
+  configKey = "acc.auth";
+
   /**
    * Configuration key for storing instances
    * @type {string}
@@ -31,26 +37,47 @@ class CampaignAuth {
   logger;
 
   /**
+   * @param {AioConfigAdapter} config Adobe I/O Core Config API for accessing configuration
+   */
+  config;
+
+  /**
    * Creates a new CampaignAuth instance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Object} sdk - Raw ACC JS SDK instance
-   * @param {Configstore} auth - Configstore instance for persistent storage
+   * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
+   * @param {Configstore} configStoreAuth - Configstore instance for authentication
    * @throws {CampaignError} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, auth) {
-    if (!sdk || !auth) {
-      throw new CampaignError(
-        "SDK and Configstore instances are required to initialize CampaignAuth.",
+  constructor(logger, sdk, config, configStoreAuth) {
+    if (!sdk) {
+      throw new CampaignError("SDK required to initialize CampaignAuth.");
+    }
+    this.config = new AioConfigAdapter(config);
+    this.config.reload();
+    // this.condig;
+    // migration since 0.10: if .aio doesn't exist and configStore exists: migrate configStore to .aio
+    // @todo remove for 1.0
+    if (
+      configStoreAuth &&
+      configStoreAuth.get(this.INSTANCES_KEY) &&
+      !this.config.get(this.INSTANCES_KEY)
+    ) {
+      logger.info(`acc 0.10.0 migrating authentication Adobe I/O (.aio)`);
+      this.config.set(
+        `${this.configKey}.${this.INSTANCES_KEY}`,
+        configStoreAuth.get(this.INSTANCES_KEY),
       );
+      configStoreAuth.delete(this.INSTANCES_KEY);
     }
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
-    this.auth = auth;
-    this.instances = auth.get(this.INSTANCES_KEY) || {};
+    this.instances =
+      this.config.get(`${this.configKey}.${this.INSTANCES_KEY}`) || {};
     this.instanceIds = Object.keys(this.instances);
   }
 
@@ -87,7 +114,7 @@ class CampaignAuth {
       );
     }
     const { alias, host, user, pass } = authOptions;
-    this.auth.set(`${this.INSTANCES_KEY}.${alias}`, {
+    this.config.set(`${this.configKey}.${this.INSTANCES_KEY}.${alias}`, {
       host,
       user,
       password: pass,
@@ -111,7 +138,9 @@ class CampaignAuth {
   async login(cliOptions, sdkOptions) {
     let auth;
     try {
-      auth = this.auth.get(`instances.${cliOptions.alias}`);
+      auth = this.config.get(
+        `${this.configKey}.${this.INSTANCES_KEY}.${cliOptions.alias}`,
+      );
     } catch (error) {
       this.logger.verbose(error);
       throw new CampaignError(
@@ -168,7 +197,7 @@ class CampaignAuth {
    * auth.list(); // Lists all configured instances
    */
   list() {
-    this.logger.info(`📚 Reading from authentication file ${this.auth.path} `);
+    this.logger.info(`📚 Reading from authentication file ${this.config.global().file} `);
     this.logger.info(`📚 Listing ${this.instanceIds.length} instance(s)`);
     if (this.instanceIds.length === 0) {
       this.logger.info(

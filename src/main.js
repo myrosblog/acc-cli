@@ -1,8 +1,8 @@
 // packages
 import { program, Command } from "commander";
-import Configstore from "configstore";
 import fs from "fs-extra";
 import path from "node:path";
+import Configstore from "configstore";
 import { fileURLToPath } from "node:url";
 // sdk
 import sdk from "@adobe/acc-js-sdk";
@@ -22,7 +22,7 @@ const packageJsonPath = path.join(dirPackage, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
 const authFile = new Configstore("campaign-cli.auth");
-const auth = new CampaignAuth(logger, sdk, authFile);
+const auth = new CampaignAuth(logger, sdk, aioConfig, authFile);
 const defaultDistRoot = path.join(process.cwd());
 const defaultConfigPath = path.join(process.cwd(), "acc.config.json"); // default config path in current working directory, if not specified
 const config = new CampaignConfig(logger, defaultConfigPath);
