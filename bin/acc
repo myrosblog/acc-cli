@@ -14,6 +14,7 @@ const mainUrl = pathToFileURL(mainPath).href; // Convertit en URL valide pour ES
 try {
   await import(mainUrl);
 } catch (error) {
-  console.error("Failed to load acc:", error.message);
+  console.error("acc top-level error:", error.message);
+  console.error(error);
   process.exit(1);
 }
