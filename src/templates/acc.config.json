@@ -232,6 +232,17 @@
     {
       "schemaId": "xtk:workflow",
       "filename": "/Administration/Production/Technical workflows/{@internalName}.meta.xml",
+      "excludeXPaths": [
+        "@errorCount",
+        "@eventCount",
+        "@failed",
+        "@lastModified",
+        "@nextProcessingDate",
+        "@port",
+        "@processDate",
+        "@taskCount",
+        "visualState"
+      ],
       "queryDef": {
         "where": {
           "condition": [
