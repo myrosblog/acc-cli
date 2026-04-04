@@ -292,8 +292,8 @@
       "schemaId": "nms:delivery",
       "filename": "/Resources/Templates/Delivery templates/{@internalName}.meta.xml",
       "decompose": {
-        "content/html/source": "/Campaign Management/Deliveries/{@internalName}.html",
-        "content/text/source": "/Campaign Management/Deliveries/{@internalName}.txt"
+        "content/html/source": "/Resources/Templates/Delivery templates/{@internalName}.html",
+        "content/text/source": "/Resources/Templates/Delivery templates/{@internalName}.txt"
       },
       "excludeXPaths": ["@cryptedId"],
       "queryDef": {
