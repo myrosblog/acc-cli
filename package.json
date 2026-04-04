@@ -22,8 +22,8 @@
   ],
   "scripts": {
     "init": "node src/main.js",
-    "test": "AIO_LOG_LEVEL=OFF c8 mocha test/index.js",
-    "jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+    "test": "AIO_LOG_LEVEL=OFF mocha test/index.js",
+    "coverage": "c8 --reporter=lcov --reporter=text npm test"
   },
   "type": "module",
   "dependencies": {
@@ -44,7 +44,6 @@
     "c8": "^11.0.0",
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
-    "jest": "^30.3.0",
     "mocha": "^11.3.0",
     "sinon": "^21.0.1",
     "sinon-chai": "^4.0.1",
