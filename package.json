@@ -21,7 +21,6 @@
     "src/"
   ],
   "scripts": {
-    "init": "node src/main.js",
     "test": "AIO_LOG_LEVEL=OFF mocha test/index.js",
     "coverage": "c8 --reporter=lcov --reporter=text npm test"
   },
