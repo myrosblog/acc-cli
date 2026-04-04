@@ -12,7 +12,6 @@ import Config from "@adobe/aio-lib-core-config/src/Config.js";
 const aioConfig = new Config();
 // Campaign
 import CampaignConfig from "./CampaignConfig.js";
-import { AccError } from "./helpers/AccErrors.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignInstance from "./CampaignInstance.js";
 
@@ -78,7 +77,7 @@ program
         try {
           await auth.login(cliOptions);
         } catch (err) {
-          handleAccError(err);
+          handleAccError(err, logger);
         }
       }),
   )
@@ -88,7 +87,7 @@ program
       try {
         auth.list();
       } catch (err) {
-        handleAccError(err);
+        handleAccError(err, logger);
       }
     }),
   )
@@ -98,7 +97,7 @@ program
       try {
         await auth.ip();
       } catch (err) {
-        handleAccError(err);
+        handleAccError(err, logger);
       }
     }),
   );
@@ -143,7 +142,7 @@ program
         try {
           await pull(cliOptions, true);
         } catch (err) {
-          handleAccError(err);
+          handleAccError(err, logger);
         }
       }),
   )
@@ -178,7 +177,7 @@ program
         try {
           await pull(cliOptions, false);
         } catch (err) {
-          handleAccError(err);
+          handleAccError(err, logger);
         }
       }),
   );
@@ -203,13 +202,17 @@ async function pull(cliOptions, isPreview) {
  * try {
  *   await auth.login({ alias: 'prod' });
  * } catch (err) {
- *   handleAccError(err);
+ *   handleAccError(err, logger);
  * }
  */
 function handleAccError(err, logger) {
-  if (err instanceof AccError) {
+  if (err && err.sdk === "acc") {
     logger.error(err.message);
-    logger.debug(err);
+    logger.error({
+      code: err.code,
+      details: err.sdkDetails,
+      stack: err.stack,
+    });
   } else {
     throw err;
   }
