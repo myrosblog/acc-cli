@@ -12,7 +12,7 @@ const Updater = createUpdater(codes, messages);
 /**
  * Custom error
  */
-const AccError = ErrorWrapper(
+const E = ErrorWrapper(
   // The class name for your SDK Error. Your Error objects will be these objects
   "AccError",
   // The name of your SDK. This will be a property in your Error objects
@@ -23,16 +23,22 @@ const AccError = ErrorWrapper(
   /* , AioCoreSDKError */
 );
 
-/**
- * Provides a wrapper to easily create classes of a certain name, and values
- * @param {} code
- * @param {*} message
- * @returns
- */
-const E = (code, message) => {
-  messages.set(code, message);
-  return (...args) => new AccError(code, ...args);
-};
+function wrapSdkError(error, ErrorClass, context = {}) {
+  return new ErrorClass({
+    sdkDetails: {
+      ...context,
+
+      // extraction CampaignException
+      statusCode: error?.statusCode,
+      faultCode: error?.faultCode,
+      errorCode: error?.errorCode,
+      faultString: error?.faultString,
+      method: error?.methodCall?.methodName,
+      urn: error?.methodCall?.urn,
+    },
+    cause: error,
+  });
+}
 
 // Define your error codes with the wrapper
 // E('UNKNOWN_THING_ID', 'There was a problem with that thing')
@@ -56,12 +62,24 @@ E(
   "Login failed: alias invalid. Use 'acc auth list' to see the path to the authentication file.",
 );
 E(
+  "AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED",
+  "Login failed: Invalid connection parameters. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
   "AUTH_LOGIN_SDK_INIT_FAILED",
-  "Login failed: SDK initialization error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  "Login failed: SDK.init error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "AUTH_LOGIN_SDK_LOGON_FAILED",
+  "Login failed: SDK.logon error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
 E(
   "AUTH_LOGIN_SDK_SERVERINFO_FAILED",
   "Login failed: Getting server info error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "AUTH_LOGIN_SDK_SERVERINFO_EMPTY",
+  "Login failed: Getting empty server info. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
 // CONFIG
 E(
@@ -74,4 +92,4 @@ E(
 );
 E("CONFIG_VALIDATE_ERRORS", "Invalid config: %s");
 
-export { AccError, codes, messages };
+export { codes, messages, wrapSdkError };

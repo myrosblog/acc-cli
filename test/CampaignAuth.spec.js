@@ -13,10 +13,14 @@ const {
   AUTH_LOGIN_ALIAS_MISSING,
   AUTH_LOGIN_ALIAS_EMPTY,
   AUTH_LOGIN_ALIAS_INVALID,
+  AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED,
   AUTH_LOGIN_SDK_INIT_FAILED,
+  AUTH_LOGIN_SDK_LOGON_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+  AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
 } = codes;
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
+import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 
 describe("CampaignAuth", function () {
   let mockSdk, mockConfig;
@@ -82,46 +86,50 @@ describe("CampaignAuth", function () {
   });
 
   describe("init", function () {
-    it.skip("should add new instance and login", async function () {
-      // Mock config.get to return empty for initial check, then return the instance for login
-      let callCount = 0;
-      mockConfig.get.callsFake((key) => {
-        if (key === "instances") {
-          // This is the first call checking if instances exist
-          return {};
-        } else if (key === "instances.test") {
-          // This is the second call from login() getting instance data
-          return {
-            host: "http://localhost",
-            user: "testuser",
-            password: "testpass",
-          };
-        }
-        return undefined;
-      });
+    it("should add new instance when config.instances is null", async function () {
+      let fakeInstances = null;
 
-      mockConfig.set.callsFake((key, value) => {
-        // Update the instances object to simulate config storage
-        auth.instances = { test: value };
-        auth.instanceIds = Object.keys(auth.instances);
-      });
+      mockConfig.get.callsFake(() => fakeInstances);
 
-      const options = {
-        alias: "test",
+      mockConfig.set.callsFake(() => {});
+
+      const authOptions = {
+        alias: "instance1",
         host: "http://localhost",
         user: "testuser",
         pass: "testpass",
       };
+      const sdkOptions = null;
+      const cliOptions = null;
 
-      await auth.init(options);
+      sinon.stub(auth, "login").resolves();
 
+      await auth.init(authOptions, sdkOptions, cliOptions);
+
+      // check config.set()
       expect(mockConfig.set.calledOnce).to.be.true;
-      expect(mockConfig.set.firstCall.args[0]).to.equal("instances.test");
+      expect(mockConfig.set.firstCall.args[0]).to.equal(
+        `acc.auth.instances.instance1`,
+      );
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
         user: "testuser",
         password: "testpass",
       });
+      // check instances
+      expect(auth.instances).to.deep.equal({
+        instance1: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      expect(auth.instanceIds).to.deep.equal(["instance1"]);
+      // check login()
+      expect(auth.login.calledOnce).to.be.true;
+      expect(auth.login.firstCall.args[0]).to.equal(authOptions);
+      expect(auth.login.firstCall.args[1]).to.equal(sdkOptions);
+      expect(auth.login.firstCall.args[2]).to.equal(cliOptions);
     });
 
     it("should throw AUTH_INIT_EXISTING_ALIAS when instance already exists", async function () {
@@ -142,32 +150,154 @@ describe("CampaignAuth", function () {
   });
 
   describe("login", function () {
-    it("should login successfully with valid credentials", async function () {
-      mockConfig.get.returns({
-        host: "http://localhost",
-        user: "testuser",
-        password: "testpass",
-      });
-
-      const client = await auth.login({ alias: "test" });
-
-      expect(client).to.exist;
-      expect(mockSdk.init.calledOnce).to.be.true;
+    it("should throw AUTH_LOGIN_ALIAS_MISSING when config cannot be parsed", async function () {
+      mockConfig.get.threw(new Error("Generic error at parsing"));
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(
+        auth.login({ alias: ["instance-array"] }),
+      ).to.be.rejectedWith(AUTH_LOGIN_ALIAS_MISSING);
     });
 
-    it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist", async function () {
-      mockConfig.get.returns(null);
-
-      await expect(auth.login({ alias: "nonexistent" })).to.be.rejectedWith(
+    it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist with empty config", async function () {
+      mockConfig.get.returns({});
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "empty-config" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist in config", async function () {
+      mockConfig.get.returns({ existingAlias: {} });
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "missingAlias" })).to.be.rejectedWith(
+        AUTH_LOGIN_ALIAS_MISSING,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_ALIAS_EMPTY when config has null values", async function () {
+      mockConfig.get.returns({ existingAlias: null });
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "existingAlias" })).to.be.rejectedWith(
+        AUTH_LOGIN_ALIAS_EMPTY,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_ALIAS_INVALID when instance doesn't exist in config", async function () {
+      mockConfig.get.returns({ instance32: {} });
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "instance32" })).to.be.rejectedWith(
+        AUTH_LOGIN_ALIAS_INVALID,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED when invalid sdkOptions", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      // @see https://github.com/adobe/acc-js-sdk/blob/fc2c447d/test/client.test.js#L49-L54
+      const err = AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED;
+      await expect(auth.login({ alias: "local" }, true)).to.be.rejectedWith(
+        err,
+      );
+      await expect(auth.login({ alias: "local" }, false)).to.be.rejectedWith(
+        err,
+      );
+      await expect(
+        auth.login({ alias: "local" }, "BadgerFish"),
+      ).to.be.rejectedWith(err);
+      await expect(
+        auth.login({ alias: "local" }, { representation: "Hello" }),
+      ).to.be.rejectedWith(err);
+    });
+
+    it("should throw AUTH_LOGIN_SDK_INIT_FAILED when init fails", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+
+      mockSdk.init.rejects(
+        new CampaignException(undefined, 400, 16384, `SDK-999999 sdk.init()`),
+      );
+
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_INIT_FAILED,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_SDK_LOGON_FAILED when init fails", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+
+      mockSdk.init.resolves({
+        logon: sinon
+          .stub()
+          .threw(
+            new CampaignException(
+              undefined,
+              400,
+              16384,
+              `SDK-999999 client.logon()`,
+            ),
+          ),
+      });
+
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_LOGON_FAILED,
       );
     });
 
     it("should throw AUTH_LOGIN_SDK_SERVERINFO_FAILED when server info is unavailable", async function () {
       mockConfig.get.returns({
-        host: "http://localhost",
-        user: "testuser",
-        password: "testpass",
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+
+      mockSdk.init.resolves({
+        logon: sinon.stub().resolves(),
+        getSessionInfo: sinon
+          .stub()
+          .threw(
+            new CampaignException(
+              undefined,
+              400,
+              16384,
+              `SDK-999999 client.getSessionInfo()`,
+            ),
+          ),
+      });
+
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_SDK_SERVERINFO_EMPTY when server info is unavailable", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
       });
 
       mockSdk.init.resolves({
@@ -175,11 +305,30 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      await expect(auth.login({ alias: "test" })).to.be.rejectedWith(
-        AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
       );
     });
 
+    it("should login successfully and return client", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+
+      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      const client = await auth.login({ alias: "local" });
+
+      expect(client).to.exist;
+      expect(mockSdk.init.calledOnce).to.be.true;
+    });
+  });
+
+  describe("private methods", () => {
     it("should prepare connection with sdkOptions", async () => {
       let actual;
       actual = auth._prepareConnectionParameters("host", "user", "pass", null);

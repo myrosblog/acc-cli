@@ -2,15 +2,18 @@
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
-import { codes } from "./helpers/AccErrors.js";
+import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
   AUTH_LOGIN_ALIAS_MISSING,
   AUTH_LOGIN_ALIAS_EMPTY,
   AUTH_LOGIN_ALIAS_INVALID,
+  AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED,
   AUTH_LOGIN_SDK_INIT_FAILED,
+  AUTH_LOGIN_SDK_LOGON_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
+  AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
@@ -120,11 +123,14 @@ class CampaignAuth {
       throw new AUTH_INIT_EXISTING_ALIAS();
     }
     const { alias, host, user, pass } = authOptions;
-    this.config.set(`${this.configKey}.${this.INSTANCES_KEY}.${alias}`, {
+    const storedInstance = {
       host,
       user,
       password: pass,
-    });
+    };
+    this.config.set(`${this.configKey}.${this.INSTANCES_KEY}.${alias}`, storedInstance);
+    this.instances[alias] = storedInstance;
+    this.instanceIds = Object.keys(this.instances);
     this.logger.info(`✅ Instance ${alias} added successfully.`);
     return this.login(authOptions, sdkOptions, cliOptions);
   }
@@ -143,13 +149,10 @@ class CampaignAuth {
    */
   async login(cliOptions, sdkOptions) {
     let auth;
-    try {
-      auth = this.config.get(
-        `${this.configKey}.${this.INSTANCES_KEY}.${cliOptions.alias}`,
-      );
-    } catch (error) {
+    if (!(cliOptions.alias in this.instances)) {
       throw new AUTH_LOGIN_ALIAS_MISSING();
     }
+    auth = this.instances[cliOptions.alias];
     if (!auth) {
       throw new AUTH_LOGIN_ALIAS_EMPTY();
     }
@@ -159,22 +162,35 @@ class CampaignAuth {
     }
     this.logger.info(`↔️ Connecting ${user}@${host}...`);
     this.logger.verbose(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
-    this.connectionParameters = this._prepareConnectionParameters(
-      host,
-      user,
-      password,
-      sdkOptions,
-    );
+    try {
+      this.connectionParameters = this._prepareConnectionParameters(
+        host,
+        user,
+        password,
+        sdkOptions,
+      );
+    } catch (error) {
+      throw wrapSdkError(error, AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED);
+    }
     let client;
     try {
       client = await this.sdk.init(this.connectionParameters);
     } catch (error) {
-      throw new AUTH_LOGIN_SDK_INIT_FAILED();
+      throw wrapSdkError(error, AUTH_LOGIN_SDK_INIT_FAILED);
     }
-    await client.logon();
-    const serverInfo = client.getSessionInfo().serverInfo;
+    try {
+      await client.logon();
+    } catch (error) {
+      throw wrapSdkError(error, AUTH_LOGIN_SDK_LOGON_FAILED);
+    }
+    let serverInfo;
+    try {
+      serverInfo = client.getSessionInfo().serverInfo;
+    } catch (error) {
+      throw wrapSdkError(error, AUTH_LOGIN_SDK_SERVERINFO_FAILED);
+    }
     if (!serverInfo) {
-      throw new AUTH_LOGIN_SDK_SERVERINFO_FAILED();
+      throw new AUTH_LOGIN_SDK_SERVERINFO_EMPTY();
     }
     this.logger.info(
       `✅ Logged in to ${serverInfo.instanceName} (${serverInfo.releaseName} build ${serverInfo.buildNumber}) successfully.`,
