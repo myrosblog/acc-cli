@@ -7,7 +7,12 @@ import ora from "ora";
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
 import { DomUtil, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
-import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
+import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+const {
+  INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
+  INSTANCE_PULL_SDK_SELECTALL_FAILED,
+  INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+} = codes;
 import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
@@ -162,6 +167,9 @@ class CampaignInstance {
         startLine += lineCount;
         recordsParsedTotal += recordsLengthOfThisBatch;
         pullLog.endTime = new Date();
+        // debug pullLog
+        this.logger.debug(`Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`);
+        this.logger.debug(pullLog);
       } while (recordsLengthOfThisBatch >= lineCount);
       const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;
       const errorMsg = errorCount > 0 ? `(⚠️ ${errorCount} errors)` : "";
@@ -171,7 +179,8 @@ class CampaignInstance {
       // display errors when verbose
       const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
       if (flatErrors.length > 0) {
-        this.logger.verbose(flatErrors);
+        this.logger.verbose(`⚠️ Listing errors for ${schemaId}:`);
+        this.logger.verbose(flatErrors.join("\n"));
       }
     }
   }
@@ -204,20 +213,20 @@ class CampaignInstance {
       startLine: startLine,
       lineCount: lineCount,
     };
-    const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
-    pullLog.queryDef = queryDef;
-    const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
-    pullLog.queryDefXml = queryDefXml;
 
     let elementDownloaded;
     let elementsParsed = [];
     try {
+      const queryDef = this._getQueryDefForSchema(schemaConfig, baseQueryDef);
+      pullLog.queryDef = queryDef;
+      const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
+      pullLog.queryDefXml = queryDefXml;
       elementDownloaded = await this.adapterCreateAndExecuteQuery(queryDefXml); // Element, <srcSchema-collection>
+      elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
     } catch (err) {
       pullLog.errors.push(err);
       return elementsParsed;
     }
-    elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
     this.logger.verbose(
       `Downloaded XML Response with ${elementsParsed.length} children`,
     );
@@ -238,7 +247,7 @@ class CampaignInstance {
         pullLog.errors.push(err);
       }
     }
-
+    // verbose filenames
     if (filenamesForThisBatch.length > 0) {
       this.logger.verbose(filenamesForThisBatch.join(", "));
     }
@@ -255,9 +264,22 @@ class CampaignInstance {
    * @throws {CampaignException}
    */
   async adapterCreateAndExecuteQuery(queryDefXml) {
-    const query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
-    await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
-    return query.executeQuery(); // Element <srcSchema></srcSchema><srcSchema></srcSchema>...
+    let query;
+    try {
+      query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_PULL_SDK_CREATEQUERY_FAILED);
+    }
+    try {
+      await query.selectAll(false); // @see https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_PULL_SDK_SELECTALL_FAILED);
+    }
+    try {
+      return await query.executeQuery(); // Element <srcSchema></srcSchema><srcSchema></srcSchema>...
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED);
+    }
   }
 
   /**

@@ -40,9 +40,6 @@ function wrapSdkError(error, ErrorClass, context = {}) {
   });
 }
 
-// Define your error codes with the wrapper
-// E('UNKNOWN_THING_ID', 'There was a problem with that thing')
-// E('UNKNOWN_ORDER_ID', 'There was a problem with that order id: %s.')
 // AUTH
 E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize CampaignAuth.");
 E(
@@ -81,6 +78,7 @@ E(
   "AUTH_LOGIN_SDK_SERVERINFO_EMPTY",
   "Login failed: Getting empty server info. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+
 // CONFIG
 E(
   "CONFIG_CONSTR_DEFAULT_PATH_MISSING",
@@ -91,5 +89,23 @@ E(
   "configPath is required for CampaignConfig.init().",
 );
 E("CONFIG_VALIDATE_ERRORS", "Invalid config: %s");
+
+// INSTANCE
+E(
+  "INSTANCE_PULL_SDK_XMLFROMJSON_FAILED",
+  "Pull failed: unable to convert the JSON queryDef to XML. Review the queryDef in the pull logs with AIO_LOG_LEVEL=debug.",
+);
+E(
+  "INSTANCE_PULL_SDK_CREATEQUERY_FAILED",
+  "Pull failed: unable to create SDK query. Review the queryDef in the pull logs with AIO_LOG_LEVEL=debug.",
+);
+E(
+  "INSTANCE_PULL_SDK_SELECTALL_FAILED",
+  "Pull failed: unable to select all fields with SDK query. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED",
+  "Pull failed: unable to execute SDK query. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
 
 export { codes, messages, wrapSdkError };
