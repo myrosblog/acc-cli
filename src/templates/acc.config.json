@@ -45,6 +45,13 @@
       }
     },
     {
+      "schemaId": "nms:stock",
+      "filename": "/Administration/Campaign Management/Stocks/{@name}.meta.xml",
+      "queryDef": {
+        "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
+      }
+    },
+    {
       "schemaId": "xtk:olapCube",
       "filename": "/Administration/Cubes/{@name}.meta.xml",
       "queryDef": {
