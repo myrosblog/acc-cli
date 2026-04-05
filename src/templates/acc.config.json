@@ -11,6 +11,16 @@
       }
     },
     {
+      "schemaId": "xtk:operator",
+      "filename": "/Administration/Access Management/Named rights/{@name}.meta.xml",
+      "excludeXPaths": [
+        "access/@password"
+      ],
+      "queryDef": {
+        "where": { "condition": [{ "expr": "@type = 2" }] }
+      }
+    },
+    {
       "schemaId": "nms:deliveryMapping",
       "filename": "/Administration/Campaign Management/Target mappings/{@name}.meta.xml",
       "queryDef": {
