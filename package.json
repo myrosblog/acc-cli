@@ -26,7 +26,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@adobe/acc-js-sdk": "^1.1.61",
+    "@adobe/acc-js-sdk": "^1.2",
     "@adobe/aio-lib-core-config": "^5.0.1",
     "@adobe/aio-lib-core-errors": "^4.0.1",
     "@adobe/aio-lib-core-logging": "^3.0.2",
