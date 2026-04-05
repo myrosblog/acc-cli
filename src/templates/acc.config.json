@@ -58,6 +58,10 @@
     {
       "schemaId": "xtk:enum",
       "filename": "/Administration/Platform/Enumerations/{@name}.meta.xml",
+      "excludeXPaths": [
+        "@lastAliasCleansing",
+        "@lastModified"
+      ],
       "queryDef": {
         "where": {
           "condition": [
