@@ -267,6 +267,13 @@
       }
     },
     {
+      "schemaId": "xtk:job",
+      "filename": "/Resources/Templates/Job templates/{@internalName}.meta.xml",
+      "queryDef": {
+        "where": { "condition": [{ "expr": "@isModel = true" }] }
+      }
+    },
+    {
       "schemaId": "nms:operation",
       "filename": "/Campaign Management/Campaigns/{@internalName}.meta.xml",
       "queryDef": {
