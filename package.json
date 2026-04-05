@@ -1,6 +1,6 @@
 {
   "name": "campaign-cli",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Save time, reduce risk and improve code health in Adobe Campaign with acc CLI",
   "keywords": [
     "adobe",
