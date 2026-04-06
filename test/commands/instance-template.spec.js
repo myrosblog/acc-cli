@@ -1,0 +1,27 @@
+import { expect } from "chai";
+import sinon from "sinon";
+import CampaignConfig from "../../src/CampaignConfig.js";
+import InstanceTemplate from "../../src/commands/instance/template.js";
+
+describe("InstanceTemplate", () => {
+  it("should have correct description", () => {
+    expect(InstanceTemplate.description).to.equal(
+      "Generate a template configuration file",
+    );
+  });
+
+  it("should have no flags", () => {
+    expect(InstanceTemplate.flags).to.be.undefined;
+  });
+
+  it("should run", async () => {
+    const argv = [];
+    const configTemplateStub = sinon
+      .stub(CampaignConfig.prototype, "template")
+      .resolves();
+    const result = await InstanceTemplate.run(argv);
+    expect(result).to.be.undefined;
+    expect(configTemplateStub.calledOnce).to.be.true;
+    sinon.restore();
+  });
+});

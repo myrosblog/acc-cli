@@ -1,0 +1,38 @@
+import { expect } from "chai";
+import sinon from "sinon";
+import CampaignAuth from "../../src/CampaignAuth.js";
+import CampaignInstance from "../../src/CampaignInstance.js";
+import InstancePull from "../../src/commands/instance/pull.js";
+
+describe("InstancePull", () => {
+  it("should have correct description", () => {
+    expect(InstancePull.description).to.equal(
+      "Pull data from Adobe Campaign instance",
+    );
+  });
+
+  it("should have required alias flag", () => {
+    expect(InstancePull.flags.alias.required).to.be.true;
+  });
+
+  it("should have optional flags", () => {
+    expect(InstancePull.flags.path).to.exist;
+    expect(InstancePull.flags.config).to.exist;
+    expect(InstancePull.flags.metadata).to.exist;
+    expect(InstancePull.flags.verbose).to.exist;
+  });
+
+  it("should run", async () => {
+    const argv = ["--alias", "test"];
+    const authLoginStub = sinon
+      .stub(CampaignAuth.prototype, "login")
+      .resolves();
+    const instanceLoginStub = sinon
+      .stub(CampaignInstance.prototype, "pull")
+      .resolves();
+    const result = await InstancePull.run(argv);
+    expect(result).to.be.undefined;
+    expect(instanceLoginStub.calledOnce).to.be.true;
+    sinon.restore();
+  });
+});
