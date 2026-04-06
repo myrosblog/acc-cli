@@ -1,14 +1,34 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "required": ["schemas"],
   "properties": {
+    "acc-js-sdk": {
+      "type": "object",
+      "properties": {
+        "traceAPICalls": { "type": "boolean" }
+      }
+    },
     "schemas": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
+        "required": ["schemaId", "filename"],
         "properties": {
-          "schemaId": { "type": "string" },
-          "filename": { "type": "string" },
+          "schemaId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9]+:[a-zA-Z0-9]+$"
+          },
+          "filename": { "type": "string", "minLength": 1 },
+          "excludeXPaths": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "decompose": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
           "queryDef": {
             "type": "object",
             "properties": {
@@ -25,16 +45,12 @@
                       "required": ["expr"]
                     }
                   }
-                },
-                "required": ["condition"]
+                }
               }
-            },
-            "required": ["where"]
+            }
           }
-        },
-        "required": ["schemaId", "filename"]
+        }
       }
     }
-  },
-  "required": ["schemas"]
+  }
 }
