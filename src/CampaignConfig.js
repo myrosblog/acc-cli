@@ -11,6 +11,7 @@ import { codes } from "./helpers/AccErrors.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
   CONFIG_INIT_CONFIG_PATH_MISSING,
+  CONFIG_PARSE_ERROR,
   CONFIG_VALIDATE_ERRORS,
 } = codes;
 
@@ -36,6 +37,27 @@ class CampaignConfig {
   logger;
 
   /**
+   * the file path to the config JSON file, set in init
+   * @type {String}
+   */
+  configPath;
+
+  /**
+   * @type {Ajv}
+   */
+  ajv;
+
+  /**
+   * @type {String}
+   */
+  ajvSchema;
+
+  /**
+   *
+   */
+  ajvValidate;
+
+  /**
    *
    * @param {*} defaultConfigPath
    * @throws {CONFIG_CONSTR_DEFAULT_PATH_MISSING}
@@ -46,12 +68,23 @@ class CampaignConfig {
     }
     this.logger = logger;
     this.defaultConfigPath = defaultConfigPath;
+    this.ajv = new Ajv();
+    this.ajvSchema = fs.readJsonSync(
+      path.join(__dirname, "validators", "accConfig.json"),
+    );
+    this.ajvValidate = this.ajv.compile(this.ajvSchema);
   }
 
+  /**
+   *
+   * @param {*} configPath
+   * @throws {CONFIG_INIT_CONFIG_PATH_MISSING, CONFIG_PARSE_ERROR, CONFIG_VALIDATE_ERRORS}
+   */
   init(configPath) {
     if (!configPath) {
       throw new CONFIG_INIT_CONFIG_PATH_MISSING();
     }
+    // use default config path if configPath is not provided, otherwise use the provided one
     if (
       configPath == this.defaultConfigPath &&
       !this.fileExists(this.defaultConfigPath)
@@ -61,27 +94,24 @@ class CampaignConfig {
     } else {
       this.logger.info(`🛠️ Using config ${configPath}`);
     }
-    const configJson = JSON.parse(fs.readFileSync(configPath));
-    this.schemas = configJson.schemas || [];
-    this.accJsSdkOptions = configJson["acc-js-sdk"] || {};
-  }
-
-  /**
-   * @throws {CONFIG_VALIDATE_ERRORS} when not valid
-   */
-  validate() {
-    const ajv = new Ajv();
-    const validatorAccConfigFile = fs.readFileSync(
-      path.join(__dirname, "validators", "accConfig.json"),
-    );
-    const validatorAccConfig = JSON.parse(validatorAccConfigFile);
-    const validate = ajv.compile(validatorAccConfig);
-    const isValid = validate(this);
+    // parse the config
+    let configJson;
+    try {
+      configJson = fs.readJsonSync(configPath);
+    } catch (error) {
+      throw new CONFIG_PARSE_ERROR({ messageValues: [error.message] });
+    }
+    // validate the config
+    const isValid = this.ajvValidate(configJson);
     if (!isValid) {
       throw new CONFIG_VALIDATE_ERRORS({
-        messageValues: [ajv.errorsText(validate.errors)],
+        messageValues: [this.ajv.errorsText(this.ajvValidate.errors)],
       });
     }
+    // OK
+    this.schemas = configJson.schemas || [];
+    this.accJsSdkOptions = configJson["acc-js-sdk"] || {};
+    this.configPath = configPath;
   }
 
   fileExists(path) {

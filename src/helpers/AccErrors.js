@@ -88,6 +88,7 @@ E(
   "CONFIG_INIT_CONFIG_PATH_MISSING",
   "configPath is required for CampaignConfig.init().",
 );
+E("CONFIG_PARSE_ERROR", "Unable to parse the config file: %s");
 E("CONFIG_VALIDATE_ERRORS", "Invalid config: %s");
 
 // INSTANCE
