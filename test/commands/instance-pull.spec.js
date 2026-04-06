@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import CampaignAuth from "../../src/CampaignAuth.js";
+import CampaignConfig from "../../src/CampaignConfig.js";
 import CampaignInstance from "../../src/CampaignInstance.js";
 import InstancePull from "../../src/commands/instance/pull.js";
 
@@ -27,11 +28,16 @@ describe("InstancePull", () => {
     const authLoginStub = sinon
       .stub(CampaignAuth.prototype, "login")
       .resolves();
+    const configInitStub = sinon
+      .stub(CampaignConfig.prototype, "init")
+      .resolves();
     const instanceLoginStub = sinon
       .stub(CampaignInstance.prototype, "pull")
       .resolves();
     const result = await InstancePull.run(argv);
     expect(result).to.be.undefined;
+    expect(authLoginStub.calledOnce).to.be.true;
+    expect(configInitStub.calledOnce).to.be.true;
     expect(instanceLoginStub.calledOnce).to.be.true;
     sinon.restore();
   });

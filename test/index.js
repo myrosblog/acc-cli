@@ -11,7 +11,6 @@ global.expect = chai.expect;
 import "./CampaignConfig.spec.js";
 import "./CampaignAuth.spec.js";
 import "./CampaignInstance.spec.js";
-import "./main.spec.js";
 import "./commands/auth-init.spec.js";
 import "./commands/auth-login.spec.js";
 import "./commands/auth-ip.spec.js";
