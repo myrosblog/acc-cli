@@ -81,122 +81,144 @@ describe("CampaignAuth", function () {
 
         expect(config.schemas).to.deep.equal(configJson.schemas);
       });
+
+      it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init("fakepath");
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
+          expect(err.message).to.include("ENOENT: no such file or directory");
+        }
+      });
+
+      it("should throw CONFIG_PARSE_ERROR when config file misses quotes", () => {
+        const configJson = `{"schemas": [{ "schemaId": "nms:delivery", filename: "{@name}.meta.xml" }]}`;
+        fs.outputFileSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
+          expect(err.message).to.include(
+            "Expected double-quoted property name in JSON at position",
+          );
+        }
+      });
+
+      it("should throw CONFIG_PARSE_ERROR when config file has trailing comma", () => {
+        const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml", }]}`;
+        fs.outputFileSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
+          expect(err.message).to.include(
+            "Expected double-quoted property name in JSON at position",
+          );
+        }
+      });
+
+      it("should throw CONFIG_PARSE_ERROR when config file has unclosed array", () => {
+        const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" }}`;
+        fs.outputFileSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
+          expect(err.message).to.include(
+            "Expected ',' or ']' after array element in JSON at position",
+          );
+        }
+      });
+
+      it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas'", () => {
+        const configJson = {
+          schemasTYPO: [
+            { schemaId: "nms:delivery", filename: "{@name}.meta.xml" },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+          expect(err.message).to.include(
+            "must have required property 'schemas'",
+          );
+        }
+      });
+
+      it("should throw CONFIG_VALIDATE_ERRORS on config 'schemas' not array", () => {
+        const configJson = {
+          schemas: {
+            schemaIdTYPO: "nms:delivery",
+            filename: "{@name}.meta.xml",
+          },
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+          expect(err.message).to.include("schemas must be array");
+        }
+      });
+
+      it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas.schemaId'", () => {
+        const configJson = {
+          schemas: [
+            { schemaIdTYPO: "nms:delivery", filename: "{@name}.meta.xml" },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+          expect(err.message).to.include(
+            "must have required property 'schemaId'",
+          );
+        }
+      });
+
+      it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas.filename'", () => {
+        const configJson = {
+          schemas: [
+            { schemaId: "nms:delivery", filenameTYPO: "{@name}.meta.xml" },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+          expect(err.message).to.include(
+            "must have required property 'filename'",
+          );
+        }
+      });
     });
 
-    it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init("fakepath");
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-        expect(err.message).to.include("ENOENT: no such file or directory");
-      }
-    });
-
-    it("should throw CONFIG_PARSE_ERROR when config file misses quotes", () => {
-      const configJson = `{"schemas": [{ "schemaId": "nms:delivery", filename: "{@name}.meta.xml" }]}`;
-      fs.outputFileSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-        expect(err.message).to.include(
-          "Expected double-quoted property name in JSON at position",
-        );
-      }
-    });
-
-    it("should throw CONFIG_PARSE_ERROR when config file has trailing comma", () => {
-      const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml", }]}`;
-      fs.outputFileSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-        expect(err.message).to.include(
-          "Expected double-quoted property name in JSON at position",
-        );
-      }
-    });
-
-    it("should throw CONFIG_PARSE_ERROR when config file has unclosed array", () => {
-      const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" }}`;
-      fs.outputFileSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-        expect(err.message).to.include(
-          "Expected ',' or ']' after array element in JSON at position",
-        );
-      }
-    });
-
-    it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas'", () => {
-      const configJson = {
-        schemasTYPO: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
-      };
-      fs.writeJsonSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
-        expect(err.message).to.include("must have required property 'schemas'");
-      }
-    });
-
-    it("should throw CONFIG_VALIDATE_ERRORS on config 'schemas' not array", () => {
-      const configJson = {
-        schemas: { schemaIdTYPO: "nms:delivery", filename: "{@name}.meta.xml" },
-      };
-      fs.writeJsonSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
-        expect(err.message).to.include("schemas must be array");
-      }
-    });
-
-    it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas.schemaId'", () => {
-      const configJson = {
-        schemas: [{ schemaIdTYPO: "nms:delivery", filename: "{@name}.meta.xml" }],
-      };
-      fs.writeJsonSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
-        expect(err.message).to.include("must have required property 'schemaId'");
-      }
-    });
-
-    it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas.filename'", () => {
-      const configJson = {
-        schemas: [{ schemaId: "nms:delivery", filenameTYPO: "{@name}.meta.xml" }],
-      };
-      fs.writeJsonSync(tmpConfigPath, configJson);
-      const config = new CampaignConfig(logger, tmpConfigPath);
-      try {
-        config.init(tmpConfigPath);
-        throw new Error("should have failed");
-      } catch (err) {
-        expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
-        expect(err.message).to.include("must have required property 'filename'");
-      }
+    describe("template", () => {
+      it("should output the template config", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        expect(() => config.template()).to.not.throw();
+      });
     });
   });
 });
