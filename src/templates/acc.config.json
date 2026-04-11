@@ -12,10 +12,16 @@
     },
     {
       "schemaId": "xtk:operator",
+      "filename": "/Administration/Access Management/Operator groups/{@name}.meta.xml",
+      "excludeXPaths": ["access/@password"],
+      "queryDef": {
+        "where": { "condition": [{ "expr": "@type = 1" }] }
+      }
+    },
+    {
+      "schemaId": "xtk:operator",
       "filename": "/Administration/Access Management/Named rights/{@name}.meta.xml",
-      "excludeXPaths": [
-        "access/@password"
-      ],
+      "excludeXPaths": ["access/@password"],
       "queryDef": {
         "where": { "condition": [{ "expr": "@type = 2" }] }
       }
