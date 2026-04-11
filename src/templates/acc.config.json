@@ -5,10 +5,7 @@
   "schemas": [
     {
       "schemaId": "nms:localOrgUnit",
-      "filename": "/Administration/Access Management/Organizational entities/{@name}.meta.xml",
-      "queryDef": {
-        "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
-      }
+      "filename": "/Administration/Access Management/Organizational entities/{@name}.meta.xml"
     },
     {
       "schemaId": "xtk:operator",
