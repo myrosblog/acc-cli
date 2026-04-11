@@ -212,6 +212,32 @@ describe("CampaignAuth", function () {
           );
         }
       });
+
+      it("should load acc-js-sdk options when provided in config", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+          "acc-js-sdk": { traceAPICalls: true },
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.accJsSdkOptions).to.deep.equal({ traceAPICalls: true });
+      });
+
+      it("should default accJsSdkOptions to empty object when not in config", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+          // no "acc-js-sdk" key
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.accJsSdkOptions).to.deep.equal({});
+      });
     });
 
     describe("template", () => {
