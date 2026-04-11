@@ -350,7 +350,26 @@
       },
       "queryDef": {
         "where": {
-          "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }]
+          "condition": [
+            { "expr": "@type = 0", "boolOperator": "AND" },
+            { "expr": "@name NOT LIKE 'xtk%'", "boolOperator": "AND" }
+          ]
+        }
+      }
+    },
+    {
+      "schemaId": "nms:includeView",
+      "filename": "/Resources/Templates/Content templates/{@name}.meta.xml",
+      "decompose": {
+        "source/html": "/Resources/Templates/Content templates/{@name}.html",
+        "source/text": "/Resources/Templates/Content templates/{@name}.txt"
+      },
+      "queryDef": {
+        "where": {
+          "condition": [
+            { "expr": "@type = 1", "boolOperator": "AND" },
+            { "expr": "@name NOT LIKE 'xtk%'", "boolOperator": "AND" }
+          ]
         }
       }
     },
