@@ -81,10 +81,7 @@
     {
       "schemaId": "xtk:enum",
       "filename": "/Administration/Platform/Enumerations/{@name}.meta.xml",
-      "excludeXPaths": [
-        "@lastAliasCleansing",
-        "@lastModified"
-      ],
+      "excludeXPaths": ["@lastAliasCleansing", "@lastModified"],
       "queryDef": {
         "where": {
           "condition": [
@@ -97,7 +94,7 @@
     },
     {
       "schemaId": "xtk:counter",
-      "filename": "/Administration/Platform/Counters/{@name}.xml",
+      "filename": "/Administration/Platform/Counters/{@name}.meta.xml",
       "queryDef": {
         "where": {
           "condition": [
