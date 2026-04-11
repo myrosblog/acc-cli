@@ -8,6 +8,7 @@ chai.use(chaiAsPromised);
 global.expect = chai.expect;
 
 // Import all test files
+import "./AccErrors.spec.js";
 import "./CampaignConfig.spec.js";
 import "./CampaignAuth.spec.js";
 import "./CampaignInstance.spec.js";
