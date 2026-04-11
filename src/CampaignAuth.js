@@ -17,6 +17,7 @@ const {
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
+import AccCache from "./helpers/AccCache.js";
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
@@ -128,7 +129,10 @@ class CampaignAuth {
       user,
       password: pass,
     };
-    this.config.set(`${this.configKey}.${this.INSTANCES_KEY}.${alias}`, storedInstance);
+    this.config.set(
+      `${this.configKey}.${this.INSTANCES_KEY}.${alias}`,
+      storedInstance,
+    );
     this.instances[alias] = storedInstance;
     this.instanceIds = Object.keys(this.instances);
     this.logger.info(`✅ Instance ${alias} added successfully.`);
@@ -147,7 +151,7 @@ class CampaignAuth {
    * @example
    * const client = await auth.login({ alias: 'prod' });
    */
-  async login(cliOptions, sdkOptions) {
+  async login(cliOptions, _sdkOptions) {
     let auth;
     if (!(cliOptions.alias in this.instances)) {
       throw new AUTH_LOGIN_ALIAS_MISSING();
@@ -161,8 +165,16 @@ class CampaignAuth {
       throw new AUTH_LOGIN_ALIAS_INVALID();
     }
     this.logger.info(`↔️ Connecting ${user}@${host}...`);
+    const sdkOptions = _sdkOptions || {};
     this.logger.verbose(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
     try {
+      if (
+        sdkOptions.noStorage === undefined ||
+        sdkOptions.noStorage === false
+      ) {
+        this.logger.verbose(`Using AccCache for SDK storage`);
+        sdkOptions.storage = new AccCache();
+      }
       this.connectionParameters = this._prepareConnectionParameters(
         host,
         user,

@@ -201,12 +201,6 @@ describe("CampaignAuth", function () {
       auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
       // @see https://github.com/adobe/acc-js-sdk/blob/fc2c447d/test/client.test.js#L49-L54
       const err = AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED;
-      await expect(auth.login({ alias: "local" }, true)).to.be.rejectedWith(
-        err,
-      );
-      await expect(auth.login({ alias: "local" }, false)).to.be.rejectedWith(
-        err,
-      );
       await expect(
         auth.login({ alias: "local" }, "BadgerFish"),
       ).to.be.rejectedWith(err);

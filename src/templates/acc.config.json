@@ -1,6 +1,7 @@
 {
   "acc-js-sdk": {
-    "traceAPICalls": false
+    "traceAPICalls": false,
+    "noStorage": false
   },
   "schemas": [
     {
