@@ -5,7 +5,6 @@ import { dirname, join } from "path";
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
-import _ from "lodash";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 import AioLogger from "@adobe/aio-lib-core-logging";
@@ -33,11 +32,16 @@ const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
   "nms/deliveryMapping/recipientAndSubscribe.xml",
 );
-
 // acc
 import CampaignInstance from "../src/CampaignInstance.js";
 
-describe("CampaignInstance", function () {
+/** Shallow-clone config and keep only the given schemaIds */
+const filterSchemas = (config, ...schemaIds) => ({
+  ...config,
+  schemas: config.schemas.filter((x) => schemaIds.includes(x.schemaId)),
+});
+
+describe("CampaignInstance", () => {
   let mockClient,
     instance,
     pathSimple,
@@ -46,7 +50,7 @@ describe("CampaignInstance", function () {
     optionsFull,
     adapterExecuteQueryStub;
 
-  beforeEach(function () {
+  beforeEach(() => {
     // mock client
     mockClient = {
       DomUtil: DomUtil,
@@ -68,25 +72,25 @@ describe("CampaignInstance", function () {
   });
 
   describe("Private methods", () => {
-    it("_getQueryDefForSchema where.condition.expr", () => {
+    it("_getQueryDefForSchema: adds where.condition for nms:deliveryMapping", () => {
       instance = new CampaignInstance(
         logger,
         mockClient,
         configDefaultSimple,
         optionsSimple,
       );
-      const baseQueryDef = {
+      const base = {
         schema: "nms:deliveryMapping",
         operation: "select",
         select: { node: [] },
       };
-      const deliveryMapping = instance._getQueryDefForSchema(
+      const result = instance._getQueryDefForSchema(
         configDefaultSimple.schemas.find(
-          (x) => x.schemaId == "nms:deliveryMapping",
+          (x) => x.schemaId === "nms:deliveryMapping",
         ),
-        baseQueryDef,
+        base,
       );
-      expect(deliveryMapping).to.deep.equal({
+      expect(result).to.deep.equal({
         schema: "nms:deliveryMapping",
         operation: "select",
         select: { node: [] },
@@ -94,17 +98,23 @@ describe("CampaignInstance", function () {
       });
     });
 
-    it("_getQueryDefForSchema where.condition.expr", () => {
-      const baseQueryDef = {
+    it("_getQueryDefForSchema: adds where.condition for xtk:folder", () => {
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        configDefaultSimple,
+        optionsSimple,
+      );
+      const base = {
         schema: "xtk:folder",
         operation: "select",
         select: { node: [] },
       };
-      const folder = instance._getQueryDefForSchema(
-        configDefaultSimple.schemas.find((x) => x.schemaId == "xtk:folder"),
-        baseQueryDef,
+      const result = instance._getQueryDefForSchema(
+        configDefaultSimple.schemas.find((x) => x.schemaId === "xtk:folder"),
+        base,
       );
-      expect(folder).to.deep.equal({
+      expect(result).to.deep.equal({
         lineCount: 100,
         schema: "xtk:folder",
         operation: "select",
@@ -112,15 +122,34 @@ describe("CampaignInstance", function () {
         where: { condition: [{ expr: "@builtIn = true" }] },
       });
     });
+
+    it("_getQueryDefForSchema: returns base unchanged when schema has no queryDef", () => {
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+      );
+      // pick a schema with no queryDef override (e.g. nms:localOrgUnit)
+      const schemaWithoutQueryDef = configDefaultFull.schemas.find(
+        (x) => !x.queryDef,
+      );
+      const base = {
+        schema: schemaWithoutQueryDef.schemaId,
+        operation: "select",
+        select: { node: [] },
+      };
+      const result = instance._getQueryDefForSchema(
+        schemaWithoutQueryDef,
+        base,
+      );
+      expect(result).to.deep.equal(base);
+    });
   });
 
   describe("check", () => {
     it("should check with basic config (2 nms:deliveryMapping)", async () => {
-      // keep only nms:deliveryMapping
-      const config = _.clone(configDefaultFull);
-      config.schemas = config.schemas.filter(
-        (x) => x.schemaId == "nms:deliveryMapping",
-      );
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
       // init
       instance = new CampaignInstance(
         logger,
@@ -159,8 +188,7 @@ describe("CampaignInstance", function () {
     });
 
     it("should check with custom lineCount=2 in 3 batches (5 xtk:olapCube)", async () => {
-      // keep only nms:deliveryMapping
-      const config = _.clone(configDefaultFull);
+      const config = filterSchemas(configDefaultFull, "xtk:olapCube");
       config.schemas = config.schemas.filter(
         (x) => x.schemaId == "xtk:olapCube",
       );
@@ -234,6 +262,253 @@ describe("CampaignInstance", function () {
         lineCount: 2,
       });
       expect(pullLog3.startTime).to.be.lessThan(pullLog3.endTime);
+    });
+
+    it("should record error in pullLog when adapterCreateAndExecuteQuery rejects", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      const sdkError = new Error("SOAP call failed");
+      adapterExecuteQueryStub.rejects(sdkError);
+
+      // pull() must not throw — errors are captured in pullLog
+      await instance.pull(true);
+
+      expect(instance.pullLogs.length).to.equal(1);
+      const pullLog = instance.pullLogs[0];
+      expect(pullLog.elements).to.be.of.length(0);
+      expect(pullLog.parsedFilenames).to.be.of.length(0);
+      expect(pullLog.errors).to.be.of.length(1);
+      expect(pullLog.errors[0]).to.equal(sdkError);
+    });
+
+    it("should record error in pullLog when adapterCreateAndExecuteQuery rejects", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      const sdkError = new Error("SOAP call failed");
+      adapterExecuteQueryStub.rejects(sdkError);
+
+      // pull() must not throw — errors are captured in pullLog
+      await instance.pull(true);
+
+      expect(instance.pullLogs.length).to.equal(1);
+      const pullLog = instance.pullLogs[0];
+      expect(pullLog.elements).to.be.of.length(0);
+      expect(pullLog.parsedFilenames).to.be.of.length(0);
+      expect(pullLog.errors).to.be.of.length(1);
+      expect(pullLog.errors[0]).to.equal(sdkError);
+    });
+
+    it("should continue pulling next schemas even when one adapter call rejects", async () => {
+      // two schemas: first will fail, second will succeed
+      const config = filterSchemas(
+        configDefaultFull,
+        "nms:deliveryMapping",
+        "xtk:olapCube",
+      );
+      // force lineCount=2 on olapCube so the stub sequence is predictable
+      const olapCubeConfig = config.schemas.find(
+        (x) => x.schemaId === "xtk:olapCube",
+      );
+      if (olapCubeConfig.queryDef) olapCubeConfig.queryDef.lineCount = 2;
+
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      // call 1: nms:deliveryMapping batch 1 → error
+      adapterExecuteQueryStub.onFirstCall().rejects(new Error("Network error"));
+      // call 2: xtk:olapCube batch 1 → 1 record (< lineCount → loop stops)
+      adapterExecuteQueryStub.onSecondCall().resolves(xtkOlapCubes3); // has 1 record
+
+      await instance.pull(true);
+
+      // 1 log per batch: 1 failing batch (deliveryMapping) + 1 succeeding (olapCube)
+      expect(instance.pullLogs.length).to.equal(2);
+
+      const failLog = instance.pullLogs[0];
+      expect(failLog.errors).to.be.of.length(1);
+      expect(failLog.elements).to.be.of.length(0);
+
+      const successLog = instance.pullLogs[1];
+      expect(successLog.errors).to.be.of.length(0);
+      expect(successLog.elements.length).to.be.greaterThan(0);
+    });
+
+    it("should skip schemas not listed in --metadata option", async () => {
+      const config = filterSchemas(
+        configDefaultFull,
+        "nms:deliveryMapping",
+        "xtk:olapCube",
+      );
+      instance = new CampaignInstance(logger, mockClient, config, {
+        ...optionsSimple,
+        metadata: "nms:deliveryMapping", // only pull deliveryMapping
+      });
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      );
+
+      await instance.pull(true);
+
+      // adapter called only once (for deliveryMapping), olapCube skipped
+      expect(adapterExecuteQueryStub.callCount).to.equal(1);
+      expect(instance.pullLogs.length).to.equal(1);
+      expect(instance.pullLogs[0].schemaConfig.schemaId).to.equal(
+        "nms:deliveryMapping",
+      );
+    });
+
+    it("should skip all schemas when --metadata lists an unknown schemaId", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(logger, mockClient, config, {
+        ...optionsSimple,
+        metadata: "xtk:unknown",
+      });
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      await instance.pull(true);
+
+      expect(adapterExecuteQueryStub.callCount).to.equal(0);
+      expect(instance.pullLogs).to.be.of.length(0);
+    });
+
+    it("should stop after first batch when it returns fewer than lineCount records", async () => {
+      const config = filterSchemas(configDefaultFull, "xtk:olapCube");
+      config.schemas[0].queryDef.lineCount = 10;
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      // batch 1: only 1 record < lineCount=10 → loop stops immediately
+      adapterExecuteQueryStub.onFirstCall().resolves(xtkOlapCubes3); // 1 record
+
+      await instance.pull(true);
+
+      expect(instance.pullLogs.length).to.equal(1);
+      expect(adapterExecuteQueryStub.callCount).to.equal(1);
+    });
+
+    it("should isolate parse errors: one failing element does not block others", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      ); // 2 elements
+
+      // Make parse() throw on the first call only
+      const parseStub = sinon.stub(instance, "parse");
+      parseStub.onFirstCall().throws(new Error("Parse failure"));
+      parseStub.onSecondCall().returns("mapSubscribe.meta.xml");
+
+      await instance.pull(true);
+
+      const pullLog = instance.pullLogs[0];
+      expect(pullLog.errors).to.be.of.length(1);
+      expect(pullLog.parsedFilenames).to.deep.equal(["mapSubscribe.meta.xml"]);
+    });
+
+    it("should reset pullLogs on each pull() call", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      );
+
+      await instance.pull(true);
+      expect(instance.pullLogs.length).to.equal(1);
+
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      );
+      await instance.pull(true);
+      // logs from first call must not accumulate
+      expect(instance.pullLogs.length).to.equal(1);
+    });
+  });
+
+  describe("pull", () => {
+    it("should not throw when isPreview=false (write mode)", async () => {
+      const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        config,
+        optionsSimple,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      adapterExecuteQueryStub.resolves(
+        nmsDeliveryMappingsRecipientAndSubscribe,
+      );
+
+      // Stub fs.outputFileSync to avoid real disk writes in test
+      sinon.stub(fs, "outputFileSync");
+
+      await instance.pull(false); // isPreview = false
+
+      expect(instance.pullLogs.length).to.equal(1);
+      expect(instance.pullLogs[0].errors).to.be.of.length(0);
     });
   });
 
@@ -461,6 +736,32 @@ describe("CampaignInstance", function () {
         expect(contentText).to.not.contain(`CDATA`);
         expect(contentText).to.not.contain(`<html`);
       });
+    });
+
+    it("should empty textContent when excludeXPath targets an element node", () => {
+      instance = new CampaignInstance(
+        logger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+      );
+      sinon.stub(fs, "outputFileSync"); // no disk write
+
+      // xtkSqlCreatedb has a <data> element — target it without '@' prefix
+      const schemaConfig = {
+        ...configDefaultFull.schemas.find((x) => x.schemaId === "xtk:sql"),
+        excludeXPaths: ["data"], // element, NOT an attribute
+      };
+
+      // reload XML to avoid mutation from other tests
+      const freshXml = loadXml("xtk/sql/createdb.sql.xml");
+
+      instance.parse(freshXml, schemaConfig, true);
+
+      // The <data> element's textContent must have been blanked
+      const serialized = DomUtil.toXMLString(freshXml);
+      expect(serialized).to.match(/<data\s*\/>/); // self-closing = empty textContent
+      expect(serialized).to.not.contain("CREATE DATABASE");
     });
   });
 });
