@@ -202,7 +202,12 @@
         "where": {
           "condition": [
             {
-              "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
+              "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')",
+              "boolOperator": "AND"
+            },
+            {
+              "expr": "@name != 'merged'",
+              "boolOperator": "AND"
             }
           ]
         }
