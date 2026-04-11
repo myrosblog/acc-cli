@@ -1,9 +1,6 @@
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
-// sdk
-import AioLogger from "@adobe/aio-lib-core-logging";
-const logger = AioLogger("CampaignAuth.spec");
 // acc
 import CampaignAuth from "../src/CampaignAuth.js";
 import { codes } from "../src/helpers/AccErrors.js";
@@ -23,7 +20,7 @@ import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 
 describe("CampaignAuth", function () {
-  let mockSdk, mockConfig;
+  let mockSdk, mockConfig, mockLogger;
   /**
    * @type {CampaignAuth}
    */
@@ -66,8 +63,14 @@ describe("CampaignAuth", function () {
       reload: sinon.stub(),
     };
 
+    mockLogger = {
+      info: sinon.stub(),
+      verbose: sinon.stub(),
+      error: sinon.stub(),
+    };
+
     // CampaignAuth now creates the adapter internally
-    auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
   });
 
   describe("constructor", function () {
@@ -79,7 +82,7 @@ describe("CampaignAuth", function () {
     });
 
     it("should throw AUTH_CONSTR_SDK_MISSING when SDK is missing", function () {
-      expect(() => new CampaignAuth(logger, null, mockConfig)).to.throw(
+      expect(() => new CampaignAuth(mockLogger, null, mockConfig)).to.throw(
         AUTH_CONSTR_SDK_MISSING,
       );
     });
@@ -152,7 +155,7 @@ describe("CampaignAuth", function () {
   describe("login", function () {
     it("should throw AUTH_LOGIN_ALIAS_MISSING when config cannot be parsed", async function () {
       mockConfig.get.threw(new Error("Generic error at parsing"));
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(
         auth.login({ alias: ["instance-array"] }),
       ).to.be.rejectedWith(AUTH_LOGIN_ALIAS_MISSING);
@@ -160,7 +163,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist with empty config", async function () {
       mockConfig.get.returns({});
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "empty-config" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -168,7 +171,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ existingAlias: {} });
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "missingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -176,7 +179,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_EMPTY when config has null values", async function () {
       mockConfig.get.returns({ existingAlias: null });
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "existingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_EMPTY,
       );
@@ -184,7 +187,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_INVALID when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ instance32: {} });
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "instance32" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_INVALID,
       );
@@ -198,7 +201,7 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       // @see https://github.com/adobe/acc-js-sdk/blob/fc2c447d/test/client.test.js#L49-L54
       const err = AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED;
       await expect(
@@ -222,7 +225,7 @@ describe("CampaignAuth", function () {
         new CampaignException(undefined, 400, 16384, `SDK-999999 sdk.init()`),
       );
 
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_INIT_FAILED,
       );
@@ -250,7 +253,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_LOGON_FAILED,
       );
@@ -279,7 +282,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_FAILED,
       );
@@ -299,7 +302,7 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
       );
@@ -314,7 +317,7 @@ describe("CampaignAuth", function () {
         },
       });
 
-      auth = new CampaignAuth(logger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
       const client = await auth.login({ alias: "local" });
 
       expect(client).to.exist;
@@ -347,7 +350,6 @@ describe("CampaignAuth", function () {
       };
       auth.instanceIds = ["prod", "staging"];
 
-      // This is a console . log test, so we'll just verify it doesn't throw
       expect(() => auth.list()).to.not.throw();
     });
 
