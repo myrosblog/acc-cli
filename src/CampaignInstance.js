@@ -2,7 +2,6 @@
 import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
 // sdk
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
@@ -63,25 +62,32 @@ class CampaignInstance {
   logger;
 
   /**
+   * @type {function} to create spinner, injected for easier unit testing
+   */
+  createSpinner;
+
+  /**
    * Creates a new CampaignInstance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
-   * @param {Object} [accConfig.*] - Schema-specific configurations
+   * @param {Object} cliOptions - Command-line options including verbose, path, and metadata filters
+   * @param {function} createSpinner - Ora spinner instance for displaying progress
    *
    * @example
    * const instance = new CampaignInstance(client, { schemas: [
    *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
    * ]});
    */
-  constructor(logger, client, accConfig, options) {
+  constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
     this.client = client;
     this.accConfig = accConfig;
-    this.verbose = options.verbose;
-    this.downloadPath = options.path;
-    this.metadata = options.metadata;
+    this.verbose = cliOptions.verbose;
+    this.downloadPath = cliOptions.path;
+    this.metadata = cliOptions.metadata;
+    this.createSpinner = createSpinner;
     /**
      * Array of schema names to process (excluding default config)
      * @type {string[]}
@@ -138,7 +144,7 @@ class CampaignInstance {
           continue;
         }
       }
-      const spinner = ora(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
+      const spinner = this.createSpinner(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
       // download and parse
       const lineCount = queryDef?.lineCount || 10;
       let startLine = 1;

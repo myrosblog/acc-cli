@@ -63,6 +63,7 @@ describe("CampaignAuth", function () {
       reload: sinon.stub(),
     };
 
+    // mock AioLogger
     mockLogger = {
       info: sinon.stub(),
       verbose: sinon.stub(),
