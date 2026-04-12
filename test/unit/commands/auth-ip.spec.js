@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import AuthIp from "../../src/commands/auth/ip.js";
-import CampaignAuth from "../../src/CampaignAuth.js";
+import AuthIp from "../../../src/commands/auth/ip.js";
+import CampaignAuth from "../../../src/CampaignAuth.js";
 
 describe("AuthIp", () => {
   it("should have correct description", () => {

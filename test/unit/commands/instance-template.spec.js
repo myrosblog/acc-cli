@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignConfig from "../../src/CampaignConfig.js";
-import InstanceTemplate from "../../src/commands/instance/template.js";
+import CampaignConfig from "../../../src/CampaignConfig.js";
+import InstanceTemplate from "../../../src/commands/instance/template.js";
 
 describe("InstanceTemplate", () => {
   it("should have correct description", () => {

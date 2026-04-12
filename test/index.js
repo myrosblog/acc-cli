@@ -8,13 +8,13 @@ chai.use(chaiAsPromised);
 global.expect = chai.expect;
 
 // Import all test files
-import "./AccErrors.spec.js";
-import "./CampaignConfig.spec.js";
-import "./CampaignAuth.spec.js";
-import "./CampaignInstance.spec.js";
-import "./commands/auth-init.spec.js";
-import "./commands/auth-login.spec.js";
-import "./commands/auth-ip.spec.js";
-import "./commands/instance-template.spec.js";
-import "./commands/instance-check.spec.js";
-import "./commands/instance-pull.spec.js";
+import "./unit/AccErrors.spec.js";
+import "./unit/CampaignConfig.spec.js";
+import "./unit/CampaignAuth.spec.js";
+import "./unit/CampaignInstance.spec.js";
+import "./unit/commands/auth-init.spec.js";
+import "./unit/commands/auth-login.spec.js";
+import "./unit/commands/auth-ip.spec.js";
+import "./unit/commands/instance-template.spec.js";
+import "./unit/commands/instance-check.spec.js";
+import "./unit/commands/instance-pull.spec.js";

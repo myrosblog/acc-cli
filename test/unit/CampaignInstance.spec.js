@@ -8,19 +8,17 @@ import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import { makeClient, makeLogger, makeSpinner } from "./helpers.js";
+import { makeClient, makeLogger, makeSpinner } from "../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const configPathJson = join(__dirname, "mocks/config/");
-const loadJson = (file) => JSON.parse(fs.readFileSync(configPathJson + file));
-const configPathXml = join(__dirname, "mocks/acc-js-sdk-xml/");
+const loadJson = (file) => JSON.parse(fs.readFileSync(join(__dirname, file)));
+const configPathXml = join(__dirname, "../mocks/acc-js-sdk-xml/");
 const loadXml = (file) =>
   DomUtil.getFirstChildElement(
     DomUtil.parse(fs.readFileSync(configPathXml + file)),
   ); // DomUtil.parse returns Document, but all methods use Element, hence the conversion
 // mocks
-const configDefaultFull = loadJson("../../../src/templates/acc.config.json");
-const configDefaultSimple = loadJson("acc.config.defaultTemplateSimple.json");
+const configDefaultFull = loadJson("../../src/templates/acc.config.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const xtkOlapCubes1 = loadXml("xtk/olapCube/olapCubes.1.xml");
@@ -32,7 +30,7 @@ const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
   "nms/deliveryMapping/recipientAndSubscribe.xml",
 );
 // acc
-import CampaignInstance from "../src/CampaignInstance.js";
+import CampaignInstance from "../../src/CampaignInstance.js";
 
 /** Shallow-clone config and keep only the given schemaIds */
 const filterSchemas = (config, ...schemaIds) => ({
@@ -53,8 +51,10 @@ describe("CampaignInstance", () => {
     // mock client
     mockClient = makeClient();
 
-    // mock options
+    // options template
     pathFull = join(__dirname, "../dist/configFull/");
+
+    // mock options
     optionsFull = {
       path: pathFull,
     };
@@ -75,7 +75,7 @@ describe("CampaignInstance", () => {
       instance = new CampaignInstance(
         mockLogger,
         mockClient,
-        configDefaultSimple,
+        configDefaultFull,
         optionsFull,
       );
       const base = {
@@ -84,7 +84,7 @@ describe("CampaignInstance", () => {
         select: { node: [] },
       };
       const result = instance._getQueryDefForSchema(
-        configDefaultSimple.schemas.find(
+        configDefaultFull.schemas.find(
           (x) => x.schemaId === "nms:deliveryMapping",
         ),
         base,
@@ -101,7 +101,7 @@ describe("CampaignInstance", () => {
       instance = new CampaignInstance(
         mockLogger,
         mockClient,
-        configDefaultSimple,
+        configDefaultFull,
         optionsFull,
         mockSpinner,
       );
@@ -110,10 +110,21 @@ describe("CampaignInstance", () => {
         operation: "select",
         select: { node: [] },
       };
-      const result = instance._getQueryDefForSchema(
-        configDefaultSimple.schemas.find((x) => x.schemaId === "xtk:folder"),
-        base,
-      );
+      const config = {
+        schemaId: "xtk:folder",
+        filename: "/Explorer/{@name}.meta.xml",
+        queryDef: {
+          lineCount: 100,
+          where: {
+            condition: [
+              {
+                expr: "@builtIn = true",
+              },
+            ],
+          },
+        },
+      };
+      const result = instance._getQueryDefForSchema(config, base);
       expect(result).to.deep.equal({
         lineCount: 100,
         schema: "xtk:folder",
@@ -533,14 +544,25 @@ describe("CampaignInstance", () => {
         instance = new CampaignInstance(
           mockLogger,
           mockClient,
-          configDefaultSimple,
+          configDefaultFull,
           optionsFull,
           mockSpinner,
         );
-        const schemaConfig = configDefaultSimple.schemas.find(
-          (x) => x.schemaId == "xtk:sql",
-        );
-        instance.parse(xtkSqlCreatedb, schemaConfig);
+        const config = {
+          schemaId: "xtk:sql",
+          filename:
+            "/Administration/Configuration/SQL scripts/{@namespace}/{@name}.sql",
+          queryDef: {
+            where: {
+              condition: [
+                {
+                  expr: "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')",
+                },
+              ],
+            },
+          },
+        };
+        instance.parse(xtkSqlCreatedb, config);
 
         const fileRaw = join(
           pathFull,
@@ -562,14 +584,20 @@ describe("CampaignInstance", () => {
         instance = new CampaignInstance(
           mockLogger,
           mockClient,
-          configDefaultSimple,
+          configDefaultFull,
           optionsFull,
           mockSpinner,
         );
-        const schemaConfig = configDefaultSimple.schemas.find(
-          (x) => x.schemaId == "nms:delivery",
-        );
-        instance.parse(nmsDelivery554, schemaConfig);
+        const config = {
+          schemaId: "nms:delivery",
+          filename: "/Campaign Management/Deliveries/{@internalName}.html",
+          queryDef: {
+            where: {
+              condition: [{ expr: "@builtIn = false AND @isModel = true" }],
+            },
+          },
+        };
+        instance.parse(nmsDelivery554, config);
 
         const fileRaw = join(
           pathFull,
@@ -591,11 +619,11 @@ describe("CampaignInstance", () => {
         instance = new CampaignInstance(
           mockLogger,
           mockClient,
-          configDefaultSimple,
+          configDefaultFull,
           optionsFull,
           mockSpinner,
         );
-        const schemaConfig = configDefaultSimple.schemas.find(
+        const schemaConfig = configDefaultFull.schemas.find(
           (x) => x.schemaId == "xtk:srcSchema",
         );
         instance.parse(xtkSchemaDelivery, schemaConfig);

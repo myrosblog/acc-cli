@@ -3,10 +3,10 @@ import fs from "fs-extra";
 import { expect } from "chai";
 import tmp from "tmp";
 // sdk
-import { makeLogger } from "./helpers.js";
+import { makeLogger } from "../helpers.js";
 // acc
-import CampaignConfig from "../src/CampaignConfig.js";
-import { codes } from "../src/helpers/AccErrors.js";
+import CampaignConfig from "../../src/CampaignConfig.js";
+import { codes } from "../../src/helpers/AccErrors.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
   CONFIG_INIT_CONFIG_PATH_MISSING,

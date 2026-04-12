@@ -1,7 +1,7 @@
 // npm
 import { expect } from "chai";
 // acc
-import { codes, wrapSdkError } from "../src/helpers/AccErrors.js";
+import { codes, wrapSdkError } from "../../src/helpers/AccErrors.js";
 
 describe("AccErrors", () => {
   describe("wrapSdkError", () => {

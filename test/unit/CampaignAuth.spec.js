@@ -5,8 +5,8 @@ import sinon from "sinon";
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
-import CampaignAuth from "../src/CampaignAuth.js";
-import { codes } from "../src/helpers/AccErrors.js";
+import CampaignAuth from "../../src/CampaignAuth.js";
+import { codes } from "../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
@@ -20,7 +20,7 @@ const {
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
 } = codes;
 // helpers
-import { makeLogger } from "./helpers.js";
+import { makeLogger } from "../helpers.js";
 
 describe("CampaignAuth", function () {
   let mockSdk, mockConfig, mockLogger;

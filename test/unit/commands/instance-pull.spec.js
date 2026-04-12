@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../src/CampaignAuth.js";
-import CampaignConfig from "../../src/CampaignConfig.js";
-import CampaignInstance from "../../src/CampaignInstance.js";
-import InstancePull from "../../src/commands/instance/pull.js";
+import CampaignAuth from "../../../src/CampaignAuth.js";
+import CampaignConfig from "../../../src/CampaignConfig.js";
+import CampaignInstance from "../../../src/CampaignInstance.js";
+import InstancePull from "../../../src/commands/instance/pull.js";
 
 describe("InstancePull", () => {
   it("should have correct description", () => {
