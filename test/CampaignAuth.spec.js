@@ -1,6 +1,9 @@
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
+// sdk
+import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
+import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
 import CampaignAuth from "../src/CampaignAuth.js";
 import { codes } from "../src/helpers/AccErrors.js";
@@ -16,8 +19,8 @@ const {
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
 } = codes;
-import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
-import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
+// helpers
+import { makeLogger } from "./helpers.js";
 
 describe("CampaignAuth", function () {
   let mockSdk, mockConfig, mockLogger;
@@ -64,11 +67,7 @@ describe("CampaignAuth", function () {
     };
 
     // mock AioLogger
-    mockLogger = {
-      info: sinon.stub(),
-      verbose: sinon.stub(),
-      error: sinon.stub(),
-    };
+    mockLogger = makeLogger();
 
     // CampaignAuth now creates the adapter internally
     auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);

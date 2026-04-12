@@ -7,9 +7,8 @@ import { expect } from "chai";
 import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
-import mockFactory from "@adobe/acc-js-sdk/test/mock.js";
-const Mock = mockFactory.Mock;
 // helpers
+import { makeClient, makeLogger, makeSpinner } from "./helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const configPathJson = join(__dirname, "mocks/config/");
@@ -46,48 +45,25 @@ describe("CampaignInstance", () => {
     mockLogger,
     mockSpinner,
     instance,
-    pathSimple,
-    optionsSimple,
     pathFull,
     optionsFull,
     adapterExecuteQueryStub;
 
   beforeEach(() => {
     // mock client
-    mockClient = {
-      DomUtil: DomUtil,
-    };
+    mockClient = makeClient();
 
     // mock options
-    pathSimple = join(__dirname, "../dist/configSimple/");
     pathFull = join(__dirname, "../dist/configFull/");
-    optionsSimple = {
-      path: pathSimple,
-    };
     optionsFull = {
       path: pathFull,
     };
 
     // mock AioLogger
-    mockLogger = {
-      info: sinon.stub(),
-      verbose: sinon.stub(),
-      error: sinon.stub(),
-      debug: sinon.stub(),
-    };
+    mockLogger = makeLogger();
 
     // mock ora spinner
-    mockSpinner = () => ({
-      start() {
-        return this;
-      },
-      succeed() {},
-      fail() {},
-      get text() {
-        return "";
-      },
-      set text(_) {},
-    });
+    mockSpinner = () => makeSpinner();
   });
 
   afterEach(() => {
@@ -100,7 +76,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         configDefaultSimple,
-        optionsSimple,
+        optionsFull,
       );
       const base = {
         schema: "nms:deliveryMapping",
@@ -126,7 +102,8 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         configDefaultSimple,
-        optionsSimple,
+        optionsFull,
+        mockSpinner,
       );
       const base = {
         schema: "xtk:folder",
@@ -178,7 +155,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -222,7 +199,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -295,7 +272,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -323,7 +300,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -362,7 +339,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -400,7 +377,7 @@ describe("CampaignInstance", () => {
         mockClient,
         config,
         {
-          ...optionsSimple,
+          ...optionsFull,
           metadata: "nms:deliveryMapping", // only pull deliveryMapping
         },
         mockSpinner,
@@ -426,7 +403,7 @@ describe("CampaignInstance", () => {
     it("should skip all schemas when --metadata lists an unknown schemaId", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
       instance = new CampaignInstance(mockLogger, mockClient, config, {
-        ...optionsSimple,
+        ...optionsFull,
         metadata: "xtk:unknown",
       });
       adapterExecuteQueryStub = sinon.stub(
@@ -447,7 +424,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -470,7 +447,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -499,7 +476,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -529,7 +506,7 @@ describe("CampaignInstance", () => {
         mockLogger,
         mockClient,
         config,
-        optionsSimple,
+        optionsFull,
         mockSpinner,
       );
       adapterExecuteQueryStub = sinon.stub(
@@ -557,7 +534,8 @@ describe("CampaignInstance", () => {
           mockLogger,
           mockClient,
           configDefaultSimple,
-          optionsSimple,
+          optionsFull,
+          mockSpinner,
         );
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "xtk:sql",
@@ -565,7 +543,7 @@ describe("CampaignInstance", () => {
         instance.parse(xtkSqlCreatedb, schemaConfig);
 
         const fileRaw = join(
-          pathSimple,
+          pathFull,
           "Administration/Configuration/SQL scripts/xtk/createdb.sql.sql",
         );
         const fileExists = await fs.pathExists(fileRaw);
@@ -585,7 +563,8 @@ describe("CampaignInstance", () => {
           mockLogger,
           mockClient,
           configDefaultSimple,
-          optionsSimple,
+          optionsFull,
+          mockSpinner,
         );
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "nms:delivery",
@@ -593,7 +572,7 @@ describe("CampaignInstance", () => {
         instance.parse(nmsDelivery554, schemaConfig);
 
         const fileRaw = join(
-          pathSimple,
+          pathFull,
           "Campaign Management/Deliveries/DM554.html",
         );
         const fileExists = await fs.pathExists(fileRaw);
@@ -613,7 +592,8 @@ describe("CampaignInstance", () => {
           mockLogger,
           mockClient,
           configDefaultSimple,
-          optionsSimple,
+          optionsFull,
+          mockSpinner,
         );
         const schemaConfig = configDefaultSimple.schemas.find(
           (x) => x.schemaId == "xtk:srcSchema",
@@ -621,7 +601,7 @@ describe("CampaignInstance", () => {
         instance.parse(xtkSchemaDelivery, schemaConfig);
 
         const fileRaw = join(
-          pathSimple,
+          pathFull,
           "Administration/Configuration/Data schemas/nms/delivery.xml",
         );
         const fileExists = await fs.pathExists(fileRaw);

@@ -3,8 +3,7 @@ import fs from "fs-extra";
 import { expect } from "chai";
 import tmp from "tmp";
 // sdk
-import AioLogger from "@adobe/aio-lib-core-logging";
-const logger = AioLogger("CampaignAuth.spec");
+import { makeLogger } from "./helpers.js";
 // acc
 import CampaignConfig from "../src/CampaignConfig.js";
 import { codes } from "../src/helpers/AccErrors.js";
@@ -16,9 +15,10 @@ const {
 } = codes;
 
 describe("CampaignAuth", function () {
-  let tmpConfigPath;
+  let tmpConfigPath, logger;
 
   beforeEach(() => {
+    logger = makeLogger();
     // prepare a random config path
     tmpConfigPath = tmp.tmpNameSync({ postfix: ".json" });
   });
