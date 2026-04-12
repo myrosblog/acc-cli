@@ -20,7 +20,6 @@ describe("InstancePull", () => {
     expect(InstancePull.flags.path).to.exist;
     expect(InstancePull.flags.config).to.exist;
     expect(InstancePull.flags.metadata).to.exist;
-    expect(InstancePull.flags.verbose).to.exist;
   });
 
   it("should run", async () => {

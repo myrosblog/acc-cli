@@ -43,11 +43,6 @@ export default class InstanceCheck extends Command {
       description:
         "Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation",
     }),
-    verbose: Flags.boolean({
-      description:
-        "Verbose output with details on each configuration item. Defaults to false.",
-      default: false,
-    }),
   };
 
   async run() {

@@ -20,7 +20,6 @@ describe("InstanceCheck", () => {
     expect(InstanceCheck.flags.path).to.exist;
     expect(InstanceCheck.flags.config).to.exist;
     expect(InstanceCheck.flags.metadata).to.exist;
-    expect(InstanceCheck.flags.verbose).to.exist;
   });
 
   it("should run", async () => {

@@ -72,7 +72,7 @@ class CampaignInstance {
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
-   * @param {Object} cliOptions - Command-line options including verbose, path, and metadata filters
+   * @param {Object} cliOptions - Command-line options including path, and metadata filters
    * @param {function} createSpinner - Ora spinner instance for displaying progress
    *
    * @example
@@ -84,7 +84,6 @@ class CampaignInstance {
     this.logger = logger;
     this.client = client;
     this.accConfig = accConfig;
-    this.verbose = cliOptions.verbose;
     this.downloadPath = cliOptions.path;
     this.metadata = cliOptions.metadata;
     this.createSpinner = createSpinner;
@@ -182,7 +181,7 @@ class CampaignInstance {
       spinner.succeed(
         `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
       );
-      // display errors when verbose
+      // display errors if any
       const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
       if (flatErrors.length > 0) {
         this.logger.verbose(`⚠️ Listing errors for ${schemaId}:`);
@@ -253,7 +252,7 @@ class CampaignInstance {
         pullLog.errors.push(err);
       }
     }
-    // verbose filenames
+    // display filenames
     if (filenamesForThisBatch.length > 0) {
       this.logger.verbose(filenamesForThisBatch.join(", "));
     }
@@ -365,9 +364,6 @@ class CampaignInstance {
             fs.outputFileSync(datapath, elementValue);
           }
           const decomposedFilenameOnly = path.basename(decomposedFilename);
-          // if (this.verbose) {
-          //   this.log(`${chalk.underline(decomposedFilenameOnly)} `, false);
-          // }
           // empty element
           lastNode.textContent = "";
         } catch (err) {
