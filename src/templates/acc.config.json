@@ -373,7 +373,7 @@
     },
     {
       "schemaId": "nms:deliveryCustomization",
-      "filename": "/Resources/Campaign Management/Personalization fields/{@name}.xml",
+      "filename": "/Resources/Campaign Management/Personalization fields/{@name}.meta.xml",
       "queryDef": {
         "where": { "condition": [{ "expr": "@isModel = true" }] }
       }
