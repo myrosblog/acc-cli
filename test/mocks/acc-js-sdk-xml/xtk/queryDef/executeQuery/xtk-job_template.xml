@@ -1,0 +1,16 @@
+<job-collection>
+    <job _form="xtk:dataTransfer" _schema="xtk:dataTransfer" builtIn="1"
+        created="2024-06-26 05:21:30.435Z" editForm="xtk:export"
+        img="xtk:export.png" internalName="jobTemplate1" jobType="export"
+        label="New text export">
+        <desc><![CDATA[Template used to start a new export from scratch]]></desc>
+        <createdBy/>
+    </job>
+    <job _form="xtk:dataTransfer" _schema="xtk:dataTransfer" builtIn="1"
+        created="2024-06-26 05:21:30.433Z" editForm="xtk:import" id="1696"
+        img="xtk:import.png" internalName="jobTemplate2" jobType="import"
+        label="New text import">
+        <desc><![CDATA[Template used to start a new import from scratch]]></desc>
+        <createdBy/>
+    </job>
+</job-collection>

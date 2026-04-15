@@ -1,0 +1,21 @@
+<javascript-collection>
+    <javascript created="2026-04-14 01:42:53.779Z"
+        entitySchema="xtk:javascript" img="xtk:javascript.png"
+        label="javascript1" lastModified="2026-04-14 01:43:17.702Z"
+        md5="ABC3"
+        name="javascript1" namespace="cus" xtkschema="xtk:javascript">
+        <createdBy />
+        <modifiedBy />
+        <data><![CDATA[logInfo('test');
+]]></data>
+    </javascript>
+    <javascript created="2026-04-14 01:43:23.047Z"
+        entitySchema="xtk:javascript" img="xtk:javascript.png"
+        label="javascript2" lastModified="2026-04-14 01:43:46.493Z"
+        md5="ABC4"
+        name="javascript2" namespace="cus" xtkschema="xtk:javascript">
+        <createdBy />
+        <modifiedBy />
+        <data><![CDATA[function hello(){return 'world';}]]></data>
+    </javascript>
+</javascript-collection>

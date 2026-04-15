@@ -1,0 +1,6 @@
+<workflow-collection>
+    <workflow _form="xtk:workflow" failed="0" internalName="workflowTechnical1"
+        label="Workflow Technical 1" nextProcessingDate="" processDate="" production="0" state="0" />
+    <workflow _form="" failed="0" internalName="workflowTechnical2" label="Workflow Technical 2"
+        nextProcessingDate="" processDate="" production="1" state="20" />
+</workflow-collection>

@@ -1,0 +1,23 @@
+<xslt-collection>
+    <xslt entitySchema="xtk:xslt" img="xtk:xslt.png"
+        md5="ABC1" name="xslt1" namespace="cus"
+        xtkschema="xtk:xslt">
+        <data><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  <xsl:decimal-format name="format" decimal-separator="." grouping-separator=" " />
+
+  <xsl:template match="/">
+    <xsl:variable name="var1">
+      <xsl:value-of select="field1"/>
+    </xsl:variable>
+  </xsl:template>
+]]></data>
+    </xslt>
+    <xslt entitySchema="xtk:xslt" img="xtk:xslt.png"
+        md5="ABC2" name="xslt2" namespace="cus"
+        xtkschema="xtk:xslt">
+        <data><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
+<!-- comments -->
+]]></data>
+    </xslt>
+</xslt-collection>

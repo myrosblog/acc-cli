@@ -1,0 +1,4 @@
+<formRendering-collection>
+    <formRendering internalName="formRendering1" label="Form Rendering 1" type="0" />
+    <formRendering internalName="formRendering2" label="Form Rendering 2" type="1" />
+</formRendering-collection>

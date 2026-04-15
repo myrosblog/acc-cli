@@ -1,0 +1,4 @@
+<counter-collection>
+    <counter label="Counter 1" name="counter1" />
+    <counter label="Counter 2" name="counter2" />
+</counter-collection>

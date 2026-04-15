@@ -1,0 +1,33 @@
+<navtree-collection>
+    <navtree created="2024-06-27 00:48:31.799Z"
+        entitySchema="xtk:navtree" img="nl:folders.png"
+        label="Navtree 1" lastModified="2024-06-27 00:52:37.699Z"
+        md5="GHI1" name="navtree1"
+        namespace="cus" xtkschema="xtk:navtree">
+        <model name="root">
+            <model label="Analytics" name="analytics">
+                <nodemodel img="nl:aggregate.png" label="Analytics"
+                    name="cusAnalytics">
+                    <view name="listdet" schema="cus:Analytics" type="listdet">
+                        <columns>
+                            <input xpath="@date" />
+                        </columns>
+                    </view>
+                </nodemodel>
+            </model>
+        </model>
+    </navtree>
+    <navtree 
+        created="2026-04-14 01:37:56.882Z"
+        entitySchema="xtk:navtree" img="nl:folders.png"
+        label="Navtree 2" lastModified="2026-04-14 01:38:05.187Z"
+        md5="GHI2" name="navtree2"
+        namespace="cus" xtkschema="xtk:navtree">
+        <model name="root">
+            <model label="Model" name="model">
+            </model>
+        </model>
+        <createdBy/>
+        <modifiedBy/>
+    </navtree>
+</navtree-collection>

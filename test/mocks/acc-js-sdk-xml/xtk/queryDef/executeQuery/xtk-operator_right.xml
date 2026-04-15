@@ -1,0 +1,10 @@
+<group-collection>
+    <group label="RIGHT1" name="right1" type="2">
+        <desc><![CDATA[Right to 1]]></desc>
+        <access />
+    </group>
+    <group label="RIGHT2" name="right2" type="2">
+        <desc><![CDATA[Right to 2]]></desc>
+        <access />
+    </group>
+</group-collection>

@@ -1,0 +1,8 @@
+<typology-collection>
+    <typology label="Typology 1" name="typology1">
+        <desc><![CDATA[Typology description 1.]]></desc>
+    </typology>
+    <typology label="Typology 2" name="typology2">
+        <desc><![CDATA[Typology description 2.]]></desc>
+    </typology>
+</typology-collection>

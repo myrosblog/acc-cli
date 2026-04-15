@@ -1,0 +1,4 @@
+<webApp-collection>
+    <webApp appState="5" internalName="webApp1" label="Web app 1" nature="subscription" />
+    <webApp appState="5" internalName="webApp2" label="Web app 2" nature="viral" />
+</webApp-collection>

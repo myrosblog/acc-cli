@@ -1,0 +1,4 @@
+<sql-collection>
+    <sql _isMemoNull="1" img="xtk:sql.png" label="" md5="DEF1" name="sql1" namespace="cus" />
+    <sql _isMemoNull="1" img="xtk:sql.png" label="" md5="DEF2" name="sql2" namespace="cus" />
+</sql-collection>

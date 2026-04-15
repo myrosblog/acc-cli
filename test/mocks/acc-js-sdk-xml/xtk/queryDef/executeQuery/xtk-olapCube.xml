@@ -1,0 +1,12 @@
+<olapCube-collection>
+    <olapCube name="olapCube1" timezone="_inherit_">
+        <fact schema="nms:deliveryLogStats" />
+    </olapCube>
+    <olapCube name="olapCube2" timezone="_inherit_">
+        <fact schema="nms:trackingLogRcp">
+            <where>
+                <condition expr="@id > 0" />
+            </where>
+        </fact>
+    </olapCube>
+</olapCube-collection>

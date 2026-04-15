@@ -1,0 +1,6 @@
+<publishing-collection>
+    <publishing lastModified="" name="publishing1" label="Publishing 1"
+        namespace="publishing1"></publishing>
+    <publishing lastModified="" name="publishing2" label="Publishing 2"
+        namespace="publishing2"></publishing>
+</publishing-collection>

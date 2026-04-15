@@ -1,0 +1,8 @@
+<stock-collection>
+    <stock nature="" name="stock1">
+        <supplier _cs="" />
+    </stock>
+    <stock nature="" name="stock2">
+        <supplier _cs="" />
+    </stock>
+</stock-collection>

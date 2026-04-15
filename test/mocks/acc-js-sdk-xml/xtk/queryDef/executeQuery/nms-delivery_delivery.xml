@@ -1,0 +1,33 @@
+<delivery-collection>
+    <delivery deliveryCode="" editForm="nms:delivery" internalName="delivery1"
+        label="Delivery 1"
+        lastModified="2026-04-05 21:54:11.840Z" messageType="0" nature="" state="37">
+        <scheduling contactDate="2026-04-05 21:54:09.129Z" />
+        <properties toDeliver="0" />
+        <indicators processed="0" success="0" />
+        <typology />
+        <content>
+            <html>
+                <source><![CDATA[<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<p>Text here</p>
+</body></html>]]></source>
+            </html>
+            <text>
+                <source><![CDATA[Text here]]></source>
+            </text>
+        </content>
+    </delivery>
+    <delivery deliveryCode="" editForm="nms:delivery" internalName="delivery2"
+        label="Delivery 2"
+        lastModified="2026-04-05 21:51:36.460Z" messageType="3" nature="" state="95">
+        <scheduling contactDate="2026-04-05 21:51:34.319Z" />
+        <properties toDeliver="2" />
+        <indicators processed="2" success="2" />
+        <typology />
+        <source/>
+    </delivery>
+</delivery-collection>

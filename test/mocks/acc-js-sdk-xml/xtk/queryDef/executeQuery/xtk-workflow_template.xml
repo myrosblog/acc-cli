@@ -1,0 +1,10 @@
+<workflow-collection>
+    <workflow _form="xtk:workflow" builtIn="1" internalName="workflowTemplate1"
+        label="Workflow Template 1" lastModified="2024-07-07 23:47:31.605Z">
+        <desc><![CDATA[Description 1]]></desc>
+    </workflow>
+    <workflow _form="" builtIn="0" id="5133" internalName="workflowTemplate2"
+        label="Workflow Template 2" lastModified="2024-07-19 02:55:04.465Z">
+        <desc><![CDATA[Description 2]]></desc>
+    </workflow>
+</workflow-collection>

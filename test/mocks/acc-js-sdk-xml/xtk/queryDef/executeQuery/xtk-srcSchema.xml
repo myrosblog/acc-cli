@@ -1,0 +1,25 @@
+<srcSchema-collection>
+    <srcSchema created="2024-06-27 00:12:54.277Z"
+        entitySchema="xtk:srcSchema" img="xtk:schema.png" label="Src Schema 1"
+        lastModified="2024-06-27 00:29:05.282Z" mappingType="sql"
+        md5="ABC11" name="srcSchema1"
+        namespace="cus" xtkschema="xtk:srcSchema">
+        <createdBy/>
+        <modifiedBy/>
+        <element autopk="true" label="New" name="new">
+            <attribute label="str" name="str" type="string" />
+            <attribute label="int" name="int" type="long" />
+        </element>
+    </srcSchema>
+    <srcSchema created="2024-06-27 00:50:30.862Z"
+        entitySchema="xtk:srcSchema" img="xtk:schema.png"
+        label="Src Schema 2" lastModified="2024-06-27 00:51:00.638Z" mappingType="sql"
+        md5="ABC12" name="srcSchema2"
+        namespace="cus" xtkschema="xtk:srcSchema">
+        <createdBy/>
+        <modifiedBy/>
+        <element label="Analytics" name="Analytics">
+            <attribute label="date" name="date" type="string" />
+        </element>
+    </srcSchema>
+</srcSchema-collection>

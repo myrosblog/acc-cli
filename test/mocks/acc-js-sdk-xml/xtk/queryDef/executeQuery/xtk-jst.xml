@@ -1,0 +1,12 @@
+<jst-collection>
+    <jst created="2024-07-02 00:14:35.344Z"
+        entitySchema="xtk:jst" img="xtk:jst.png" label="Jst 1"
+        lastModified="2024-07-02 00:14:35.344Z"
+        md5="ABC8" name="jst1"
+        namespace="cus" />
+    <jst created="2026-04-15 00:52:35.689Z" 
+        entitySchema="xtk:jst" img="xtk:jst.png" label="Jst 2"
+        lastModified="2026-04-15 00:52:35.689Z"
+        md5="ABC7" name="jst2"
+        namespace="cus" />
+</jst-collection>

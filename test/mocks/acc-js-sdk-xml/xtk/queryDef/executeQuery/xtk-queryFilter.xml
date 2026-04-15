@@ -1,0 +1,4 @@
+<queryFilter-collection>
+    <queryFilter label="Query 1" name="queryFilter1" schema="nms:couponValue"/>
+    <queryFilter label="Query 2" name="queryFilter2" schema="nms:coupon"/>
+</queryFilter-collection>

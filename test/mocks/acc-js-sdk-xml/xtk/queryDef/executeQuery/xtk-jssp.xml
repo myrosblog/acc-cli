@@ -1,0 +1,18 @@
+<jssp-collection>
+    <jssp entitySchema="xtk:jssp" img="xtk:javascript.png" label="Jssp 1"
+        lastModified="2024-07-09 01:57:16.570Z" md5="ABC9" name="jssp1" namespace="cus"
+        xtkschema="xtk:jssp">
+        <createdBy />
+        <modifiedBy />
+        <data><![CDATA[
+<html><head>/head><body>
+<script type="text/javascript"></script>
+</body></html>]]></data>
+    </jssp>
+    <jssp created="2026-04-15 00:55:56.212Z" entitySchema="xtk:jssp" img="xtk:javascript.png"
+        label="Jssp 2" lastModified="2026-04-15 00:56:04.137Z" md5="ABC10" name="jssp2"
+        namespace="cus" xtkschema="xtk:jssp">
+        <createdBy />
+        <modifiedBy />
+    </jssp>
+</jssp-collection>

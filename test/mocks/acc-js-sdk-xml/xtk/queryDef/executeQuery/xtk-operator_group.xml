@@ -1,0 +1,10 @@
+<operator-collection>
+    <operator label="Group 1" name="group1" type="1">
+        <desc><![CDATA[Description 1]]></desc>
+        <access />
+    </operator>
+    <operator label="Group 2" name="group2" type="1">
+        <desc><![CDATA[Description 2]]></desc>
+        <access />
+    </operator>
+</operator-collection>

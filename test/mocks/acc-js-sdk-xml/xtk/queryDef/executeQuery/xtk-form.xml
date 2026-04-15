@@ -1,0 +1,6 @@
+<form-collection>
+    <form  _isMemoNull="0" img="xtk:form.png" label="Form 1"
+        md5="ABC5" name="form1" namespace="cus" />
+    <form  _isMemoNull="0" img="xtk:form.png" label="Form 2"
+        md5="ABC6" name="form2" namespace="cus" />
+</form-collection>

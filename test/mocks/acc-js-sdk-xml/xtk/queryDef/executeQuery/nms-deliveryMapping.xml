@@ -1,0 +1,6 @@
+<deliveryMapping-collection>
+    <deliveryMapping builtIn="1" label="Mapping 1" name="deliveryMapping1"
+        schema="nms:recipient" />
+    <deliveryMapping builtIn="1" label="Mapping 2" name="deliveryMapping2"
+        schema="nms:subscription" />
+</deliveryMapping-collection>

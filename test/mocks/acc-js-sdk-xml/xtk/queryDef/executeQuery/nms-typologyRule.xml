@@ -1,0 +1,10 @@
+<typologyRule-collection>
+    <typologyRule builtIn="1" label="Rule 1" messageType="0" name="typologyRule1"
+        order="35" ruleStep="preMessage" ruleType="javascript">
+        <desc><![CDATA[Checking 1.]]></desc>
+    </typologyRule>
+    <typologyRule builtIn="1" label="Rule 2" messageType="0" name="typologyRule2"
+        order="30" ruleStep="preMessage" ruleType="javascript">
+        <desc><![CDATA[Checking 2.]]></desc>
+    </typologyRule>
+</typologyRule-collection>

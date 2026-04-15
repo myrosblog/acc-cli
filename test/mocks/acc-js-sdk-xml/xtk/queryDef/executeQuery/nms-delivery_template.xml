@@ -1,0 +1,27 @@
+<delivery-collection>
+    <delivery builtIn="1" deliveryMode="1" editForm="nms:delivery" internalName="deliveryTemplate1"
+        label="Delivery Template 1" messageType="0">
+        <typology />
+        <content>
+            <html>
+                <source><![CDATA[<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<p>Text here</p>
+</body>
+</html>]]></source>
+            </html>
+            <text>
+                <source><![CDATA[Text here]]></source>
+            </text>
+        </content>
+    </delivery>
+    <delivery builtIn="0" deliveryMode="0" editForm="nms:delivery" internalName="deliveryTemplate2"
+        label="Delivery Template 2" messageType="3">
+        <typology />
+        <html/>
+        <text/>
+    </delivery>
+</delivery-collection>

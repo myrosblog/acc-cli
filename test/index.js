@@ -7,7 +7,7 @@ chai.use(chaiAsPromised);
 
 global.expect = chai.expect;
 
-// Import all test files
+// unit tests
 import "./unit/AccErrors.spec.js";
 import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
@@ -18,3 +18,6 @@ import "./unit/commands/auth-ip.spec.js";
 import "./unit/commands/instance-template.spec.js";
 import "./unit/commands/instance-check.spec.js";
 import "./unit/commands/instance-pull.spec.js";
+
+// integration tests
+import "./integration/CampaignInstance.pull.spec.js";

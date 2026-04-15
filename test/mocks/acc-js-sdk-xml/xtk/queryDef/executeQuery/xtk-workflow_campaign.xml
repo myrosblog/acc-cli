@@ -1,0 +1,8 @@
+<workflow-collection>
+    <workflow _form="" failed="0" internalName="workflowCampaign1"
+        label="Campaign Workflow 1" nextProcessingDate=""
+        processDate="2024-07-24 02:14:02.710Z" production="0" state="20" />
+    <workflow _form="" failed="1" internalName="workflowCampaign2"
+        label="Campaign Workflow 2" nextProcessingDate=""
+        processDate="2024-07-29 02:34:47.198Z" production="0" state="13" />
+</workflow-collection>

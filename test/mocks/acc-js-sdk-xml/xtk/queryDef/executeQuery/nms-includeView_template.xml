@@ -1,0 +1,14 @@
+<includeView-collection>
+    <includeView name="template1" contentType="1" type="1">
+        <source>
+            <html><![CDATA[ <p>Footer text</p>]]></html>
+            <text>Footer text</text>
+        </source>
+    </includeView>
+    <includeView name="template2" contentType="2" type="1">
+        <source>
+            <html><![CDATA[ <img src="image.jpg" alt="Image">]]></html>
+            <text>Image</text>
+        </source>
+    </includeView>
+</includeView-collection>

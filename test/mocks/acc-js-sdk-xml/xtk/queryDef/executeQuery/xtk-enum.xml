@@ -1,0 +1,4 @@
+<enum-collection>
+    <enum label="Enum 1" name="enum1" type="1" />
+    <enum label="Enum 2" name="enum2" type="2" />
+</enum-collection>

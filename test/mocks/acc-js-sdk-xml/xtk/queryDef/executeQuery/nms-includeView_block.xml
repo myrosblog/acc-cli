@@ -1,0 +1,22 @@
+<includeView-collection>
+    <includeView name="block1" contentType="0">
+        <source>
+            <text><![CDATA[<%var array = [recipient.salutation,
+              recipient.firstName,
+              recipient.lastName];
+document.write(array[0]+array[1]+array[2]);%>]]></text>
+        </source>
+    </includeView>
+    <includeView name="block2" contentType="0">
+        <source>
+            <html><![CDATA[<a href="localhost/homepage" target="_blank">Homepage</a>]]></html>
+        </source>
+    </includeView>
+    <includeView name="block3" contentType="1">
+        <source>
+            <html><![CDATA[<a href="<%@ include view='MirrorPage' %>" _label="Mirror Page" _type="mirrorPage">Unsubcription</a>]]></html>
+            <text><![CDATA[Unsubscription:
+(<%@ include view='MirrorPage' %>)]]></text>
+        </source>
+    </includeView>
+</includeView-collection>
