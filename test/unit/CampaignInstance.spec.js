@@ -8,7 +8,12 @@ import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import { makeClient, makeLogger, makeSpinner } from "../helpers.js";
+import {
+  makeClient,
+  makeLogger,
+  makeSpinner,
+  filterSchemas,
+} from "../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const loadJson = (file) => JSON.parse(fs.readFileSync(join(__dirname, file)));
@@ -31,12 +36,6 @@ const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
 );
 // acc
 import CampaignInstance from "../../src/CampaignInstance.js";
-
-/** Shallow-clone config and keep only the given schemaIds */
-const filterSchemas = (config, ...schemaIds) => ({
-  ...config,
-  schemas: config.schemas.filter((x) => schemaIds.includes(x.schemaId)),
-});
 
 describe("CampaignInstance", () => {
   let mockClient,
@@ -201,9 +200,6 @@ describe("CampaignInstance", () => {
 
     it("should check with custom lineCount=2 in 3 batches (5 xtk:olapCube)", async () => {
       const config = filterSchemas(configDefaultFull, "xtk:olapCube");
-      config.schemas = config.schemas.filter(
-        (x) => x.schemaId == "xtk:olapCube",
-      );
       config.schemas[0].queryDef.lineCount = 2; // force lineCount to 2 to test batching on 5 elements
       // init
       instance = new CampaignInstance(
