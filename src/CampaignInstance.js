@@ -50,6 +50,12 @@ class CampaignInstance {
    */
   CONFIG_XPATH_ATTR = "@";
 
+  /** 
+   * Default SQL LIMIT to fetch schemas (querydef lineCount)
+   * @type {number}
+  */
+  CONFIG_DEFAULT_LINECOUNT = 20;
+
   /**
    * Logs of downloaded data
    * @type {Array<CampaignPullLog>}
@@ -145,7 +151,7 @@ class CampaignInstance {
       }
       const spinner = this.createSpinner(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
       // download and parse
-      const lineCount = queryDef?.lineCount || 10;
+      const lineCount = queryDef?.lineCount || this.CONFIG_DEFAULT_LINECOUNT;
       let startLine = 1;
       let recordsExpectedTotal = 0;
       let recordsParsedTotal = 0;

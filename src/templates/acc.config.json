@@ -45,7 +45,8 @@
         "code": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.js"
       },
       "queryDef": {
-        "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
+        "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] },
+        "lineCount": 10
       }
     },
     {
@@ -116,7 +117,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -132,7 +134,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -148,7 +151,8 @@
               "expr": "@internalName NOT LIKE 'xtk%' AND @internalName NOT LIKE 'nl%' AND @internalName NOT LIKE 'ncm%' AND @internalName NOT LIKE 'nms%'"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -190,7 +194,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -224,7 +229,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -240,7 +246,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -319,7 +326,8 @@
             { "expr": "@builtIn = true", "boolOperator": "AND" },
             { "expr": "@isModel = false", "boolOperator": "AND" }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -336,7 +344,8 @@
             { "expr": "@builtIn = true", "boolOperator": "AND" },
             { "expr": "@isModel = true", "boolOperator": "AND" }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -352,7 +361,8 @@
             { "expr": "@type = 0", "boolOperator": "AND" },
             { "expr": "@name NOT LIKE 'xtk%'", "boolOperator": "AND" }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {
@@ -368,7 +378,8 @@
             { "expr": "@type = 1", "boolOperator": "AND" },
             { "expr": "@name NOT LIKE 'xtk%'", "boolOperator": "AND" }
           ]
-        }
+        },
+        "lineCount": 10
       }
     },
     {

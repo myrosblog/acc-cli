@@ -191,7 +191,7 @@ describe("CampaignInstance", () => {
         schema: "nms:deliveryMapping",
         operation: "select",
         select: { node: [] },
-        lineCount: 10,
+        lineCount: 20,
         startLine: 1,
         where: { condition: [{ expr: "@builtIn = false" }] },
       });
