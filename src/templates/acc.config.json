@@ -390,6 +390,13 @@
       }
     },
     {
+      "schemaId": "xtk:fileRes",
+      "filename": "/Resources/Online/Public resources/{@internalName}.meta.xml",
+      "queryDef": {
+        "where": { "condition": [{ "expr": "@fileName LIKE '%css%'" }] }
+      }
+    },
+    {
       "schemaId": "nms:webApp",
       "filename": "/Resources/Online/Web applications/{@internalName}.xml",
       "queryDef": {
