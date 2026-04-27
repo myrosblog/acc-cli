@@ -211,6 +211,11 @@ const mappingFixtures = [
     parsedFilenames: ["webApp1.xml", "webApp2.xml"], // not decomposed
   },
   {
+    schemaId: "xtk:fileRes",
+    xml: loadXml(dir, "xtk-fileRes.xml"),
+    parsedFilenames: ["fileRes1.meta.xml", "fileRes2.meta.xml"],
+  },
+  {
     schemaId: "xtk:queryFilter",
     xml: loadXml(dir, "xtk-queryFilter.xml"),
     parsedFilenames: ["queryFilter1.meta.xml", "queryFilter2.meta.xml"],
