@@ -58,7 +58,7 @@
     },
     {
       "schemaId": "xtk:olapCube",
-      "filename": "/Administration/Cubes/{@name}.meta.xml",
+      "filename": "/Administration/Configuration/Cubes/{@name}.meta.xml",
       "queryDef": {
         "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] }
       }
