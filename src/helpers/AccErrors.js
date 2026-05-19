@@ -44,19 +44,19 @@ function wrapSdkError(error, ErrorClass, context = {}) {
 E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize CampaignAuth.");
 E(
   "AUTH_INIT_EXISTING_ALIAS",
-  "Instance with alias already exists. Use 'acc auth list' to see all configured instances.",
+  "Instance with alias already exists. Use 'acc config get acc.auth.instances' to see all configured instances.",
 );
 E(
   "AUTH_LOGIN_ALIAS_MISSING",
-  "Instance with alias not found. Use 'acc auth list' to see all configured instances.",
+  "Instance with alias not found. Use 'acc config get acc.auth.instances' to see all configured instances.",
 );
 E(
   "AUTH_LOGIN_ALIAS_EMPTY",
-  "Login failed: alias empty. Use 'acc auth list' to see the path to the authentication file.",
+  "Login failed: alias empty. Use 'acc config get acc.auth.instances' to see the path to the authentication file.",
 );
 E(
   "AUTH_LOGIN_ALIAS_INVALID",
-  "Login failed: alias invalid. Use 'acc auth list' to see the path to the authentication file.",
+  "Login failed: alias invalid. Use 'acc config get acc.auth.instances' to see the path to the authentication file.",
 );
 E(
   "AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED",
