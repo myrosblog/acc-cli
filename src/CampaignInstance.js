@@ -54,10 +54,10 @@ class CampaignInstance {
    */
   CONFIG_XPATH_ATTR = "@";
 
-  /** 
+  /**
    * Default SQL LIMIT to fetch schemas (querydef lineCount)
    * @type {number}
-  */
+   */
   CONFIG_DEFAULT_LINECOUNT = 20;
 
   /**
@@ -153,7 +153,9 @@ class CampaignInstance {
           continue;
         }
       }
-      const spinner = this.createSpinner(`${filename}: ${chalk.bgCyan(schemaId)}`).start(); // Démarre le spinner
+      const spinner = this.createSpinner(
+        `${filename}: ${chalk.bgCyan(schemaId)}`,
+      ).start(); // Démarre le spinner
       // download and parse
       const lineCount = queryDef?.lineCount || this.CONFIG_DEFAULT_LINECOUNT;
       let startLine = 1;
@@ -183,7 +185,9 @@ class CampaignInstance {
         recordsParsedTotal += recordsLengthOfThisBatch;
         pullLog.endTime = new Date();
         // debug pullLog
-        this.logger.debug(`Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`);
+        this.logger.debug(
+          `Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
+        );
         this.logger.debug(pullLog);
       } while (recordsLengthOfThisBatch >= lineCount);
       const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;

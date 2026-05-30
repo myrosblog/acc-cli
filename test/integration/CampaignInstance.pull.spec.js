@@ -144,19 +144,28 @@ const mappingFixtures = [
     schemaId: "xtk:workflow",
     filename: "Campaign workflows",
     xml: loadXml(dir, "xtk-workflow_campaign.xml"),
-    parsedFilenames: ["workflowCampaign1.meta.xml", "workflowCampaign2.meta.xml"],
+    parsedFilenames: [
+      "workflowCampaign1.meta.xml",
+      "workflowCampaign2.meta.xml",
+    ],
   },
   {
     schemaId: "xtk:workflow",
     filename: "Technical workflows",
     xml: loadXml(dir, "xtk-workflow_technical.xml"),
-    parsedFilenames: ["workflowTechnical1.meta.xml", "workflowTechnical2.meta.xml"],
+    parsedFilenames: [
+      "workflowTechnical1.meta.xml",
+      "workflowTechnical2.meta.xml",
+    ],
   },
   {
     schemaId: "xtk:workflow",
     filename: "Workflow templates",
     xml: loadXml(dir, "xtk-workflow_template.xml"),
-    parsedFilenames: ["workflowTemplate1.meta.xml", "workflowTemplate2.meta.xml"],
+    parsedFilenames: [
+      "workflowTemplate1.meta.xml",
+      "workflowTemplate2.meta.xml",
+    ],
   },
   {
     schemaId: "xtk:job",

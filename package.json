@@ -32,7 +32,9 @@
   },
   "scripts": {
     "test": "mocha test/index.js",
-    "coverage": "c8 --reporter=lcov --reporter=text npm test"
+    "coverage": "c8 --reporter=lcov --reporter=text npm test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "type": "module",
   "dependencies": {
@@ -54,6 +56,7 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "mocha": "^11.3.0",
+    "prettier": "^3.8.3",
     "sinon": "^21.0.1",
     "sinon-chai": "^4.0.1",
     "tmp": "^0.2.5"

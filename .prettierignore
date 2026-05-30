@@ -1,0 +1,7 @@
+node_modules
+coverage
+dist
+package-lock.json
+test/dist
+test/mocks
+.acc-cache

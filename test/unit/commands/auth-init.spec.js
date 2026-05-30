@@ -33,9 +33,7 @@ describe("AuthInit", () => {
       "--pass",
       "test",
     ];
-    const authInitStub = sinon
-      .stub(CampaignAuth.prototype, "init")
-      .resolves();
+    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
     const result = await AuthInit.run(argv);
     expect(result).to.be.undefined;
     expect(authInitStub.calledOnce).to.be.true;
