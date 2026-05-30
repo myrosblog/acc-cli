@@ -13,14 +13,14 @@ describe("InstanceExec", () => {
   });
 
   it("should have required alias flag", () => {
-    expect(InstanceExec.flags.alias.required).to.be.true;
+    expect(InstanceExec.baseFlags.alias.required).to.be.true;
   });
 
   it("should have optional flags", () => {
     expect(InstanceExec.flags.file).to.exist;
     expect(InstanceExec.flags.script).to.exist;
     expect(InstanceExec.flags.name).to.exist;
-    expect(InstanceExec.flags.config).to.exist;
+    expect(InstanceExec.baseFlags.config).to.exist;
   });
 
   it("should run", async () => {

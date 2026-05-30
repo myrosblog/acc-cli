@@ -1,16 +1,7 @@
-import { Command, Flags } from "@oclif/core";
-import CampaignAuth from "../../CampaignAuth.js";
-import AioLogger from "@adobe/aio-lib-core-logging";
-const logger = AioLogger("acc");
-import Configstore from "configstore";
-import sdk from "@adobe/acc-js-sdk";
-import Config from "@adobe/aio-lib-core-config/src/Config.js";
+import { Flags } from "@oclif/core";
+import BaseCommand from "../../BaseCommand.js";
 
-const aioConfig = new Config();
-const authFile = new Configstore("campaign-cli.auth");
-const auth = new CampaignAuth(logger, sdk, aioConfig, authFile);
-
-export default class AuthLogin extends Command {
+export default class AuthLogin extends BaseCommand {
   static description = "Login to an Adobe Campaign instance";
 
   static flags = {
@@ -21,7 +12,7 @@ export default class AuthLogin extends Command {
   };
 
   async run() {
-    const { flags } = await this.parse();
-    await auth.login(flags);
+    const { flags } = await this.parse(AuthLogin);
+    await this.auth.login(flags);
   }
 }

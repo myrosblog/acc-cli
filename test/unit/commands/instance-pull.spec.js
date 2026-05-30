@@ -13,12 +13,12 @@ describe("InstancePull", () => {
   });
 
   it("should have required alias flag", () => {
-    expect(InstancePull.flags.alias.required).to.be.true;
+    expect(InstancePull.baseFlags.alias.required).to.be.true;
   });
 
   it("should have optional flags", () => {
-    expect(InstancePull.flags.path).to.exist;
-    expect(InstancePull.flags.config).to.exist;
+    expect(InstancePull.baseFlags.path).to.exist;
+    expect(InstancePull.baseFlags.config).to.exist;
     expect(InstancePull.flags.metadata).to.exist;
   });
 

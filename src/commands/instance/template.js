@@ -1,16 +1,9 @@
-import { Command } from "@oclif/core";
-import CampaignConfig from "../../CampaignConfig.js";
-import AioLogger from "@adobe/aio-lib-core-logging";
-const logger = AioLogger("acc");
-import path from "node:path";
+import BaseCommand from "../../BaseCommand.js";
 
-const defaultConfigPath = path.join(process.cwd(), "acc.config.json");
-const config = new CampaignConfig(logger, defaultConfigPath);
-
-export default class InstanceTemplate extends Command {
+export default class InstanceTemplate extends BaseCommand {
   static description = "Generate a template configuration file";
 
   async run() {
-    config.template();
+    this.makeConfig().template();
   }
 }

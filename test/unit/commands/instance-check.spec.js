@@ -13,12 +13,12 @@ describe("InstanceCheck", () => {
   });
 
   it("should have required alias flag", () => {
-    expect(InstanceCheck.flags.alias.required).to.be.true;
+    expect(InstanceCheck.baseFlags.alias.required).to.be.true;
   });
 
   it("should have optional flags", () => {
-    expect(InstanceCheck.flags.path).to.exist;
-    expect(InstanceCheck.flags.config).to.exist;
+    expect(InstanceCheck.baseFlags.path).to.exist;
+    expect(InstanceCheck.baseFlags.config).to.exist;
     expect(InstanceCheck.flags.metadata).to.exist;
   });
 
