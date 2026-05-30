@@ -34,6 +34,11 @@ acc instance pull --alias staging
 # ✔ /Administration/Configuration/Form rendering: xtk:formRendering
 # ✔ /Administration/Configuration/Javascript codes: xtk:javascript
 # ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
+
+# Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
+acc instance exec --alias staging --script "context.@result = application.instanceName"
+acc instance exec --alias staging --script "context.@result = getOption('NmsEmail_DefaultFromAddr')"
+acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
 ```
 
 ### 🔧 Advanced Configuration
