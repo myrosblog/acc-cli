@@ -867,9 +867,7 @@ describe("CampaignInstance", () => {
 
     it("should throw INSTANCE_EXEC_NO_SCRIPT when neither file nor script", async () => {
       instance = newInstance();
-      await expect(instance.exec({})).to.be.rejectedWith(
-        /no script provided/,
-      );
+      await expect(instance.exec({})).to.be.rejectedWith(/no script provided/);
     });
 
     it("should throw INSTANCE_EXEC_BOTH_SCRIPT when both file and script", async () => {
