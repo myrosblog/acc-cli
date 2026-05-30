@@ -34,6 +34,10 @@ acc instance pull --alias staging
 # ✔ /Administration/Configuration/Form rendering: xtk:formRendering
 # ✔ /Administration/Configuration/Javascript codes: xtk:javascript
 # ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
+
+# Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
+acc instance exec --alias staging --file ./scripts/cleanup.js
+acc instance exec --alias staging --script "logInfo(application.instanceName)"
 ```
 
 ### 🔧 Advanced Configuration
