@@ -11,6 +11,10 @@ const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
   INSTANCE_PULL_SDK_SELECTALL_FAILED,
   INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+  INSTANCE_EXEC_NO_SCRIPT,
+  INSTANCE_EXEC_BOTH_SCRIPT,
+  INSTANCE_EXEC_FILE_NOT_FOUND,
+  INSTANCE_EXEC_SDK_EVALUATE_FAILED,
 } = codes;
 import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
@@ -290,6 +294,83 @@ class CampaignInstance {
       return await query.executeQuery(); // Element <srcSchema></srcSchema><srcSchema></srcSchema>...
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED);
+    }
+  }
+
+  /**
+   * Executes server-side JavaScript on the instance via xtk:builder#EvaluateJavaScript.
+   * The script does not "return" a value: it surfaces output through logInfo() /
+   * the execution context, which is echoed back raw.
+   *
+   * @param {Object} cliOptions - Command-line options
+   * @param {string} [cliOptions.file] - Path to a JavaScript file to execute
+   * @param {string} [cliOptions.script] - Inline JavaScript to execute
+   * @param {string} [cliOptions.name] - Logical script name (param `name`)
+   * @returns {Promise<string>} The execution context, serialized as XML
+   * @throws {INSTANCE_EXEC_NO_SCRIPT, INSTANCE_EXEC_BOTH_SCRIPT, INSTANCE_EXEC_FILE_NOT_FOUND, INSTANCE_EXEC_SDK_EVALUATE_FAILED}
+   */
+  async exec(cliOptions) {
+    const { file, script: inlineScript } = cliOptions;
+    if (!file && !inlineScript) {
+      throw new INSTANCE_EXEC_NO_SCRIPT();
+    }
+    if (file && inlineScript) {
+      throw new INSTANCE_EXEC_BOTH_SCRIPT();
+    }
+
+    let script = inlineScript;
+    if (file) {
+      if (!fs.existsSync(file)) {
+        throw new INSTANCE_EXEC_FILE_NOT_FOUND({ messageValues: [file] });
+      }
+      script = fs.readFileSync(file, "utf8");
+    }
+    const name = cliOptions.name || (file ? path.basename(file) : "acc-cli");
+
+    const spinner = this.createSpinner(
+      `Executing ${chalk.bgCyan(name)} on the server`,
+    ).start();
+    // EvaluateJavaScript requires a `context` XML param (in/out)
+    const contextXml = DomUtil.fromJSON("context", {}, "SimpleJson");
+    let resultContext;
+    try {
+      resultContext = await this.adapterEvaluateJavaScript(
+        name,
+        script,
+        contextXml,
+      );
+    } catch (err) {
+      spinner.fail(`${chalk.bgCyan(name)} failed`);
+      throw err;
+    }
+    spinner.succeed(`${chalk.bgCyan(name)} executed`);
+
+    const resultXml = DomUtil.toXMLString(resultContext);
+    this.logger.info(resultXml);
+    return resultXml;
+  }
+
+  /**
+   * Adapter of the SDK static method xtk:builder#EvaluateJavaScript for:
+   * - easier mocking in unit tests
+   * - SDK error wrapping
+   * @param {string} name Script name (param `name`)
+   * @param {string} script JavaScript source to evaluate server-side (param `script`)
+   * @param {Document} contextXml Execution context (param `context`, in/out)
+   * @returns {Promise<Element>} the output `context` element
+   * @throws {CampaignException}
+   */
+  async adapterEvaluateJavaScript(name, script, contextXml) {
+    try {
+      // `.xml` forces the XML representation so DOMDocument params (context)
+      // are passed/returned as DOM rather than re-cast from SimpleJson.
+      return await this.client.NLWS.xml.xtkBuilder.evaluateJavaScript(
+        name,
+        script,
+        contextXml,
+      );
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_EXEC_SDK_EVALUATE_FAILED);
     }
   }
 

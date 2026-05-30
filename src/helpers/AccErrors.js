@@ -108,5 +108,18 @@ E(
   "INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED",
   "Pull failed: unable to execute SDK query. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+E(
+  "INSTANCE_EXEC_NO_SCRIPT",
+  "Exec failed: no script provided. Use --file <path> or --script <code>.",
+);
+E(
+  "INSTANCE_EXEC_BOTH_SCRIPT",
+  "Exec failed: --file and --script are mutually exclusive. Provide only one.",
+);
+E("INSTANCE_EXEC_FILE_NOT_FOUND", "Exec failed: script file not found: %s");
+E(
+  "INSTANCE_EXEC_SDK_EVALUATE_FAILED",
+  "Exec failed: server-side EvaluateJavaScript error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
 
 export { codes, messages, wrapSdkError };
