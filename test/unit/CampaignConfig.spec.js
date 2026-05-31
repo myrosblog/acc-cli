@@ -82,6 +82,50 @@ describe("CampaignAuth", function () {
         expect(config.schemas).to.deep.equal(configJson.schemas);
       });
 
+      it("should read the project alias when present", () => {
+        const configJson = {
+          alias: "prod",
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.alias).to.equal("prod");
+      });
+
+      it("should leave alias undefined when absent", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.alias).to.be.undefined;
+      });
+
+      it("should set createdFromTemplate when the file is generated", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.createdFromTemplate).to.be.true;
+      });
+
+      it("should not set createdFromTemplate when the file pre-exists", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.createdFromTemplate).to.be.false;
+      });
+
       it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
         const config = new CampaignConfig(logger, tmpConfigPath);
         try {
@@ -237,6 +281,45 @@ describe("CampaignAuth", function () {
         config.init(tmpConfigPath);
 
         expect(config.accJsSdkOptions).to.deep.equal({});
+      });
+    });
+
+    describe("seedAlias", () => {
+      it("should write the alias into a freshly created config", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+        config.seedAlias("prod");
+
+        expect(config.alias).to.equal("prod");
+        expect(fs.readJsonSync(tmpConfigPath).alias).to.equal("prod");
+      });
+
+      it("should not touch a pre-existing config file", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+        config.seedAlias("prod");
+
+        expect(config.alias).to.be.undefined;
+        expect(fs.readJsonSync(tmpConfigPath)).to.not.have.property("alias");
+      });
+
+      it("should not overwrite an existing alias", () => {
+        const configJson = {
+          alias: "staging",
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+        config.seedAlias("prod");
+
+        expect(config.alias).to.equal("staging");
       });
     });
 

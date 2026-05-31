@@ -27,6 +27,18 @@ class CampaignConfig {
   accJsSdkOptions;
 
   /**
+   * Default instance alias for this project, if set in acc.config.json.
+   * @type {String|undefined}
+   */
+  alias;
+
+  /**
+   * True when init() just created the config file from the template.
+   * @type {boolean}
+   */
+  createdFromTemplate = false;
+
+  /**
    * @type {String}
    */
   templateDir = path.join(__dirname, "templates");
@@ -91,6 +103,7 @@ class CampaignConfig {
     ) {
       this.logger.info(`🛠️ Config not found, initializing ${configPath}`);
       this.copyTemplateTo("acc.config.json", this.defaultConfigPath);
+      this.createdFromTemplate = true;
     } else {
       this.logger.info(`🛠️ Using config ${configPath}`);
     }
@@ -111,11 +124,29 @@ class CampaignConfig {
     // OK
     this.schemas = configJson.schemas || [];
     this.accJsSdkOptions = configJson["acc-js-sdk"] || {};
+    this.alias = configJson.alias;
     this.configPath = configPath;
   }
 
   fileExists(path) {
     return fs.existsSync(path);
+  }
+
+  /**
+   * Seeds the project alias into a freshly created config file, to avoid
+   * re-typing --alias on subsequent runs. No-op if the file pre-existed or
+   * already has an alias, so an existing manifest is never overwritten.
+   * @param {String} alias
+   */
+  seedAlias(alias) {
+    if (!this.createdFromTemplate || this.alias || !alias) {
+      return;
+    }
+    const configJson = fs.readJsonSync(this.configPath);
+    configJson.alias = alias;
+    fs.writeJsonSync(this.configPath, configJson, { spaces: 2 });
+    this.alias = alias;
+    this.logger.info(`🌱 Seeded alias "${alias}" into ${this.configPath}`);
   }
 
   /**

@@ -121,5 +121,9 @@ E(
   "INSTANCE_EXEC_SDK_EVALUATE_FAILED",
   "Exec failed: server-side EvaluateJavaScript error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+E(
+  "INSTANCE_ALIAS_UNRESOLVED",
+  'No instance alias provided. Pass --alias <name> or set "alias" in acc.config.json.',
+);
 
 export { codes, messages, wrapSdkError };
