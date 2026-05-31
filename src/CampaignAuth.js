@@ -60,32 +60,17 @@ class CampaignAuth {
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Object} sdk - Raw ACC JS SDK instance
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
-   * @param {Configstore} configStoreAuth - Configstore instance for authentication
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, configStoreAuth) {
+  constructor(logger, sdk, config) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
     this.config = new AioConfigAdapter(config);
     this.config.reload();
-    // migration since 0.10: if .aio doesn't exist and configStore exists: migrate configStore to .aio
-    // @todo remove for 1.0
-    if (
-      configStoreAuth &&
-      configStoreAuth.get(this.INSTANCES_KEY) &&
-      !this.config.get(this.INSTANCES_KEY)
-    ) {
-      logger.info(`acc 0.10.0 migrating authentication Adobe I/O (.aio)`);
-      this.config.set(
-        `${this.configKey}.${this.INSTANCES_KEY}`,
-        configStoreAuth.get(this.INSTANCES_KEY),
-      );
-      configStoreAuth.delete(this.INSTANCES_KEY);
-    }
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
     this.instances =

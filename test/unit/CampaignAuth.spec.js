@@ -58,7 +58,7 @@ describe("CampaignAuth", function () {
       }),
     };
 
-    // Mock Configstore
+    // Mock aio config
     mockConfig = {
       global: { file: "test-config-path" },
       get: sinon.stub(),
@@ -70,7 +70,7 @@ describe("CampaignAuth", function () {
     mockLogger = makeLogger();
 
     // CampaignAuth now creates the adapter internally
-    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
   });
 
   describe("constructor", function () {
@@ -155,7 +155,7 @@ describe("CampaignAuth", function () {
   describe("login", function () {
     it("should throw AUTH_LOGIN_ALIAS_MISSING when config cannot be parsed", async function () {
       mockConfig.get.threw(new Error("Generic error at parsing"));
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(
         auth.login({ alias: ["instance-array"] }),
       ).to.be.rejectedWith(AUTH_LOGIN_ALIAS_MISSING);
@@ -163,7 +163,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist with empty config", async function () {
       mockConfig.get.returns({});
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "empty-config" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -171,7 +171,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ existingAlias: {} });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "missingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -179,7 +179,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_EMPTY when config has null values", async function () {
       mockConfig.get.returns({ existingAlias: null });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "existingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_EMPTY,
       );
@@ -187,7 +187,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_INVALID when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ instance32: {} });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "instance32" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_INVALID,
       );
@@ -201,7 +201,7 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       // @see https://github.com/adobe/acc-js-sdk/blob/fc2c447d/test/client.test.js#L49-L54
       const err = AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED;
       await expect(
@@ -225,7 +225,7 @@ describe("CampaignAuth", function () {
         new CampaignException(undefined, 400, 16384, `SDK-999999 sdk.init()`),
       );
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_INIT_FAILED,
       );
@@ -253,7 +253,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_LOGON_FAILED,
       );
@@ -282,7 +282,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_FAILED,
       );
@@ -302,7 +302,7 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
       );
@@ -317,7 +317,7 @@ describe("CampaignAuth", function () {
         },
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, null);
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
       const client = await auth.login({ alias: "local" });
 
       expect(client).to.exist;
