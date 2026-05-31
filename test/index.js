@@ -12,6 +12,7 @@ import "./unit/AccErrors.spec.js";
 import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
 import "./unit/CampaignInstance.spec.js";
+import "./unit/InstanceCommand.spec.js";
 import "./unit/commands/auth-init.spec.js";
 import "./unit/commands/auth-login.spec.js";
 import "./unit/commands/auth-list.spec.js";

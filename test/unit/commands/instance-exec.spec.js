@@ -12,8 +12,8 @@ describe("InstanceExec", () => {
     );
   });
 
-  it("should have required alias flag", () => {
-    expect(InstanceExec.baseFlags.alias.required).to.be.true;
+  it("should have an optional alias flag", () => {
+    expect(InstanceExec.baseFlags.alias.required).to.not.be.true;
   });
 
   it("should have optional flags", () => {

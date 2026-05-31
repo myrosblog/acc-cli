@@ -82,6 +82,31 @@ describe("CampaignAuth", function () {
         expect(config.schemas).to.deep.equal(configJson.schemas);
       });
 
+      it("should read the project alias when present", () => {
+        const configJson = {
+          alias: "prod",
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.alias).to.equal("prod");
+      });
+
+      it("should leave alias undefined when absent", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.alias).to.be.undefined;
+      });
+
       it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
         const config = new CampaignConfig(logger, tmpConfigPath);
         try {
