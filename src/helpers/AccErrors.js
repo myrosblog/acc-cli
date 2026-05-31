@@ -126,4 +126,18 @@ E(
   'No instance alias provided. Pass --alias <name> or set "alias" in acc.config.json.',
 );
 
+// MONITOR
+E(
+  "MONITOR_HOST_UNRESOLVED",
+  "No target instance. Pass --host <url> or --alias <name>.",
+);
+E(
+  "MONITOR_ALIAS_UNKNOWN",
+  "Unknown alias. Use 'acc auth list' to see configured instances.",
+);
+E(
+  "MONITOR_TEST_FAILED",
+  "Health check failed: could not reach /r/test. Note: this endpoint targets the Apache front server, not Tomcat (:8080).",
+);
+
 export { codes, messages, wrapSdkError };
