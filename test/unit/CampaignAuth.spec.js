@@ -342,25 +342,6 @@ describe("CampaignAuth", function () {
     });
   });
 
-  describe("list", function () {
-    it("should list all instances", function () {
-      auth.instances = {
-        prod: { host: "http://prod", user: "produser" },
-        staging: { host: "http://staging", user: "staginguser" },
-      };
-      auth.instanceIds = ["prod", "staging"];
-
-      expect(() => auth.list()).to.not.throw();
-    });
-
-    it("should handle empty instances", function () {
-      auth.instances = {};
-      auth.instanceIds = [];
-
-      expect(() => auth.list()).to.not.throw();
-    });
-  });
-
   describe("ip", () => {
     it("should display ip info", async () => {
       const ip = await auth.ip();

@@ -20,6 +20,13 @@ import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import AccCache from "./helpers/AccCache.js";
 
 /**
+ * Config key (dot path) under which instances are stored in the aio config.
+ * Single source of truth shared with the `acc auth list` command.
+ * @type {string}
+ */
+export const AUTH_INSTANCES_KEY = "acc.auth.instances";
+
+/**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
  * Provides authentication, instance management, and connection capabilities.
  *
@@ -27,18 +34,6 @@ import AccCache from "./helpers/AccCache.js";
  * @classdesc Main class for interacting with ACC instances
  */
 class CampaignAuth {
-  /**
-   * @type {string}
-   */
-  configKey = "acc.auth";
-
-  /**
-   * Configuration key for storing instances
-   * @type {string}
-   * @private
-   */
-  INSTANCES_KEY = "instances";
-
   /**
    * @type {ConnectionParameters}
    */
@@ -73,8 +68,7 @@ class CampaignAuth {
     this.config.reload();
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
-    this.instances =
-      this.config.get(`${this.configKey}.${this.INSTANCES_KEY}`) || {};
+    this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
 
@@ -115,7 +109,7 @@ class CampaignAuth {
       password: pass,
     };
     this.config.set(
-      `${this.configKey}.${this.INSTANCES_KEY}.${alias}`,
+      `${AUTH_INSTANCES_KEY}.${alias}`,
       storedInstance,
     );
     this.instances[alias] = storedInstance;
@@ -202,30 +196,6 @@ class CampaignAuth {
       password,
       sdkOptions,
     );
-  }
-
-  /**
-   * Lists all configured ACC instances.
-   *
-   * @returns {void} Outputs list of instances
-   *
-   * @example
-   * auth.list(); // Lists all configured instances
-   */
-  list() {
-    this.logger.info(
-      `📚 Reading from authentication file ${this.config.global().file} `,
-    );
-    this.logger.info(`📚 Listing ${this.instanceIds.length} instance(s)`);
-    if (this.instanceIds.length === 0) {
-      this.logger.info(
-        `  No instances configured yet. Use "campaign auth init" to add an instance.`,
-      );
-      return;
-    }
-    for (const [key, value] of Object.entries(this.instances)) {
-      this.logger.info(`  - "${key}": ${value.user}@${value.host}`);
-    }
   }
 }
 
