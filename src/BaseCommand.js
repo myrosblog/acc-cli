@@ -9,6 +9,7 @@ import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignConfig from "./CampaignConfig.js";
+import CampaignMonitor from "./CampaignMonitor.js";
 
 /**
  * Base oclif command for acc.
@@ -36,6 +37,13 @@ export default class BaseCommand extends Command {
    */
   get auth() {
     return (this._auth ??= new CampaignAuth(this.logger, sdk, new Config()));
+  }
+
+  /**
+   * @type {CampaignMonitor}
+   */
+  get monitor() {
+    return (this._monitor ??= new CampaignMonitor(this.logger, sdk, this.auth));
   }
 
   /**
