@@ -45,6 +45,10 @@ export default class InstanceCommand extends BaseCommand {
     if (!alias) {
       throw new INSTANCE_ALIAS_UNRESOLVED();
     }
+    // Seed the alias into a freshly created config so it needn't be retyped.
+    if (flags.alias) {
+      config.seedAlias(flags.alias);
+    }
     const resolvedFlags = { ...flags, alias };
     const client = await this.auth.login(resolvedFlags, config.accJsSdkOptions);
     return new CampaignInstance(
