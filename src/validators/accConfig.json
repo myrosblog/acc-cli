@@ -3,6 +3,11 @@
   "type": "object",
   "required": ["schemas"],
   "properties": {
+    "alias": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Default instance alias for this project. Overridden by --alias."
+    },
     "acc-js-sdk": {
       "type": "object",
       "properties": {

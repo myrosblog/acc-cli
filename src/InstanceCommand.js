@@ -4,6 +4,8 @@ import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
 import CampaignInstance from "./CampaignInstance.js";
+import { codes } from "./helpers/AccErrors.js";
+const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 
 /**
  * Base command for `acc instance ...` subcommands that talk to an instance.
@@ -16,8 +18,8 @@ import CampaignInstance from "./CampaignInstance.js";
 export default class InstanceCommand extends BaseCommand {
   static baseFlags = {
     alias: Flags.string({
-      required: true,
-      description: "Local alias for this instance, e.g. prod, staging, local",
+      description:
+        "Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of acc.config.json.",
     }),
     path: Flags.string({
       description:
@@ -39,9 +41,18 @@ export default class InstanceCommand extends BaseCommand {
   async getInstance(flags) {
     const config = this.makeConfig();
     config.init(flags.config);
-    const client = await this.auth.login(flags, config.accJsSdkOptions);
-    return new CampaignInstance(this.logger, client, config, flags, (text) =>
-      this.spinner(text),
+    const alias = flags.alias || config.alias;
+    if (!alias) {
+      throw new INSTANCE_ALIAS_UNRESOLVED();
+    }
+    const resolvedFlags = { ...flags, alias };
+    const client = await this.auth.login(resolvedFlags, config.accJsSdkOptions);
+    return new CampaignInstance(
+      this.logger,
+      client,
+      config,
+      resolvedFlags,
+      (text) => this.spinner(text),
     );
   }
 }

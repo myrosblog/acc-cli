@@ -27,6 +27,12 @@ class CampaignConfig {
   accJsSdkOptions;
 
   /**
+   * Default instance alias for this project, if set in acc.config.json.
+   * @type {String|undefined}
+   */
+  alias;
+
+  /**
    * @type {String}
    */
   templateDir = path.join(__dirname, "templates");
@@ -111,6 +117,7 @@ class CampaignConfig {
     // OK
     this.schemas = configJson.schemas || [];
     this.accJsSdkOptions = configJson["acc-js-sdk"] || {};
+    this.alias = configJson.alias;
     this.configPath = configPath;
   }
 
