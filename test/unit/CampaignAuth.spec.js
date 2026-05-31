@@ -341,13 +341,14 @@ describe("CampaignAuth", function () {
         input: sinon.stub(),
         password: sinon.stub().resolves("secret"),
       };
+      // Prompt order: host -> user -> (masked password) -> alias
       mockPrompt.input
         .onCall(0)
-        .resolves("prod") // alias
-        .onCall(1)
         .resolves("http://localhost") // host
+        .onCall(1)
+        .resolves("admin") // user
         .onCall(2)
-        .resolves("admin"); // user
+        .resolves("prod"); // alias
       auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 

@@ -203,11 +203,9 @@ class CampaignAuth {
       return opts;
     }
     const missing = (v) => v === undefined || v === null || v === "";
-    if (missing(opts.alias)) {
-      opts.alias = await this.prompt.input(
-        "Local alias for this instance (e.g. prod, staging, local)",
-      );
-    }
+    // Prompt order follows the natural "where → who → secret → local label"
+    // flow: connection target first, then identity, then the masked secret,
+    // and finally the local alias used to refer back to this instance.
     if (missing(opts.host)) {
       opts.host = await this.prompt.input(
         "Adobe Campaign host URL (e.g. https://instance.com)",
@@ -218,6 +216,11 @@ class CampaignAuth {
     }
     if (missing(opts.pass)) {
       opts.pass = await this.prompt.password("Operator password");
+    }
+    if (missing(opts.alias)) {
+      opts.alias = await this.prompt.input(
+        "Local alias for this instance (e.g. prod, staging, local)",
+      );
     }
     return opts;
   }
