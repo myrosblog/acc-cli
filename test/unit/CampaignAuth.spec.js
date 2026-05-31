@@ -23,7 +23,7 @@ const {
 import { makeLogger } from "../helpers.js";
 
 describe("CampaignAuth", function () {
-  let mockSdk, mockConfig, mockLogger;
+  let mockSdk, mockConfig, mockLogger, mockPrompt;
   /**
    * @type {CampaignAuth}
    */
@@ -69,8 +69,16 @@ describe("CampaignAuth", function () {
     // mock AioLogger
     mockLogger = makeLogger();
 
-    // CampaignAuth now creates the adapter internally
-    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+    // Default to a non-interactive prompt so tests are deterministic whether or
+    // not `npm test` runs attached to a TTY. Tests that exercise the
+    // interactive path inject their own prompt.
+    mockPrompt = {
+      isInteractive: sinon.stub().returns(false),
+      input: sinon.stub(),
+      password: sinon.stub(),
+    };
+
+    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
   });
 
   describe("constructor", function () {
@@ -322,6 +330,66 @@ describe("CampaignAuth", function () {
 
       expect(client).to.exist;
       expect(mockSdk.init.calledOnce).to.be.true;
+    });
+  });
+
+  describe("init prompting", function () {
+    it("should prompt for missing fields (masked password) when interactive", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub().resolves("secret"),
+      };
+      // Prompt order: host -> user -> (masked password) -> alias
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost") // host
+        .onCall(1)
+        .resolves("admin") // user
+        .onCall(2)
+        .resolves("prod"); // alias
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockPrompt.input.callCount).to.equal(3);
+      expect(mockPrompt.password.calledOnce).to.be.true;
+      expect(mockConfig.set.firstCall.args[0]).to.equal(
+        "acc.auth.instances.prod",
+      );
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        user: "admin",
+        password: "secret",
+      });
+    });
+
+    it("should not prompt and keep provided options when non-interactive", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(false),
+        input: sinon.stub(),
+        password: sinon.stub(),
+      };
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({
+        alias: "prod",
+        host: "http://localhost",
+        user: "admin",
+        pass: "secret",
+      });
+
+      expect(mockPrompt.input.called).to.be.false;
+      expect(mockPrompt.password.called).to.be.false;
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        user: "admin",
+        password: "secret",
+      });
     });
   });
 

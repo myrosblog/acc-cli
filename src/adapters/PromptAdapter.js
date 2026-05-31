@@ -1,0 +1,51 @@
+import { input, password } from "@inquirer/prompts";
+
+/**
+ * Adapter around @inquirer/prompts (the same prompt library aio-cli relies on).
+ * Encapsulates interactive terminal prompts behind a clean, mockable interface
+ * so business services (e.g. CampaignAuth) can ask the user for missing input
+ * without coupling to a specific prompt library, and so tests can stub it.
+ *
+ * IMPORTANT: callers must guard interactive prompts with {@link isInteractive}
+ * so that scripted / CI usage (no TTY) never blocks waiting for stdin.
+ *
+ * @class PromptAdapter
+ */
+class PromptAdapter {
+  /**
+   * @param {NodeJS.ReadStream} stdin - input stream, defaults to process.stdin
+   */
+  constructor(stdin = process.stdin) {
+    this.stdin = stdin;
+  }
+
+  /**
+   * Whether the process is attached to an interactive terminal.
+   * @returns {boolean}
+   */
+  isInteractive() {
+    return Boolean(this.stdin && this.stdin.isTTY);
+  }
+
+  /**
+   * Free-text prompt.
+   * @param {string} message
+   * @param {object} [opts] - extra @inquirer/input options
+   * @returns {Promise<string>}
+   */
+  async input(message, opts = {}) {
+    return input({ message, ...opts });
+  }
+
+  /**
+   * Masked password prompt (input is hidden from the terminal and history).
+   * @param {string} message
+   * @param {object} [opts] - extra @inquirer/password options
+   * @returns {Promise<string>}
+   */
+  async password(message, opts = {}) {
+    return password({ message, mask: "*", ...opts });
+  }
+}
+
+export default PromptAdapter;

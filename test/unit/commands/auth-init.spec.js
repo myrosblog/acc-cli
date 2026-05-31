@@ -10,11 +10,11 @@ describe("AuthInit", () => {
     );
   });
 
-  it("should have required flags", () => {
-    expect(AuthInit.flags.alias.required).to.be.true;
-    expect(AuthInit.flags.host.required).to.be.true;
-    expect(AuthInit.flags.user.required).to.be.true;
-    expect(AuthInit.flags.pass.required).to.be.true;
+  it("should have optional flags (prompted interactively when omitted)", () => {
+    expect(AuthInit.flags.alias.required).to.not.be.true;
+    expect(AuthInit.flags.host.required).to.not.be.true;
+    expect(AuthInit.flags.user.required).to.not.be.true;
+    expect(AuthInit.flags.pass.required).to.not.be.true;
   });
 
   it("should have correct flag descriptions", () => {
