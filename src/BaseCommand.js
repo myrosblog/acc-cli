@@ -1,6 +1,5 @@
 // npm
 import { Command } from "@oclif/core";
-import Configstore from "configstore";
 import path from "node:path";
 import ora from "ora";
 // sdk
@@ -36,12 +35,7 @@ export default class BaseCommand extends Command {
    * @type {CampaignAuth}
    */
   get auth() {
-    return (this._auth ??= new CampaignAuth(
-      this.logger,
-      sdk,
-      new Config(),
-      new Configstore("campaign-cli.auth"),
-    ));
+    return (this._auth ??= new CampaignAuth(this.logger, sdk, new Config()));
   }
 
   /**
