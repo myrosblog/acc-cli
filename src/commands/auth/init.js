@@ -7,20 +7,17 @@ export default class AuthInit extends BaseCommand {
 
   static flags = {
     alias: Flags.string({
-      required: true,
       description: "Local alias for this instance, e.g. prod, staging, local",
     }),
     host: Flags.string({
-      required: true,
       description: "URL of Adobe Campaign root, e.g. http://localhost:8080",
     }),
     user: Flags.string({
-      required: true,
       description: "Operator username",
     }),
     pass: Flags.string({
-      required: true,
-      description: "Operator password",
+      description:
+        "Operator password. Omit on an interactive terminal to be prompted securely (avoids leaking it into shell history).",
     }),
   };
 

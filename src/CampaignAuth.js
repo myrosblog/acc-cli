@@ -17,6 +17,7 @@ const {
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
+import PromptAdapter from "./adapters/PromptAdapter.js";
 import AccCache from "./helpers/AccCache.js";
 
 /**
@@ -55,12 +56,13 @@ class CampaignAuth {
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Object} sdk - Raw ACC JS SDK instance
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
+   * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config) {
+  constructor(logger, sdk, config, prompt) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -68,6 +70,7 @@ class CampaignAuth {
     this.config.reload();
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
+    this.prompt = prompt || new PromptAdapter();
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -99,6 +102,7 @@ class CampaignAuth {
    * });
    */
   async init(authOptions, sdkOptions, cliOptions) {
+    authOptions = await this._collectInitOptions(authOptions || {});
     if (this.instanceIds.includes(authOptions.alias)) {
       throw new AUTH_INIT_EXISTING_ALIAS();
     }
@@ -108,10 +112,7 @@ class CampaignAuth {
       user,
       password: pass,
     };
-    this.config.set(
-      `${AUTH_INSTANCES_KEY}.${alias}`,
-      storedInstance,
-    );
+    this.config.set(`${AUTH_INSTANCES_KEY}.${alias}`, storedInstance);
     this.instances[alias] = storedInstance;
     this.instanceIds = Object.keys(this.instances);
     this.logger.info(`✅ Instance ${alias} added successfully.`);
@@ -187,6 +188,38 @@ class CampaignAuth {
       `✅ Logged in to ${serverInfo.instanceName} (${serverInfo.releaseName} build ${serverInfo.buildNumber}) successfully.`,
     );
     return client;
+  }
+
+  /**
+   * Fills in any missing init options by prompting the user, but only when
+   * attached to an interactive terminal. The password is always collected via
+   * a masked prompt so it never lands in shell history or the process list.
+   * In non-interactive mode the options are returned untouched (flags only).
+   * @param {Object} opts - partial init options ({ alias, host, user, pass })
+   * @returns {Promise<Object>}
+   */
+  async _collectInitOptions(opts) {
+    if (!this.prompt.isInteractive()) {
+      return opts;
+    }
+    const missing = (v) => v === undefined || v === null || v === "";
+    if (missing(opts.alias)) {
+      opts.alias = await this.prompt.input(
+        "Local alias for this instance (e.g. prod, staging, local)",
+      );
+    }
+    if (missing(opts.host)) {
+      opts.host = await this.prompt.input(
+        "Adobe Campaign host URL (e.g. https://instance.com)",
+      );
+    }
+    if (missing(opts.user)) {
+      opts.user = await this.prompt.input("Operator username");
+    }
+    if (missing(opts.pass)) {
+      opts.pass = await this.prompt.password("Operator password");
+    }
+    return opts;
   }
 
   _prepareConnectionParameters(host, user, password, sdkOptions) {
