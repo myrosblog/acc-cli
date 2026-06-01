@@ -29,6 +29,11 @@ const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const xtkOlapCubes1 = loadXml("xtk/olapCube/olapCubes.1.xml");
 const xtkOlapCubes2 = loadXml("xtk/olapCube/olapCubes.2.xml");
 const xtkOlapCubes3 = loadXml("xtk/olapCube/olapCubes.3.xml");
+// empty collection, as the server returns it past the last record (see Fiddler:
+// <delivery-collection/>); getChildElements() yields []
+const xtkOlapCubesEmpty = DomUtil.getFirstChildElement(
+  DomUtil.parse("<olapCube-collection/>"),
+);
 const nmsDelivery554 = loadXml("nms/delivery/DM554.xml");
 const nmsViewSubscription = loadXml("nms/includeView/SubscriptionLink.xml");
 const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
@@ -192,7 +197,7 @@ describe("CampaignInstance", () => {
         operation: "select",
         select: { node: [] },
         lineCount: 20,
-        startLine: 1,
+        startLine: 0,
         where: { condition: [{ expr: "@builtIn = false" }] },
       });
       expect(pullLog.startTime).to.be.lessThan(pullLog.endTime);
@@ -234,7 +239,7 @@ describe("CampaignInstance", () => {
         operation: "select",
         select: { node: [] },
         where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
-        startLine: 1,
+        startLine: 0,
         lineCount: 2,
       });
       expect(pullLog1.startTime).to.be.lessThan(pullLog1.endTime);
@@ -251,7 +256,7 @@ describe("CampaignInstance", () => {
         operation: "select",
         select: { node: [] },
         where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
-        startLine: 3,
+        startLine: 2,
         lineCount: 2,
       });
       expect(pullLog2.startTime).to.be.lessThan(pullLog2.endTime);
@@ -267,7 +272,7 @@ describe("CampaignInstance", () => {
         operation: "select",
         select: { node: [] },
         where: { condition: [{ expr: "@name NOT LIKE 'xtk%'" }] },
-        startLine: 5,
+        startLine: 4,
         lineCount: 2,
       });
       expect(pullLog3.startTime).to.be.lessThan(pullLog3.endTime);
@@ -446,6 +451,37 @@ describe("CampaignInstance", () => {
 
       expect(instance.pullLogs.length).to.equal(1);
       expect(adapterExecuteQueryStub.callCount).to.equal(1);
+    });
+
+    it("should not journal the trailing empty batch when the total is an exact multiple of lineCount", async () => {
+      const config = filterSchemas(configDefaultFull, "xtk:olapCube");
+      config.schemas[0].queryDef.lineCount = 2;
+      instance = new CampaignInstance(
+        mockLogger,
+        mockClient,
+        config,
+        optionsFull,
+        mockSpinner,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+
+      // 2 full batches (2 records each) then, like the console, a trailing
+      // empty batch signals end-of-data when the total is a multiple of lineCount.
+      adapterExecuteQueryStub.onFirstCall().resolves(xtkOlapCubes1); // 2 records
+      adapterExecuteQueryStub.onSecondCall().resolves(xtkOlapCubes2); // 2 records
+      adapterExecuteQueryStub.onThirdCall().resolves(xtkOlapCubesEmpty); // 0 records
+
+      await instance.pull(true);
+
+      // the server is queried 3 times (incl. the empty probe at startLine=4)...
+      expect(adapterExecuteQueryStub.callCount).to.equal(3);
+      // ...but the empty trailing batch is not journaled: only 2 pullLogs
+      expect(instance.pullLogs.length).to.equal(2);
+      expect(instance.pullLogs[0].queryDef.startLine).to.equal(0);
+      expect(instance.pullLogs[1].queryDef.startLine).to.equal(2);
     });
 
     it("should isolate parse errors: one failing element does not block others", async () => {

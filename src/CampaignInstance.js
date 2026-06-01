@@ -24,7 +24,7 @@ import DomUtilAcc from "./helpers/DomUtilAcc.js";
  * Campaign Instance class for interacting with ACC instances.
  * Handles data checking, pulling, and downloading from ACC schemas.
  * - pull():
- *   - paginates by batch of 10 (startLine, lineCount)
+ *   - paginates by batch of CONFIG_DEFAULT_LINECOUNT (startLine, lineCount)
  *   - download()
  *     - NLWS.xml.xtkQueryDef.create(schema)
  *     - NLWS.xml.xtkQueryDef.selectAll()
@@ -158,8 +158,9 @@ class CampaignInstance {
       ).start(); // Démarre le spinner
       // download and parse
       const lineCount = queryDef?.lineCount || this.CONFIG_DEFAULT_LINECOUNT;
-      let startLine = 1;
-      let recordsExpectedTotal = 0;
+      // startLine is 0-based, matching the Adobe Campaign console (verified via
+      // Fiddler)
+      let startLine = 0;
       let recordsParsedTotal = 0;
       let recordsLengthOfThisBatch = 0;
       // pagination loop, 1 per batch
@@ -171,7 +172,6 @@ class CampaignInstance {
         this.logger.verbose(
           `  Querying instance for records from ${startLine} to ${startLine + lineCount - 1}...`,
         );
-        recordsExpectedTotal++;
         const elementsForThisBatch = await this.downloadAndParse(
           schemaConfig,
           startLine,
@@ -184,6 +184,14 @@ class CampaignInstance {
         startLine += lineCount;
         recordsParsedTotal += recordsLengthOfThisBatch;
         pullLog.endTime = new Date();
+        // Like the console, pagination ends with one empty batch when the total
+        // is an exact multiple of lineCount. Don't journal that trailing empty
+        // batch (no records, no errors): drop it and stop.
+        if (recordsLengthOfThisBatch === 0 && pullLog.errors.length === 0) {
+          this.pullLogs.pop();
+          pullLogsForThisSchema.pop();
+          break;
+        }
         // debug pullLog
         this.logger.debug(
           `Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
