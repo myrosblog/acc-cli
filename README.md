@@ -26,26 +26,42 @@ npm install -g campaign-cli
 
 ### Usage
 
-```bash
-acc auth init --host https://instance.com --user username --pass --alias staging
+First time authentication:
 
+```bash
+# Interactive: prompts for any missing value; the password is entered hidden
+# (never stored in your shell history or visible in the process list).
+acc auth init
+# Host (i.e. https://instance1.campaign.adobe.com):
+# Username:
+# Password:
+# Alias (i.e. staging):
+```
+
+Then, recurring pulls:
+
+```bash
 acc instance pull --alias staging
 # Downloading
 # ✔ /Administration/Configuration/Form rendering: xtk:formRendering
 # ✔ /Administration/Configuration/Javascript codes: xtk:javascript
 # ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
-
-# Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
-acc instance exec --alias staging --script "context.@result = application.instanceName"
-acc instance exec --alias staging --script "context.@result = getOption('NmsEmail_DefaultFromAddr')"
-acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
 ```
 
 ### 🔧 Advanced Configuration
 
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
-## Roadmap
+Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
+
+```bash
+# Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
+acc instance exec --alias staging --script "context.@result = application.instanceName"
+acc instance exec --alias staging --script "context.@result = getOption('NmsEmail_DefaultFromAddr')"
+acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
+```
+
+## 🗓️ Roadmap
 
 Read the [Project Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).
 
@@ -53,7 +69,7 @@ Read the [Project Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?
 
 Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
 
-## Changelog
+## 📋 Changelog
 
 Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
 
@@ -61,7 +77,7 @@ Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_
 
 Contributions are welcome! Please open a Github Pull Request!
 
-### Local development
+### 🛠️ Local development
 
 ```bash
 # Clone repository
