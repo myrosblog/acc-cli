@@ -29,14 +29,27 @@ npm install -g campaign-cli
 First time authentication:
 
 ```bash
-# Interactive: prompts for any missing value; the password is entered hidden
-# (never stored in your shell history or visible in the process list).
+# Interactive: prompts for any missing value; the password / IMS token is
+# entered hidden (never stored in your shell history or visible in the
+# process list).
 acc auth init
 # Host (i.e. https://instance1.campaign.adobe.com):
+# Authentication method: (User / password | IMS bearer token)
 # Username:
 # Password:
 # Alias (i.e. staging):
 ```
+
+Campaign 8.5+ instances migrating to [IMS](https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration)
+authenticate with an IMS bearer token instead of a password:
+
+```bash
+acc auth init --method ImsBearerToken --host https://instance.campaign.adobe.com --token "$IMS_BEARER_TOKEN" --alias prod
+```
+
+> The IMS bearer token is stored as-is and is short-lived (typically ~24h).
+> Re-run `acc auth init` (or update `acc.auth.instances` via `acc config`) when
+> it expires. Existing user/password instances keep working unchanged.
 
 Then, recurring pulls:
 
@@ -53,6 +66,7 @@ acc instance pull --alias staging
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
+(or `--method ImsBearerToken --token '...'` for IMS instances)
 
 ```bash
 # Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
