@@ -1,4 +1,4 @@
-import { input, password } from "@inquirer/prompts";
+import { input, password, select } from "@inquirer/prompts";
 
 /**
  * Adapter around @inquirer/prompts (the same prompt library aio-cli relies on).
@@ -45,6 +45,17 @@ class PromptAdapter {
    */
   async password(message, opts = {}) {
     return password({ message, mask: "*", ...opts });
+  }
+
+  /**
+   * Single-choice list prompt.
+   * @param {string} message
+   * @param {Array<{name: string, value: *}>} choices
+   * @param {object} [opts] - extra @inquirer/select options
+   * @returns {Promise<*>} the selected choice's value
+   */
+  async select(message, choices, opts = {}) {
+    return select({ message, choices, ...opts });
   }
 }
 

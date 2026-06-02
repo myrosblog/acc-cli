@@ -78,6 +78,18 @@ E(
   "AUTH_LOGIN_SDK_SERVERINFO_EMPTY",
   "Login failed: Getting empty server info. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+E(
+  "AUTH_LOGIN_TOKEN_MISSING",
+  "Login failed: IMS bearer token missing for this instance. Re-run 'acc auth init' or update 'acc.auth.instances' with a valid token.",
+);
+E(
+  "AUTH_LOGIN_INVALID_METHOD",
+  "Login failed: unknown authMethod. Expected 'UserPassword' or 'ImsBearerToken'.",
+);
+E(
+  "AUTH_INIT_INVALID_METHOD",
+  "Init failed: unsupported auth method. Expected 'UserPassword' or 'ImsBearerToken'.",
+);
 
 // CONFIG
 E(

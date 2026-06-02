@@ -14,6 +14,9 @@ const {
   AUTH_LOGIN_SDK_LOGON_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
+  AUTH_LOGIN_TOKEN_MISSING,
+  AUTH_LOGIN_INVALID_METHOD,
+  AUTH_INIT_INVALID_METHOD,
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
@@ -26,6 +29,16 @@ import AccCache from "./helpers/AccCache.js";
  * @type {string}
  */
 export const AUTH_INSTANCES_KEY = "acc.auth.instances";
+
+/**
+ * Supported authentication methods, stored per-instance under `authMethod`.
+ * Legacy instances without `authMethod` are treated as `UserPassword`.
+ * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string }}
+ */
+export const AUTH_METHODS = {
+  USER_PASSWORD: "UserPassword",
+  IMS_BEARER_TOKEN: "ImsBearerToken",
+};
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
@@ -106,12 +119,8 @@ class CampaignAuth {
     if (this.instanceIds.includes(authOptions.alias)) {
       throw new AUTH_INIT_EXISTING_ALIAS();
     }
-    const { alias, host, user, pass } = authOptions;
-    const storedInstance = {
-      host,
-      user,
-      password: pass,
-    };
+    const { alias } = authOptions;
+    const storedInstance = this._buildStoredInstance(authOptions);
     this.config.set(`${AUTH_INSTANCES_KEY}.${alias}`, storedInstance);
     this.instances[alias] = storedInstance;
     this.instanceIds = Object.keys(this.instances);
@@ -140,11 +149,26 @@ class CampaignAuth {
     if (!auth) {
       throw new AUTH_LOGIN_ALIAS_EMPTY();
     }
-    let { host, user, password } = auth;
-    if (!host || !user || !password) {
-      throw new AUTH_LOGIN_ALIAS_INVALID();
+    // Legacy instances stored before IMS support have no authMethod and are
+    // UserPassword by definition, so default keeps them working untouched.
+    const authMethod = auth.authMethod || AUTH_METHODS.USER_PASSWORD;
+    const { host, user, token } = auth;
+    if (authMethod === AUTH_METHODS.USER_PASSWORD) {
+      if (!host || !user || !auth.password) {
+        throw new AUTH_LOGIN_ALIAS_INVALID();
+      }
+      this.logger.info(`↔️ Connecting ${user}@${host}...`);
+    } else if (authMethod === AUTH_METHODS.IMS_BEARER_TOKEN) {
+      if (!host) {
+        throw new AUTH_LOGIN_ALIAS_INVALID();
+      }
+      if (!token) {
+        throw new AUTH_LOGIN_TOKEN_MISSING();
+      }
+      this.logger.info(`↔️ Connecting to ${host} via IMS bearer token...`);
+    } else {
+      throw new AUTH_LOGIN_INVALID_METHOD();
     }
-    this.logger.info(`↔️ Connecting ${user}@${host}...`);
     const sdkOptions = _sdkOptions || {};
     this.logger.verbose(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
     try {
@@ -156,9 +180,8 @@ class CampaignAuth {
         sdkOptions.storage = new AccCache();
       }
       this.connectionParameters = this._prepareConnectionParameters(
-        host,
-        user,
-        password,
+        authMethod,
+        auth,
         sdkOptions,
       );
     } catch (error) {
@@ -203,19 +226,31 @@ class CampaignAuth {
       return opts;
     }
     const missing = (v) => v === undefined || v === null || v === "";
-    // Prompt order follows the natural "where → who → secret → local label"
-    // flow: connection target first, then identity, then the masked secret,
-    // and finally the local alias used to refer back to this instance.
+    // Prompt order follows the natural "where → how → who → secret → local
+    // label" flow: connection target first, then the auth method, then the
+    // method-specific identity/secret, and finally the local alias.
     if (missing(opts.host)) {
       opts.host = await this.prompt.input(
         "Adobe Campaign host URL (e.g. https://instance.com)",
       );
     }
-    if (missing(opts.user)) {
-      opts.user = await this.prompt.input("Operator username");
+    if (missing(opts.method)) {
+      opts.method = await this.prompt.select("Authentication method", [
+        { name: "User / password", value: AUTH_METHODS.USER_PASSWORD },
+        { name: "IMS access token", value: AUTH_METHODS.IMS_BEARER_TOKEN },
+      ]);
     }
-    if (missing(opts.pass)) {
-      opts.pass = await this.prompt.password("Operator password");
+    if (opts.method === AUTH_METHODS.IMS_BEARER_TOKEN) {
+      if (missing(opts.token)) {
+        opts.token = await this.prompt.password("IMS access token");
+      }
+    } else {
+      if (missing(opts.user)) {
+        opts.user = await this.prompt.input("Operator username");
+      }
+      if (missing(opts.pass)) {
+        opts.pass = await this.prompt.password("Operator password");
+      }
     }
     if (missing(opts.alias)) {
       opts.alias = await this.prompt.input(
@@ -225,13 +260,52 @@ class CampaignAuth {
     return opts;
   }
 
-  _prepareConnectionParameters(host, user, password, sdkOptions) {
+  /**
+   * Builds SDK ConnectionParameters for the given auth method.
+   * @param {string} authMethod - one of AUTH_METHODS
+   * @param {Object} auth - stored instance ({ host, user, password } | { host, token })
+   * @param {Object} sdkOptions - acc-js-sdk connection options
+   * @returns {ConnectionParameters}
+   */
+  _prepareConnectionParameters(authMethod, auth, sdkOptions) {
+    if (authMethod === AUTH_METHODS.IMS_BEARER_TOKEN) {
+      // sessionInfo:true is required: without it ofImsBearerToken performs no
+      // SOAP logon and getSessionInfo().serverInfo stays empty, which would
+      // trip AUTH_LOGIN_SDK_SERVERINFO_EMPTY downstream. Available since SDK
+      // 1.1.35 (we depend on ^1.2).
+      return ConnectionParameters.ofImsBearerToken(auth.host, auth.token, {
+        ...sdkOptions,
+        sessionInfo: true,
+      });
+    }
     return ConnectionParameters.ofUserAndPassword(
-      host,
-      user,
-      password,
+      auth.host,
+      auth.user,
+      auth.password,
       sdkOptions,
     );
+  }
+
+  /**
+   * Builds the per-method object persisted under acc.auth.instances.<alias>.
+   * @param {Object} opts - collected init options
+   * @returns {Object}
+   * @throws {AUTH_INIT_INVALID_METHOD}
+   */
+  _buildStoredInstance(opts) {
+    const authMethod = opts.method || AUTH_METHODS.USER_PASSWORD;
+    if (authMethod === AUTH_METHODS.IMS_BEARER_TOKEN) {
+      return { host: opts.host, authMethod, token: opts.token };
+    }
+    if (authMethod === AUTH_METHODS.USER_PASSWORD) {
+      return {
+        host: opts.host,
+        authMethod,
+        user: opts.user,
+        password: opts.pass,
+      };
+    }
+    throw new AUTH_INIT_INVALID_METHOD();
   }
 }
 
