@@ -15,6 +15,37 @@ describe("AuthInit", () => {
     expect(AuthInit.flags.host.required).to.not.be.true;
     expect(AuthInit.flags.user.required).to.not.be.true;
     expect(AuthInit.flags.pass.required).to.not.be.true;
+    expect(AuthInit.flags.method.required).to.not.be.true;
+    expect(AuthInit.flags.token.required).to.not.be.true;
+  });
+
+  it("should restrict --method to the supported auth methods", () => {
+    expect(AuthInit.flags.method.options).to.deep.equal([
+      "UserPassword",
+      "ImsBearerToken",
+    ]);
+  });
+
+  it("should run an ImsBearerToken init", async () => {
+    const argv = [
+      "--alias",
+      "test",
+      "--host",
+      "http://test.com",
+      "--method",
+      "ImsBearerToken",
+      "--token",
+      "ims-token",
+    ];
+    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
+    const result = await AuthInit.run(argv);
+    expect(result).to.be.undefined;
+    expect(authInitStub.calledOnce).to.be.true;
+    expect(authInitStub.firstCall.args[0]).to.include({
+      method: "ImsBearerToken",
+      token: "ims-token",
+    });
+    sinon.restore();
   });
 
   it("should have correct flag descriptions", () => {
