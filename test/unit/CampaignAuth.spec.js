@@ -23,7 +23,7 @@ const {
 import { makeLogger } from "../helpers.js";
 
 describe("CampaignAuth", function () {
-  let mockSdk, mockConfig, mockLogger, mockPrompt;
+  let mockSdk, mockConfig, mockLogger, mockPrompt, mockMakeCache;
   /**
    * @type {CampaignAuth}
    */
@@ -78,7 +78,16 @@ describe("CampaignAuth", function () {
       password: sinon.stub(),
     };
 
-    auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+    // Stub cache factory so login() never touches the filesystem in tests.
+    mockMakeCache = sinon.stub().returns({});
+
+    auth = new CampaignAuth(
+      mockLogger,
+      mockSdk,
+      mockConfig,
+      mockPrompt,
+      mockMakeCache,
+    );
   });
 
   describe("constructor", function () {
@@ -163,7 +172,13 @@ describe("CampaignAuth", function () {
   describe("login", function () {
     it("should throw AUTH_LOGIN_ALIAS_MISSING when config cannot be parsed", async function () {
       mockConfig.get.threw(new Error("Generic error at parsing"));
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(
         auth.login({ alias: ["instance-array"] }),
       ).to.be.rejectedWith(AUTH_LOGIN_ALIAS_MISSING);
@@ -171,7 +186,13 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist with empty config", async function () {
       mockConfig.get.returns({});
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "empty-config" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -179,7 +200,13 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ existingAlias: {} });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "missingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_MISSING,
       );
@@ -187,7 +214,13 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_EMPTY when config has null values", async function () {
       mockConfig.get.returns({ existingAlias: null });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "existingAlias" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_EMPTY,
       );
@@ -195,7 +228,13 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_INVALID when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ instance32: {} });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "instance32" })).to.be.rejectedWith(
         AUTH_LOGIN_ALIAS_INVALID,
       );
@@ -209,7 +248,13 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       // @see https://github.com/adobe/acc-js-sdk/blob/fc2c447d/test/client.test.js#L49-L54
       const err = AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED;
       await expect(
@@ -233,7 +278,13 @@ describe("CampaignAuth", function () {
         new CampaignException(undefined, 400, 16384, `SDK-999999 sdk.init()`),
       );
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_INIT_FAILED,
       );
@@ -261,7 +312,13 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_LOGON_FAILED,
       );
@@ -290,7 +347,13 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_FAILED,
       );
@@ -310,7 +373,13 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
         AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
       );
@@ -325,11 +394,66 @@ describe("CampaignAuth", function () {
         },
       });
 
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      // Inject a stub cache factory so the test never touches the filesystem.
+      const makeCache = sinon.stub().returns({});
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        makeCache,
+      );
       const client = await auth.login({ alias: "local" });
 
       expect(client).to.exist;
       expect(mockSdk.init.calledOnce).to.be.true;
+      expect(makeCache.calledOnce).to.be.true;
+    });
+
+    it("wires the injected cache factory as SDK storage", async function () {
+      mockConfig.get.returns({
+        local: { host: "http://localhost", user: "u", password: "p" },
+      });
+      const sentinelCache = { getItem() {}, setItem() {}, removeItem() {} };
+      const makeCache = sinon.stub().returns(sentinelCache);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        makeCache,
+      );
+      const prepStub = sinon
+        .stub(auth, "_prepareConnectionParameters")
+        .returns({});
+
+      await auth.login({ alias: "local" });
+
+      expect(makeCache.calledOnce).to.be.true;
+      const sdkOptions = prepStub.firstCall.args[3];
+      expect(sdkOptions.storage).to.equal(sentinelCache);
+    });
+
+    it("does not create a cache when noStorage is set", async function () {
+      mockConfig.get.returns({
+        local: { host: "http://localhost", user: "u", password: "p" },
+      });
+      const makeCache = sinon.stub();
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        makeCache,
+      );
+      const prepStub = sinon
+        .stub(auth, "_prepareConnectionParameters")
+        .returns({});
+
+      await auth.login({ alias: "local" }, { noStorage: true });
+
+      expect(makeCache.notCalled).to.be.true;
+      expect(prepStub.firstCall.args[3].storage).to.be.undefined;
     });
   });
 

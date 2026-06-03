@@ -63,7 +63,7 @@ class CampaignAuth {
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, prompt) {
+  constructor(logger, sdk, config, prompt, makeCache) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -72,6 +72,7 @@ class CampaignAuth {
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
+    this.makeCache = makeCache || (() => new AccCache());
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -154,7 +155,7 @@ class CampaignAuth {
         sdkOptions.noStorage === false
       ) {
         this.logger.verbose(`Using AccCache for SDK storage`);
-        sdkOptions.storage = new AccCache();
+        sdkOptions.storage = this.makeCache();
       }
       this.connectionParameters = this._prepareConnectionParameters(
         host,

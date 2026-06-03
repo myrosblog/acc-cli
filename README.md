@@ -102,3 +102,22 @@ they are imported directly from the package internals
 trade-off: they reach past the public API and may break on any SDK release.
 Prefer the public entry whenever a symbol is available there, and keep the list
 of internal imports as small as possible.
+
+### Dependency injection
+
+External dependencies (SDK, config, prompt, cache, spinner) are passed into the
+service classes (`CampaignAuth`, `CampaignInstance`, ...) rather than created
+inside them, with a sensible default applied when the argument is omitted. This
+keeps the production call sites simple while letting tests inject stubs — so the
+suite never touches the network or the filesystem.
+
+When a dependency has a side effect on construction (e.g. `AccCache` creates its
+directory on disk), inject a **factory** instead of an instance, so the resource
+is only built lazily when actually needed:
+
+```js
+constructor(logger, sdk, config, prompt, makeCache) {
+  this.prompt = prompt || new PromptAdapter();
+  this.makeCache = makeCache || (() => new AccCache()); // built on login(), not here
+}
+```
