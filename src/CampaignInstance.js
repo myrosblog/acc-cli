@@ -18,7 +18,6 @@ const {
   INSTANCE_EXEC_FILE_NOT_FOUND,
   INSTANCE_EXEC_SDK_EVALUATE_FAILED,
 } = codes;
-import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 
@@ -43,12 +42,6 @@ class CampaignInstance {
    * @type {RegExp}
    */
   REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
-
-  /**
-   * XPath separator character
-   * @type {string}
-   */
-  CONFIG_XPATH_SEP = "/";
 
   /**
    * XPath attribute prefix character
@@ -88,9 +81,7 @@ class CampaignInstance {
    * @param {function} createSpinner - Ora spinner instance for displaying progress
    *
    * @example
-   * const instance = new CampaignInstance(client, { schemas: [
-   *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
-   * ]});
+   * const instance = new CampaignInstance(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -99,11 +90,6 @@ class CampaignInstance {
     this.downloadPath = cliOptions.path;
     this.metadata = cliOptions.metadata;
     this.createSpinner = createSpinner;
-    /**
-     * Array of schema names to process (excluding default config)
-     * @type {string[]}
-     */
-    this.schemas = Object.keys(this.accConfig);
   }
 
   /**
@@ -220,10 +206,7 @@ class CampaignInstance {
    * @param {Object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
-   * @returns {Array<Element>} Number of records downloaded
-   *
-   * @example
-   * const count = await instance.download('nms:recipient', '/path/to/save', 1);
+   * @returns {Promise<Array<Element>>} the parsed records of this batch
    */
   async downloadAndParse(
     schemaConfig,
@@ -264,12 +247,7 @@ class CampaignInstance {
       pullLog.elements.push(element);
 
       try {
-        const filenameOnly = this.parse(
-          element,
-          schemaConfig,
-          isPreview,
-          pullLog,
-        );
+        const filenameOnly = this.parse(element, schemaConfig, isPreview);
         pullLog.parsedFilenames.push(filenameOnly);
         filenamesForThisBatch.push(`${chalk.underline(filenameOnly)}`);
       } catch (err) {
@@ -389,11 +367,12 @@ class CampaignInstance {
   }
 
   /**
-   *
-   * @param {Element} childElement
-   * @param {*} schemaConfig
-   * @param {boolean} isPreview
-   * @return string filenameOnly
+   * Writes a single record to disk (raw XML, or decomposed per `decompose`),
+   * after blanking any `excludeXPaths`.
+   * @param {Element} childElement - the record element
+   * @param {Object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
+   * @param {boolean} isPreview - when true, compute filenames but write nothing
+   * @returns {string} the base filename of the saved record
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
@@ -464,7 +443,6 @@ class CampaignInstance {
           if (!isPreview) {
             fs.outputFileSync(datapath, elementValue);
           }
-          const decomposedFilenameOnly = path.basename(decomposedFilename);
           // empty element
           lastNode.textContent = "";
         } catch (err) {
@@ -572,7 +550,7 @@ class CampaignPullLog {
    */
   parsedFilenames = [];
 
-  constructor(schemaConfig, lineCount, startLine) {
+  constructor(schemaConfig) {
     this.startTime = new Date();
     this.elements = [];
     this.schemaConfig = schemaConfig;
