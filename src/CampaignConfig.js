@@ -169,7 +169,7 @@ class CampaignConfig {
     );
     const filename = "acc.config.json";
     const content = fs.readFileSync(path.join(this.templateDir, filename));
-    this.logger.info(content.toString());
+    return content.toString();
   }
 }
 

@@ -360,7 +360,7 @@ class CampaignInstance {
     spinner.succeed(`${chalk.bgCyan(name)} executed`);
 
     const resultXml = DomUtil.toXMLString(resultContext);
-    this.logger.info(resultXml);
+    this.logger.verbose(resultXml);
     return resultXml;
   }
 

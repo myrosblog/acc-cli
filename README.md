@@ -61,6 +61,25 @@ acc instance exec --alias staging --script "context.@result = getOption('NmsEmai
 acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
 ```
 
+## 📤 Output & logging
+
+`acc` follows the Unix convention so its output is safe to script:
+
+- **stdout** carries the command **result only** — e.g. the XML returned by
+  `acc instance exec`, or the IP from `acc auth ip` — raw and undecorated, so it
+  pipes cleanly.
+- **stderr** carries everything else: progress spinners, status, warnings and
+  errors. Verbosity is controlled by `AIO_LOG_LEVEL` (`info` by default; set
+  `AIO_LOG_LEVEL=debug` to troubleshoot).
+- A rotating **`acc.log`** under the CLI cache directory keeps the full trace at
+  all levels for audit/post-mortem, regardless of the console verbosity. Disable
+  it with `ACC_NO_FILE_LOG=1`.
+
+```bash
+# Only the result reaches the pipe; diagnostics stay on the terminal (stderr)
+acc instance exec --alias staging --script "context.@result = application.instanceName" | xmllint --format -
+```
+
 ## 🗓️ Roadmap
 
 Read the [Project Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).

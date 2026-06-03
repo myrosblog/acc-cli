@@ -5,8 +5,8 @@ import ora from "ora";
 // sdk
 import sdk from "@adobe/acc-js-sdk";
 import Config from "@adobe/aio-lib-core-config/src/Config.js";
-import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
+import makeLogger from "./helpers/makeLogger.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignMonitor from "./CampaignMonitor.js";
@@ -29,7 +29,7 @@ export default class BaseCommand extends Command {
    * @type {AioLogger}
    */
   get logger() {
-    return (this._logger ??= AioLogger("acc"));
+    return (this._logger ??= makeLogger(this.config?.cacheDir));
   }
 
   /**

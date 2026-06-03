@@ -28,6 +28,6 @@ export default class InstanceExec extends InstanceCommand {
   async run() {
     const { flags } = await this.parse(InstanceExec);
     const instance = await this.getInstance(flags);
-    await instance.exec(flags);
+    this.log(await instance.exec(flags)); // The result XML is data: print it on stdout (this.log)
   }
 }

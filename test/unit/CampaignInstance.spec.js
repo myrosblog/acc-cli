@@ -212,7 +212,11 @@ describe("CampaignInstance", () => {
 
       it("substitutes a clean attribute value", () => {
         expect(
-          instance._computeFilename("{@name}.meta.xml", ["@name"], record("DM42")),
+          instance._computeFilename(
+            "{@name}.meta.xml",
+            ["@name"],
+            record("DM42"),
+          ),
         ).to.equal("DM42.meta.xml");
       });
 
@@ -962,7 +966,9 @@ describe("CampaignInstance", () => {
       expect(name).to.equal("acc-cli");
       expect(script).to.equal("logInfo('hi')");
       expect(result).to.contain("result");
-      expect(mockLogger.info.called).to.be.true;
+      // The result is returned (for the command to print on stdout) and only
+      // mirrored into the verbose diagnostic trace — never logged at info.
+      expect(mockLogger.verbose.calledWith(result)).to.be.true;
     });
 
     it("should read --file and derive the name from its basename", async () => {

@@ -324,9 +324,11 @@ describe("CampaignAuth", function () {
     });
 
     describe("template", () => {
-      it("should output the template config", () => {
+      it("should return the template config content", () => {
         const config = new CampaignConfig(logger, tmpConfigPath);
-        expect(() => config.template()).to.not.throw();
+        const content = config.template();
+        expect(content).to.be.a("string");
+        expect(content).to.include("schemas");
       });
     });
   });

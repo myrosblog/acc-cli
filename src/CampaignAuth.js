@@ -80,7 +80,6 @@ class CampaignAuth {
   async ip() {
     this.logger.info(`Fetching IP address...`);
     const ip = await this.sdk.ip();
-    this.logger.info(ip);
     return ip;
   }
 
