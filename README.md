@@ -84,3 +84,21 @@ Contributions are welcome! Please open a Github Pull Request!
 git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
 npm install && npm test
 ```
+
+### Importing from `@adobe/acc-js-sdk`
+
+Always import from the package's public entry point so the code only depends on
+the SDK's documented, semver-protected API:
+
+```js
+import accSdk from "@adobe/acc-js-sdk";
+const { DomUtil, ConnectionParameters } = accSdk;
+```
+
+A few classes used internally (`Client`, `EntityAccessor`, `XPath`,
+`XPathElement`, `DomException`) are **not** re-exported by the public entry, so
+they are imported directly from the package internals
+(`@adobe/acc-js-sdk/src/...`). These deep imports are a deliberate, known
+trade-off: they reach past the public API and may break on any SDK release.
+Prefer the public entry whenever a symbol is available there, and keep the list
+of internal imports as small as possible.

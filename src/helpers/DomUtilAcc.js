@@ -1,5 +1,6 @@
+import accSdk from "@adobe/acc-js-sdk";
+const { DomUtil } = accSdk;
 import {
-  DomUtil,
   XPath,
   XPathElement,
   DomException,

@@ -3,9 +3,11 @@ import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
 // sdk
+import accSdk from "@adobe/acc-js-sdk";
+const { DomUtil } = accSdk;
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { DomUtil, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
+import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,

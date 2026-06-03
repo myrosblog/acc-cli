@@ -1,5 +1,6 @@
 // sdk
-import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
+import accSdk from "@adobe/acc-js-sdk";
+const { ConnectionParameters } = accSdk;
 import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";

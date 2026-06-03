@@ -1,6 +1,6 @@
 // sdk
-import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
-import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
+import accSdk from "@adobe/acc-js-sdk";
+const { ConnectionParameters, DomUtil } = accSdk;
 // acc
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
