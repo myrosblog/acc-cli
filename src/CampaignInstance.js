@@ -488,15 +488,36 @@ class CampaignInstance {
   }
 
   _computeFilename(configFilename, configAttributes, record) {
-    var filename = configFilename;
+    let filename = configFilename;
     for (let configAttribute of configAttributes) {
       const value = DomUtil.getAttributeAsString(
         record,
         configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
       );
-      filename = filename.replace(`{${configAttribute}}`, value);
+      // The template (configFilename) is trusted and may contain "/" for
+      // subdirectories. The attribute value comes from the server record and is
+      // untrusted, so it must never inject path separators, parent-dir refs or
+      // control chars (path traversal). A function replacer is used so "$"
+      // patterns in the value are not interpreted by String.replaceAll.
+      const safeValue = this._sanitizeFilenameValue(value);
+      filename = filename.replaceAll(`{${configAttribute}}`, () => safeValue);
     }
     return filename;
+  }
+
+  /**
+   * Sanitizes a single attribute value before it is substituted into a filename
+   * template, so untrusted record data cannot escape the download directory.
+   * Only the value is sanitized, never the template (which legitimately carries
+   * "/" for subfolders).
+   * @param {string} value raw attribute value from the record
+   * @returns {string} a value safe to use as a filename component
+   */
+  _sanitizeFilenameValue(value) {
+    return String(value)
+      .replace(/[/\\]/g, "_") // POSIX + Windows path separators
+      .replace(/[\x00-\x1f]/g, "") // NUL + control characters
+      .replace(/^\.+$/, (dots) => "_".repeat(dots.length)); // "." / ".." -> "_" / "__"
   }
 }
 
