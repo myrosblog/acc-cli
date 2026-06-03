@@ -9,6 +9,7 @@ global.expect = chai.expect;
 
 // unit tests
 import "./unit/AccErrors.spec.js";
+import "./unit/helpers/AccCache.spec.js";
 import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
 import "./unit/CampaignInstance.spec.js";
