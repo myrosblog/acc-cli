@@ -125,6 +125,22 @@ E(
   "INSTANCE_ALIAS_UNRESOLVED",
   'No instance alias provided. Pass --alias <name> or set "alias" in acc.config.json.',
 );
+E(
+  "INSTANCE_INFO_SDK_TESTCNX_FAILED",
+  "Instance info failed: xtk:session#TestCnx error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "INSTANCE_INFO_SDK_SERVERTIME_FAILED",
+  "Instance info failed: xtk:session#GetServerTime error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "INSTANCE_INFO_SDK_CNXINFO_FAILED",
+  "Instance info failed: xtk:session#GetCnxInfo error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "INSTANCE_INFO_SDK_DUMPSTATE_FAILED",
+  "Instance info failed: nl:monitoring#DumpCurrentInstanceState error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
 
 // MONITOR
 E(

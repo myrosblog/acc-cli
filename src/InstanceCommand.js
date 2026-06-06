@@ -36,9 +36,11 @@ export default class InstanceCommand extends BaseCommand {
   /**
    * Logs in to the aliased instance and builds a CampaignInstance.
    * @param {object} flags - parsed CLI flags (alias, config, path, ...)
+   * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
+   *   over the config ones (e.g. a raised `timeout` for heavy calls)
    * @returns {Promise<CampaignInstance>}
    */
-  async getInstance(flags) {
+  async getInstance(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();
     config.init(flags.config);
     const alias = flags.alias || config.alias;
@@ -50,7 +52,10 @@ export default class InstanceCommand extends BaseCommand {
       config.seedAlias(flags.alias);
     }
     const resolvedFlags = { ...flags, alias };
-    const client = await this.auth.login(resolvedFlags, config.accJsSdkOptions);
+    const client = await this.auth.login(resolvedFlags, {
+      ...config.accJsSdkOptions,
+      ...sdkOptionsOverride,
+    });
     return new CampaignInstance(
       this.logger,
       client,
