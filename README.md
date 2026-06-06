@@ -109,7 +109,9 @@ Contributions are welcome! Please open a Github Pull Request!
 ```bash
 # Clone repository
 git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
-npm install && npm test
+npm install
+npm test # unit tests & integration tests with XML samples
+ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against a real instance
 ```
 
 ### Importing from `@adobe/acc-js-sdk`
