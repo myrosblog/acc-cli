@@ -1,7 +1,7 @@
 // Keep the suite hermetic: never write the rotating acc.log to the user cache.
 process.env.ACC_NO_FILE_LOG = "1";
 // Silence the diagnostics logs during tests, except for errors which indicate test failures.
-process.env.AIO_LOG_LEVEL = "error"; 
+process.env.AIO_LOG_LEVEL = "error";
 
 import * as chai from "chai";
 import sinonChai from "sinon-chai";
@@ -30,6 +30,7 @@ import "./unit/commands/instance-template.spec.js";
 import "./unit/commands/instance-check.spec.js";
 import "./unit/commands/instance-pull.spec.js";
 import "./unit/commands/instance-exec.spec.js";
+import "./unit/commands/instance-info.spec.js";
 import "./unit/commands/monitor-test.spec.js";
 
 // integration tests
