@@ -61,6 +61,14 @@ acc instance exec --alias staging --script "context.@result = getOption('NmsEmai
 acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
 ```
 
+```bash
+# Diagnostic report: connection test, server time, active connections and
+# instance state (xtk:session#TestCnx/#GetServerTime/#GetCnxInfo,
+# nl:monitoring#DumpCurrentInstanceState). Best-effort: exits non-zero if any
+# probe fails.
+acc instance info --alias staging
+```
+
 ## 📤 Output & logging
 
 `acc` follows the Unix convention so its output is safe to script:
