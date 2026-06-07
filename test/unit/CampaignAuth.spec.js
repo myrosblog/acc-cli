@@ -549,4 +549,61 @@ describe("CampaignAuth", function () {
       });
     });
   });
+
+  describe("list", () => {
+    it("should map instances to redacted rows sorted by alias", () => {
+      auth.instances = {
+        staging: { host: "http://stg", user: "ops", password: "s3cret" },
+        prod: { host: "http://prod", user: "admin", password: "p4ss" },
+      };
+      auth.instanceIds = Object.keys(auth.instances);
+
+      const rows = auth.list();
+
+      expect(rows).to.deep.equal([
+        {
+          alias: "prod",
+          host: "http://prod",
+          user: "admin",
+          method: "UserPassword",
+        },
+        {
+          alias: "staging",
+          host: "http://stg",
+          user: "ops",
+          method: "UserPassword",
+        },
+      ]);
+    });
+
+    it("should never expose the stored password", () => {
+      auth.instances = {
+        prod: { host: "http://prod", user: "admin", password: "p4ss" },
+      };
+      auth.instanceIds = Object.keys(auth.instances);
+
+      const rows = auth.list();
+
+      expect(JSON.stringify(rows)).to.not.include("p4ss");
+      expect(rows[0]).to.not.have.property("password");
+    });
+
+    it("should return an empty array when no instances are configured", () => {
+      auth.instances = {};
+      auth.instanceIds = [];
+      expect(auth.list()).to.deep.equal([]);
+    });
+  });
+
+  describe("_methodOf", () => {
+    it("should return UserPassword when a password is present", () => {
+      expect(auth._methodOf({ password: "x" })).to.equal("UserPassword");
+    });
+
+    it("should return Unknown when no password is present", () => {
+      expect(auth._methodOf({ user: "admin" })).to.equal("Unknown");
+      expect(auth._methodOf({})).to.equal("Unknown");
+      expect(auth._methodOf(null)).to.equal("Unknown");
+    });
+  });
 });
