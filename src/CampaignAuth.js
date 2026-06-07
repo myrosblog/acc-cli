@@ -72,6 +72,7 @@ class CampaignAuth {
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
+    this.logger.info(`Reading authentication from ${this.config.global()?.file}`);
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -80,6 +81,46 @@ class CampaignAuth {
     this.logger.info(`Fetching IP address...`);
     const ip = await this.sdk.ip();
     return ip;
+  }
+
+  /**
+   * Returns a redacted view of the configured instances, safe to print.
+   *
+   * Secrets are NEVER included: only the connection target (host), the operator
+   * (user) and the derived auth method are exposed. This is what `acc auth list`
+   * renders, deliberately replacing the raw `config:get` dump which leaked the
+   * stored password in clear text.
+   *
+   * @returns {Array<{alias: string, host: string, user: string, method: string}>}
+   *   One entry per instance, sorted by alias.
+   */
+  list() {
+    return this.instanceIds.sort().map((alias) => {
+      const record = this.instances[alias] || {};
+      // Coerce missing host/user to null so the 4 fields are always present,
+      // keeping the --json shape stable (JSON.stringify drops undefined keys).
+      return {
+        alias,
+        host: record.host ?? null,
+        user: record.user ?? null,
+        method: this._methodOf(record),
+      };
+    });
+  }
+
+  /**
+   * Derives the auth method from a stored instance record. Only user/password
+   * is stored today, so this returns "UserPassword" when a password is present
+   * and "Unknown" otherwise. Kept separate to stay forward-compatible with
+   * future token-based methods (BearerToken, SessionToken, …).
+   * @param {Object} record - a stored instance record
+   * @returns {string}
+   */
+  _methodOf(record) {
+    if (record && record.password) {
+      return "UserPassword";
+    }
+    return "Unknown";
   }
 
   /**
