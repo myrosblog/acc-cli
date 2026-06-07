@@ -1,11 +1,27 @@
 ![Downloads](https://img.shields.io/npm/dm/campaign-cli)
 ![Code Coverage](https://img.shields.io/codecov/c/github/myrosblog/acc-cli)
+![License](https://img.shields.io/npm/l/campaign-cli)
 
 # acc, the command line interface for Adobe Campaign developers
 
-Save time, reduce risk, and improve code health with `acc`! This CLI tool helps you build on Adobe Campaign Classic platform. It quickly downloads Adobe Campaign **configuration, campaigns and online resources**. You can also use it to automate many common development tasks.
+Save time, reduce risk, and improve code health with `acc`! This CLI tool helps you build on your Adobe Campaign Classic instances. It quickly downloads Adobe Campaign v7 **configuration, campaigns and online resources**. You can also use it to automate many common development tasks.
 
 Full documentation available on [Getting started with acc](https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=readme)
+
+![acc CLI downloading an Adobe Campaign instance](docs/media/acc-pull.gif)
+
+## Table of contents
+
+- [Features](#features)
+- [Quick Start](#-quick-start)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Advanced Configuration](#-advanced-configuration)
+- [Command reference](#-command-reference)
+- [Roadmap](#️-roadmap)
+- [Architecture & Security](#-architecture--security)
+- [Changelog](#-changelog)
+- [Contributing](#-contributing)
 
 ## Features
 
@@ -69,7 +85,42 @@ acc instance exec --alias staging --file ./Administration/Configuration/JavaScri
 acc instance info --alias staging
 ```
 
-## 📤 Output & logging
+## 📖 Command reference
+
+The full command reference (every command, flag and example) lives in the
+[acc Reference](https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=readme).
+You can also run `acc --help` or `acc <topic> --help` for inline help.
+
+## 🗓️ Roadmap
+
+Read the [acc Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).
+
+## 🔒 Architecture & Security
+
+Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
+
+## 📋 Changelog
+
+Read the [acc Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open a Github Pull Request!
+
+### 🛠️ Local development
+
+```bash
+# Clone repository
+git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
+npm install
+npm test # unit tests & integration tests with XML samples
+ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against a real instance
+```
+
+Coding conventions, project structure and contributor guidelines live in
+[`AGENTS.md`](AGENTS.md).
+
+### 📤 Output & logging
 
 `acc` follows the Unix convention so its output is safe to script:
 
@@ -86,67 +137,4 @@ acc instance info --alias staging
 ```bash
 # Only the result reaches the pipe; diagnostics stay on the terminal (stderr)
 acc instance exec --alias staging --script "context.@result = application.instanceName" | xmllint --format -
-```
-
-## 🗓️ Roadmap
-
-Read the [Project Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).
-
-## 🔒 Architecture & Security
-
-Read the [Architecture & Security documentation](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
-
-## 📋 Changelog
-
-Read the [Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open a Github Pull Request!
-
-### 🛠️ Local development
-
-```bash
-# Clone repository
-git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
-npm install
-npm test # unit tests & integration tests with XML samples
-ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against a real instance
-```
-
-### Importing from `@adobe/acc-js-sdk`
-
-Always import from the package's public entry point so the code only depends on
-the SDK's documented, semver-protected API:
-
-```js
-import accSdk from "@adobe/acc-js-sdk";
-const { DomUtil, ConnectionParameters } = accSdk;
-```
-
-A few classes used internally (`Client`, `EntityAccessor`, `XPath`,
-`XPathElement`, `DomException`) are **not** re-exported by the public entry, so
-they are imported directly from the package internals
-(`@adobe/acc-js-sdk/src/...`). These deep imports are a deliberate, known
-trade-off: they reach past the public API and may break on any SDK release.
-Prefer the public entry whenever a symbol is available there, and keep the list
-of internal imports as small as possible.
-
-### Dependency injection
-
-External dependencies (SDK, config, prompt, cache, spinner) are passed into the
-service classes (`CampaignAuth`, `CampaignInstance`, ...) rather than created
-inside them, with a sensible default applied when the argument is omitted. This
-keeps the production call sites simple while letting tests inject stubs — so the
-suite never touches the network or the filesystem.
-
-When a dependency has a side effect on construction (e.g. `AccCache` creates its
-directory on disk), inject a **factory** instead of an instance, so the resource
-is only built lazily when actually needed:
-
-```js
-constructor(logger, sdk, config, prompt, makeCache) {
-  this.prompt = prompt || new PromptAdapter();
-  this.makeCache = makeCache || (() => new AccCache()); // built on login(), not here
-}
 ```
