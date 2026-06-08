@@ -19,6 +19,7 @@ import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import PromptAdapter from "./adapters/PromptAdapter.js";
 import AccCache from "./helpers/AccCache.js";
+import soapLogObserver from "./helpers/soapLogObserver.js";
 
 /**
  * Config key (dot path) under which instances are stored in the aio config.
@@ -72,7 +73,9 @@ class CampaignAuth {
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
-    this.logger.info(`Reading authentication from ${this.config.global()?.file}`);
+    this.logger.info(
+      `🔑 Reading authentication from ${this.config.global()?.file}`,
+    );
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -194,7 +197,9 @@ class CampaignAuth {
         sdkOptions.noStorage === false
       ) {
         this.logger.verbose(`Using AccCache for SDK storage`);
-        sdkOptions.storage = this.makeCache();
+        // Per-instance cache: each alias gets its own sub-directory (the
+        // Console stores each instance separately too).
+        sdkOptions.storage = this.makeCache(cliOptions.alias);
       }
       this.connectionParameters = this._prepareConnectionParameters(
         host,
@@ -211,6 +216,8 @@ class CampaignAuth {
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_INIT_FAILED);
     }
+    // Trace SOAP calls into the logger (secret hidden and length-capped)
+    client.registerObserver(soapLogObserver(this.logger));
     try {
       await client.logon();
     } catch (error) {
