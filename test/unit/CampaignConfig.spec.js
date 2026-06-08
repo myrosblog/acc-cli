@@ -182,6 +182,64 @@ describe("CampaignAuth", function () {
         }
       });
 
+      it("should accept the common acc-js-sdk connection options", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+          "acc-js-sdk": {
+            traceAPICalls: false,
+            noStorage: true,
+            timeout: 30000,
+            instanceKey: "prod",
+            extraHttpHeaders: { "X-Foo": "bar" },
+          },
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.accJsSdkOptions).to.deep.equal(configJson["acc-js-sdk"]);
+      });
+
+      it("should throw CONFIG_VALIDATE_ERRORS when acc-js-sdk.timeout is not a number", () => {
+        const configJson = {
+          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
+          "acc-js-sdk": { timeout: "nope" },
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        try {
+          config.init(tmpConfigPath);
+          throw new Error("should have failed");
+        } catch (err) {
+          expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+          expect(err.message).to.include("must be number");
+        }
+      });
+
+      // storage/transport are runtime-only objects the CLI owns (login overwrites
+      // storage with a per-instance cache). Forbid them in the JSON config so a
+      // user gets an explicit error rather than a silent override.
+      ["storage", "transport"].forEach((forbidden) => {
+        it(`should throw CONFIG_VALIDATE_ERRORS when acc-js-sdk.${forbidden} is set`, () => {
+          const configJson = {
+            schemas: [
+              { schemaId: "nms:delivery", filename: "{@name}.meta.xml" },
+            ],
+            "acc-js-sdk": { [forbidden]: {} },
+          };
+          fs.writeJsonSync(tmpConfigPath, configJson);
+          const config = new CampaignConfig(logger, tmpConfigPath);
+          try {
+            config.init(tmpConfigPath);
+            throw new Error("should have failed");
+          } catch (err) {
+            expect(err).to.be.instanceOf(CONFIG_VALIDATE_ERRORS);
+            expect(err.message).to.include("must NOT be valid");
+          }
+        });
+      });
+
       it("should throw CONFIG_VALIDATE_ERRORS on config missing 'schemas'", () => {
         const configJson = {
           schemasTYPO: [
