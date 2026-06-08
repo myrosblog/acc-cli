@@ -13,6 +13,7 @@ const makeClient = () => ({
 const makeLogger = () => ({
   info: sinon.stub(),
   verbose: sinon.stub(),
+  warn: sinon.stub(),
   error: sinon.stub(),
   debug: sinon.stub(),
 });
