@@ -7,6 +7,7 @@ import sdk from "@adobe/acc-js-sdk";
 import Config from "@adobe/aio-lib-core-config/src/Config.js";
 // acc
 import makeLogger from "./helpers/makeLogger.js";
+import AccCache from "./helpers/AccCache.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignMonitor from "./CampaignMonitor.js";
@@ -40,7 +41,23 @@ export default class BaseCommand extends Command {
    * @type {CampaignAuth}
    */
   get auth() {
-    return (this._auth ??= new CampaignAuth(this.logger, sdk, new Config()));
+    return (this._auth ??= new CampaignAuth(
+      this.logger,
+      sdk,
+      new Config(),
+      undefined,
+      // Persist the SDK cache under the per-user oclif cache dir (alongside
+      // acc.log), not in the current working directory. Each instance alias
+      // gets its own sub-directory, mirroring the Campaign Client Console.
+      (alias) =>
+        new AccCache(
+          path.join(
+            this.config.cacheDir,
+            "sdk-cache",
+            encodeURIComponent(alias),
+          ),
+        ),
+    ));
   }
 
   /**

@@ -434,6 +434,8 @@ describe("CampaignAuth", function () {
       await auth.login({ alias: "local" });
 
       expect(makeCache.calledOnce).to.be.true;
+      // the factory receives the alias so each instance caches separately
+      expect(makeCache.firstCall.args[0]).to.equal("local");
       const sdkOptions = prepStub.firstCall.args[3];
       expect(sdkOptions.storage).to.equal(sentinelCache);
     });

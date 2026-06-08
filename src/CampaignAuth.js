@@ -197,7 +197,9 @@ class CampaignAuth {
         sdkOptions.noStorage === false
       ) {
         this.logger.verbose(`Using AccCache for SDK storage`);
-        sdkOptions.storage = this.makeCache();
+        // Per-instance cache: each alias gets its own sub-directory (the
+        // Console stores each instance separately too).
+        sdkOptions.storage = this.makeCache(cliOptions.alias);
       }
       this.connectionParameters = this._prepareConnectionParameters(
         host,
