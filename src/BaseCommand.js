@@ -29,7 +29,11 @@ export default class BaseCommand extends Command {
    * @type {AioLogger}
    */
   get logger() {
-    return (this._logger ??= makeLogger(this.config?.cacheDir));
+    if (!this._logger) {
+      this._logger = makeLogger(this.config?.cacheDir);
+      this._logger.info(`📰 Writing logs to ${this.config?.cacheDir}`);
+    }
+    return this._logger;
   }
 
   /**

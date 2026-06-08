@@ -72,7 +72,7 @@ class CampaignAuth {
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
-    this.logger.info(`Reading authentication from ${this.config.global()?.file}`);
+    this.logger.info(`🔑 Reading authentication from ${this.config.global()?.file}`);
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
