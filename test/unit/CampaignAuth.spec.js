@@ -37,6 +37,7 @@ describe("CampaignAuth", function () {
         ofUserAndPassword: sinon.stub().returns({}),
       },
       init: sinon.stub().resolves({
+        registerObserver: sinon.stub(),
         logon: sinon.stub().resolves(),
         getSessionInfo: sinon.stub().returns({
           serverInfo: {
@@ -300,6 +301,7 @@ describe("CampaignAuth", function () {
       });
 
       mockSdk.init.resolves({
+        registerObserver: sinon.stub(),
         logon: sinon
           .stub()
           .threw(
@@ -334,6 +336,7 @@ describe("CampaignAuth", function () {
       });
 
       mockSdk.init.resolves({
+        registerObserver: sinon.stub(),
         logon: sinon.stub().resolves(),
         getSessionInfo: sinon
           .stub()
@@ -369,6 +372,7 @@ describe("CampaignAuth", function () {
       });
 
       mockSdk.init.resolves({
+        registerObserver: sinon.stub(),
         logon: sinon.stub().resolves(),
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
