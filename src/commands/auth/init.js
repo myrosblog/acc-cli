@@ -27,7 +27,7 @@ export default class AuthInit extends BaseCommand {
     }),
     token: Flags.string({
       description:
-        "IMS bearer token (ImsBearerToken method). Omit on an interactive terminal to be prompted securely.",
+        "IMS bearer token (ImsBearerToken method), a JWT starting with 'eyJ'. Omit on an interactive terminal to be prompted securely.",
     }),
   };
 

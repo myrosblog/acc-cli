@@ -290,7 +290,9 @@ class CampaignAuth {
     }
     if (opts.method === AUTH_METHODS.IMS_BEARER_TOKEN) {
       if (missing(opts.token)) {
-        opts.token = await this.prompt.password("IMS access token");
+        opts.token = await this.prompt.password(
+          "IMS access token (JWT, starts with 'eyJ…')",
+        );
       }
     } else {
       if (missing(opts.user)) {
