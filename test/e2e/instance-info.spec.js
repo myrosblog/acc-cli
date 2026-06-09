@@ -1,5 +1,4 @@
-// e2e for `acc instance info` against a live instance. Suite docs (how to run,
-// gating, conventions): see ./README.md
+// e2e for `acc instance info` against a live instance
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";

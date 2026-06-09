@@ -1,6 +1,4 @@
-// e2e for `acc instance exec` against a live instance: evaluates server-side JS
-// (xtk:builder#EvaluateJavaScript) and echoes the result context on stdout.
-// Suite docs (how to run, gating, conventions): see ./README.md
+// e2e for `acc instance exec` against a live instance
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";

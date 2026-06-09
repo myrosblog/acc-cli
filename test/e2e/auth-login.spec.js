@@ -1,5 +1,4 @@
-// e2e for `acc auth login` against a live instance. Suite docs (how to run,
-// gating, conventions): see ./README.md
+// e2e for `acc auth login` against a live instance.
 import { expect } from "chai";
 import { ALIAS, runAcc } from "./helpers.js";
 
