@@ -35,6 +35,7 @@ export const AUTH_INSTANCES_KEY = "acc.auth.instances";
  * Supported authentication methods, stored per-instance under `authMethod`.
  * Legacy instances without `authMethod` are treated as `UserPassword`.
  * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string }}
+ * @since 1.2.0
  */
 export const AUTH_METHODS = {
   USER_PASSWORD: "UserPassword",
@@ -47,6 +48,7 @@ export const AUTH_METHODS = {
  *
  * @class CampaignAuth
  * @classdesc Main class for interacting with ACC instances
+ * @see Credentials in node_modules/@adobe/acc-js-sdk/src/client.js
  */
 class CampaignAuth {
   /**
@@ -125,18 +127,21 @@ class CampaignAuth {
   }
 
   /**
-   * Derives the auth method from a stored instance record. Only user/password
-   * is stored today, so this returns "UserPassword" when a password is present
-   * and "Unknown" otherwise. Kept separate to stay forward-compatible with
-   * future token-based methods (BearerToken, SessionToken, …).
+   * Derives the auth method from a stored instance record. Records now persist
+   * `authMethod` explicitly (UserPassword or ImsBearerToken). Legacy instances
+   * stored before IMS support have no authMethod but carry a password, so they
+   * are UserPassword by definition (mirrors the fallback in login()).
    * @param {Object} record - a stored instance record
    * @returns {string}
    */
   _methodOf(record) {
-    if (record && record.password) {
-      return "UserPassword";
+    if (!record) {
+      return "Unknown";
     }
-    return "Unknown";
+    if (record.authMethod) {
+      return record.authMethod;
+    }
+    return record.password ? AUTH_METHODS.USER_PASSWORD : "Unknown";
   }
 
   /**
