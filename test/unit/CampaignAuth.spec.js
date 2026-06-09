@@ -441,7 +441,7 @@ describe("CampaignAuth", function () {
       expect(makeCache.calledOnce).to.be.true;
       // the factory receives the alias so each instance caches separately
       expect(makeCache.firstCall.args[0]).to.equal("local");
-      const sdkOptions = prepStub.firstCall.args[3];
+      const sdkOptions = prepStub.firstCall.args[2];
       expect(sdkOptions.storage).to.equal(sentinelCache);
     });
 
@@ -464,7 +464,7 @@ describe("CampaignAuth", function () {
       await auth.login({ alias: "local" }, { noStorage: true });
 
       expect(makeCache.notCalled).to.be.true;
-      expect(prepStub.firstCall.args[3].storage).to.be.undefined;
+      expect(prepStub.firstCall.args[2].storage).to.be.undefined;
     });
 
     it("should login a legacy instance (no authMethod) as UserPassword", async function () {
