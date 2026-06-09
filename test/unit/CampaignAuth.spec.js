@@ -18,6 +18,8 @@ const {
   AUTH_LOGIN_SDK_LOGON_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
+  AUTH_LOGIN_TOKEN_MISSING,
+  AUTH_LOGIN_INVALID_METHOD,
 } = codes;
 // helpers
 import { makeLogger } from "../helpers.js";
@@ -77,6 +79,7 @@ describe("CampaignAuth", function () {
       isInteractive: sinon.stub().returns(false),
       input: sinon.stub(),
       password: sinon.stub(),
+      select: sinon.stub(),
     };
 
     // Stub cache factory so login() never touches the filesystem in tests.
@@ -134,6 +137,7 @@ describe("CampaignAuth", function () {
       );
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
+        authMethod: "UserPassword",
         user: "testuser",
         password: "testpass",
       });
@@ -141,6 +145,7 @@ describe("CampaignAuth", function () {
       expect(auth.instances).to.deep.equal({
         instance1: {
           host: "http://localhost",
+          authMethod: "UserPassword",
           user: "testuser",
           password: "testpass",
         },
@@ -436,7 +441,7 @@ describe("CampaignAuth", function () {
       expect(makeCache.calledOnce).to.be.true;
       // the factory receives the alias so each instance caches separately
       expect(makeCache.firstCall.args[0]).to.equal("local");
-      const sdkOptions = prepStub.firstCall.args[3];
+      const sdkOptions = prepStub.firstCall.args[2];
       expect(sdkOptions.storage).to.equal(sentinelCache);
     });
 
@@ -459,7 +464,59 @@ describe("CampaignAuth", function () {
       await auth.login({ alias: "local" }, { noStorage: true });
 
       expect(makeCache.notCalled).to.be.true;
-      expect(prepStub.firstCall.args[3].storage).to.be.undefined;
+      expect(prepStub.firstCall.args[2].storage).to.be.undefined;
+    });
+
+    it("should login a legacy instance (no authMethod) as UserPassword", async function () {
+      // Back-compat: entries stored before IMS support have no authMethod.
+      mockConfig.get.returns({
+        legacy: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      const spy = sinon.spy(auth, "_prepareConnectionParameters");
+
+      await auth.login({ alias: "legacy" });
+
+      expect(spy.firstCall.args[0]).to.equal("UserPassword");
+    });
+
+    it("should login successfully with an IMS bearer token instance", async function () {
+      mockConfig.get.returns({
+        ims: {
+          host: "http://localhost",
+          authMethod: "ImsBearerToken",
+          token: "ims-token",
+        },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      const client = await auth.login({ alias: "ims" });
+
+      expect(client).to.exist;
+      expect(mockSdk.init.calledOnce).to.be.true;
+    });
+
+    it("should throw AUTH_LOGIN_TOKEN_MISSING for an IMS instance without token", async function () {
+      mockConfig.get.returns({
+        ims: { host: "http://localhost", authMethod: "ImsBearerToken" },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      await expect(auth.login({ alias: "ims" })).to.be.rejectedWith(
+        AUTH_LOGIN_TOKEN_MISSING,
+      );
+    });
+
+    it("should throw AUTH_LOGIN_INVALID_METHOD for an unknown authMethod", async function () {
+      mockConfig.get.returns({
+        weird: { host: "http://localhost", authMethod: "Telepathy" },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      await expect(auth.login({ alias: "weird" })).to.be.rejectedWith(
+        AUTH_LOGIN_INVALID_METHOD,
+      );
     });
   });
 
@@ -470,8 +527,9 @@ describe("CampaignAuth", function () {
         isInteractive: sinon.stub().returns(true),
         input: sinon.stub(),
         password: sinon.stub().resolves("secret"),
+        select: sinon.stub().resolves("UserPassword"),
       };
-      // Prompt order: host -> user -> (masked password) -> alias
+      // Prompt order: host -> method -> user -> (masked password) -> alias
       mockPrompt.input
         .onCall(0)
         .resolves("http://localhost") // host
@@ -485,14 +543,44 @@ describe("CampaignAuth", function () {
       await auth.init({});
 
       expect(mockPrompt.input.callCount).to.equal(3);
+      expect(mockPrompt.select.calledOnce).to.be.true;
       expect(mockPrompt.password.calledOnce).to.be.true;
       expect(mockConfig.set.firstCall.args[0]).to.equal(
         "acc.auth.instances.prod",
       );
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
+        authMethod: "UserPassword",
         user: "admin",
         password: "secret",
+      });
+    });
+
+    it("should prompt for IMS bearer token (masked) when method is ImsBearerToken", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub().resolves("ims-token"),
+        select: sinon.stub().resolves("ImsBearerToken"),
+      };
+      // Prompt order: host -> method -> (masked token) -> alias
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost") // host
+        .onCall(1)
+        .resolves("prod"); // alias
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockPrompt.select.calledOnce).to.be.true;
+      expect(mockPrompt.password.calledOnce).to.be.true;
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        authMethod: "ImsBearerToken",
+        token: "ims-token",
       });
     });
 
@@ -502,6 +590,7 @@ describe("CampaignAuth", function () {
         isInteractive: sinon.stub().returns(false),
         input: sinon.stub(),
         password: sinon.stub(),
+        select: sinon.stub(),
       };
       auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
@@ -515,8 +604,10 @@ describe("CampaignAuth", function () {
 
       expect(mockPrompt.input.called).to.be.false;
       expect(mockPrompt.password.called).to.be.false;
+      expect(mockPrompt.select.called).to.be.false;
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
+        authMethod: "UserPassword",
         user: "admin",
         password: "secret",
       });
@@ -524,18 +615,36 @@ describe("CampaignAuth", function () {
   });
 
   describe("private methods", () => {
+    const userPass = { host: "host", user: "user", password: "pass" };
+
     it("should prepare connection with sdkOptions", async () => {
       let actual;
-      actual = auth._prepareConnectionParameters("host", "user", "pass", null);
+      actual = auth._prepareConnectionParameters(
+        "UserPassword",
+        userPass,
+        null,
+      );
       expect(actual).to.be.an.instanceof(ConnectionParameters);
       expect(actual._options.traceAPICalls).to.equal(false);
-      actual = auth._prepareConnectionParameters("host", "user", "pass", {});
+      actual = auth._prepareConnectionParameters("UserPassword", userPass, {});
       expect(actual).to.be.an.instanceof(ConnectionParameters);
       expect(actual._options.traceAPICalls).to.equal(false);
-      actual = auth._prepareConnectionParameters("host", "user", "pass", {
+      actual = auth._prepareConnectionParameters("UserPassword", userPass, {
         traceAPICalls: true,
       });
       expect(actual).to.be.an.instanceof(ConnectionParameters);
+      expect(actual._options.traceAPICalls).to.equal(true);
+    });
+
+    it("should prepare an IMS bearer token connection with sessionInfo", async () => {
+      const actual = auth._prepareConnectionParameters(
+        "ImsBearerToken",
+        { host: "host", token: "ims-token" },
+        { traceAPICalls: true },
+      );
+      expect(actual).to.be.an.instanceof(ConnectionParameters);
+      expect(actual._credentials._type).to.equal("ImsBearerToken");
+      expect(actual._options.sessionInfo).to.equal(true);
       expect(actual._options.traceAPICalls).to.equal(true);
     });
   });
