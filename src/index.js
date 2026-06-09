@@ -1,6 +1,5 @@
 import { Command } from "@oclif/core";
-import AioLogger from "@adobe/aio-lib-core-logging";
-const logger = AioLogger("acc");
+import makeLogger from "./helpers/makeLogger.js";
 import fs from "fs-extra";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +18,7 @@ export default class Acc extends Command {
   static version = vAcc;
 
   async run() {
+    const logger = makeLogger(this.config?.cacheDir);
     logger.info(`🏠 acc ${vAcc} initialized with Adobe Campaign SDK ${vSdk}`);
     // Display help if no subcommand
     this.help();

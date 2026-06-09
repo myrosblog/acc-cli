@@ -4,8 +4,6 @@ import path from "node:path";
 import Ajv from "ajv";
 import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// sdk
-import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import { codes } from "./helpers/AccErrors.js";
 const {
@@ -169,7 +167,7 @@ class CampaignConfig {
     );
     const filename = "acc.config.json";
     const content = fs.readFileSync(path.join(this.templateDir, filename));
-    this.logger.info(content.toString());
+    return content.toString();
   }
 }
 

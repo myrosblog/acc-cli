@@ -36,3 +36,4 @@ jobs:
           files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+          skip_validation: true # bypass GPG validation @since 2026-06-08

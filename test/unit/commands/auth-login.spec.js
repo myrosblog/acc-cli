@@ -25,4 +25,31 @@ describe("AuthLogin", () => {
     expect(authLoginStub.calledOnce).to.be.true;
     sinon.restore();
   });
+
+  describe("readSdkOptions", () => {
+    afterEach(() => sinon.restore());
+
+    it("returns {} when no acc.config.json exists", () => {
+      const cmd = new AuthLogin([], {});
+      sinon.stub(cmd, "makeConfig").returns({
+        defaultConfigPath: "/nope/acc.config.json",
+        fileExists: () => false,
+        init: sinon.fake.throws("init must not be called"),
+      });
+      expect(cmd.readSdkOptions()).to.deep.equal({});
+    });
+
+    it("reads acc-js-sdk options when acc.config.json exists", () => {
+      const cmd = new AuthLogin([], {});
+      const init = sinon.fake();
+      sinon.stub(cmd, "makeConfig").returns({
+        defaultConfigPath: "/here/acc.config.json",
+        fileExists: () => true,
+        init,
+        accJsSdkOptions: { traceAPICalls: false },
+      });
+      expect(cmd.readSdkOptions()).to.deep.equal({ traceAPICalls: false });
+      expect(init.calledOnceWith("/here/acc.config.json")).to.be.true;
+    });
+  });
 });

@@ -23,7 +23,7 @@ describe("InstanceExec", () => {
     expect(InstanceExec.baseFlags.config).to.exist;
   });
 
-  it("should run", async () => {
+  it("should run and print the result on stdout", async () => {
     const argv = ["--alias", "test", "--script", "logInfo('hi')"];
     const authLoginStub = sinon
       .stub(CampaignAuth.prototype, "login")
@@ -33,12 +33,15 @@ describe("InstanceExec", () => {
       .resolves();
     const instanceExecStub = sinon
       .stub(CampaignInstance.prototype, "exec")
-      .resolves();
+      .resolves("<context result='ok'/>");
+    // this.log is oclif's stdout writer: the result must go there, raw.
+    const logStub = sinon.stub(InstanceExec.prototype, "log");
     const result = await InstanceExec.run(argv);
     expect(result).to.be.undefined;
     expect(authLoginStub.calledOnce).to.be.true;
     expect(configInitStub.calledOnce).to.be.true;
     expect(instanceExecStub.calledOnce).to.be.true;
+    expect(logStub.calledOnceWith("<context result='ok'/>")).to.be.true;
     sinon.restore();
   });
 });

@@ -1,6 +1,6 @@
 // sdk
-import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
-import AioLogger from "@adobe/aio-lib-core-logging";
+import accSdk from "@adobe/acc-js-sdk";
+const { ConnectionParameters } = accSdk;
 // acc
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
@@ -22,6 +22,7 @@ import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import PromptAdapter from "./adapters/PromptAdapter.js";
 import AccCache from "./helpers/AccCache.js";
+import soapLogObserver from "./helpers/soapLogObserver.js";
 
 /**
  * Config key (dot path) under which instances are stored in the aio config.
@@ -75,7 +76,7 @@ class CampaignAuth {
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, prompt) {
+  constructor(logger, sdk, config, prompt, makeCache) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -84,6 +85,10 @@ class CampaignAuth {
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
+    this.makeCache = makeCache || (() => new AccCache());
+    this.logger.info(
+      `🔑 Reading authentication from ${this.config.global()?.file}`,
+    );
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -91,8 +96,47 @@ class CampaignAuth {
   async ip() {
     this.logger.info(`Fetching IP address...`);
     const ip = await this.sdk.ip();
-    this.logger.info(ip);
     return ip;
+  }
+
+  /**
+   * Returns a redacted view of the configured instances, safe to print.
+   *
+   * Secrets are NEVER included: only the connection target (host), the operator
+   * (user) and the derived auth method are exposed. This is what `acc auth list`
+   * renders, deliberately replacing the raw `config:get` dump which leaked the
+   * stored password in clear text.
+   *
+   * @returns {Array<{alias: string, host: string, user: string, method: string}>}
+   *   One entry per instance, sorted by alias.
+   */
+  list() {
+    return this.instanceIds.sort().map((alias) => {
+      const record = this.instances[alias] || {};
+      // Coerce missing host/user to null so the 4 fields are always present,
+      // keeping the --json shape stable (JSON.stringify drops undefined keys).
+      return {
+        alias,
+        host: record.host ?? null,
+        user: record.user ?? null,
+        method: this._methodOf(record),
+      };
+    });
+  }
+
+  /**
+   * Derives the auth method from a stored instance record. Only user/password
+   * is stored today, so this returns "UserPassword" when a password is present
+   * and "Unknown" otherwise. Kept separate to stay forward-compatible with
+   * future token-based methods (BearerToken, SessionToken, …).
+   * @param {Object} record - a stored instance record
+   * @returns {string}
+   */
+  _methodOf(record) {
+    if (record && record.password) {
+      return "UserPassword";
+    }
+    return "Unknown";
   }
 
   /**
@@ -177,7 +221,9 @@ class CampaignAuth {
         sdkOptions.noStorage === false
       ) {
         this.logger.verbose(`Using AccCache for SDK storage`);
-        sdkOptions.storage = new AccCache();
+        // Per-instance cache: each alias gets its own sub-directory (the
+        // Console stores each instance separately too).
+        sdkOptions.storage = this.makeCache(cliOptions.alias);
       }
       this.connectionParameters = this._prepareConnectionParameters(
         authMethod,
@@ -193,6 +239,8 @@ class CampaignAuth {
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_INIT_FAILED);
     }
+    // Trace SOAP calls into the logger (secret hidden and length-capped)
+    client.registerObserver(soapLogObserver(this.logger));
     try {
       await client.logon();
     } catch (error) {

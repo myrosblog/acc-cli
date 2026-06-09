@@ -3,9 +3,11 @@ import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
 // sdk
+import accSdk from "@adobe/acc-js-sdk";
+const { DomUtil } = accSdk;
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { DomUtil, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
+import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
@@ -15,8 +17,11 @@ const {
   INSTANCE_EXEC_BOTH_SCRIPT,
   INSTANCE_EXEC_FILE_NOT_FOUND,
   INSTANCE_EXEC_SDK_EVALUATE_FAILED,
+  INSTANCE_INFO_SDK_TESTCNX_FAILED,
+  INSTANCE_INFO_SDK_SERVERTIME_FAILED,
+  INSTANCE_INFO_SDK_CNXINFO_FAILED,
+  INSTANCE_INFO_SDK_DUMPSTATE_FAILED,
 } = codes;
-import AioLogger from "@adobe/aio-lib-core-logging";
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 
@@ -41,12 +46,6 @@ class CampaignInstance {
    * @type {RegExp}
    */
   REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
-
-  /**
-   * XPath separator character
-   * @type {string}
-   */
-  CONFIG_XPATH_SEP = "/";
 
   /**
    * XPath attribute prefix character
@@ -86,9 +85,7 @@ class CampaignInstance {
    * @param {function} createSpinner - Ora spinner instance for displaying progress
    *
    * @example
-   * const instance = new CampaignInstance(client, { schemas: [
-   *   { schemaId: "nms:recipient", filename: "recipient_%name%.xml" }
-   * ]});
+   * const instance = new CampaignInstance(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -97,11 +94,6 @@ class CampaignInstance {
     this.downloadPath = cliOptions.path;
     this.metadata = cliOptions.metadata;
     this.createSpinner = createSpinner;
-    /**
-     * Array of schema names to process (excluding default config)
-     * @type {string[]}
-     */
-    this.schemas = Object.keys(this.accConfig);
   }
 
   /**
@@ -218,10 +210,7 @@ class CampaignInstance {
    * @param {Object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
-   * @returns {Array<Element>} Number of records downloaded
-   *
-   * @example
-   * const count = await instance.download('nms:recipient', '/path/to/save', 1);
+   * @returns {Promise<Array<Element>>} the parsed records of this batch
    */
   async downloadAndParse(
     schemaConfig,
@@ -262,12 +251,7 @@ class CampaignInstance {
       pullLog.elements.push(element);
 
       try {
-        const filenameOnly = this.parse(
-          element,
-          schemaConfig,
-          isPreview,
-          pullLog,
-        );
+        const filenameOnly = this.parse(element, schemaConfig, isPreview);
         pullLog.parsedFilenames.push(filenameOnly);
         filenamesForThisBatch.push(`${chalk.underline(filenameOnly)}`);
       } catch (err) {
@@ -358,7 +342,7 @@ class CampaignInstance {
     spinner.succeed(`${chalk.bgCyan(name)} executed`);
 
     const resultXml = DomUtil.toXMLString(resultContext);
-    this.logger.info(resultXml);
+    this.logger.verbose(resultXml);
     return resultXml;
   }
 
@@ -387,11 +371,126 @@ class CampaignInstance {
   }
 
   /**
+   * Diagnostic report combining read-only session/monitoring probes:
+   *   - xtk:session#TestCnx (reachability ping)
+   *   - xtk:session#GetServerTime (server clock)
+   *   - xtk:session#GetCnxInfo (active connections + datasource)
+   *   - nl:monitoring#DumpCurrentInstanceState (workflows & instance state)
    *
-   * @param {Element} childElement
-   * @param {*} schemaConfig
-   * @param {boolean} isPreview
-   * @return string filenameOnly
+   * Best-effort, "doctor"-style: each probe runs in its own try/catch so one
+   * failure doesn't hide the others. The caller gets the rendered report plus
+   * the list of failed probes (to set a non-zero exit code).
+   *
+   * @returns {Promise<{text: string, errors: Array<Error>}>}
+   */
+  async info() {
+    // GetServerTime returns a JS Date; the two XML probes return an Element
+    // (not a Document), so DomUtil.toXMLString serializes them directly.
+    const probes = [
+      {
+        title: "Connection (xtk:session#TestCnx)",
+        run: () => this.adapterTestCnx(),
+        render: () => "✅ reachable",
+      },
+      {
+        title: "Server time (xtk:session#GetServerTime)",
+        run: () => this.adapterGetServerTime(),
+        render: (value) => value?.toISOString?.() ?? String(value),
+      },
+      {
+        title: "Connection info (xtk:session#GetCnxInfo)",
+        run: () => this.adapterGetCnxInfo(),
+        render: (value) => DomUtil.toXMLString(value),
+      },
+      {
+        title: "Instance state (nl:monitoring#DumpCurrentInstanceState)",
+        run: () => this.adapterDumpCurrentInstanceState(),
+        render: (value) => DomUtil.toXMLString(value),
+      },
+    ];
+
+    const sections = [];
+    const errors = [];
+    for (const probe of probes) {
+      const spinner = this.createSpinner(probe.title).start();
+      try {
+        const body = probe.render(await probe.run());
+        spinner.succeed(probe.title);
+        sections.push(`== ${probe.title} ==\n${body}`);
+      } catch (err) {
+        spinner.fail(probe.title);
+        errors.push(err);
+        sections.push(`== ${probe.title} ==\n⚠️ ${err.message}`);
+      }
+    }
+
+    const text = sections.join("\n\n");
+    this.logger.verbose(text);
+    return { text, errors };
+  }
+
+  /**
+   * Adapter of xtk:session#TestCnx (reachability ping; resolves with no value).
+   * @returns {Promise<*>}
+   * @throws {CampaignException}
+   */
+  async adapterTestCnx() {
+    try {
+      return await this.client.NLWS.xtkSession.testCnx();
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_INFO_SDK_TESTCNX_FAILED);
+    }
+  }
+
+  /**
+   * Adapter of xtk:session#GetServerTime.
+   * @returns {Promise<Date>} the server clock
+   * @throws {CampaignException}
+   */
+  async adapterGetServerTime() {
+    try {
+      return await this.client.NLWS.xtkSession.getServerTime();
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_INFO_SDK_SERVERTIME_FAILED);
+    }
+  }
+
+  /**
+   * Adapter of xtk:session#GetCnxInfo. `.xml` forces the XML representation so
+   * the result is returned as a DOM Element.
+   * @returns {Promise<Element>} the `<infos>` element
+   * @throws {CampaignException}
+   */
+  async adapterGetCnxInfo() {
+    try {
+      return await this.client.NLWS.xml.xtkSession.getCnxInfo();
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_INFO_SDK_CNXINFO_FAILED);
+    }
+  }
+
+  /**
+   * Adapter of nl:monitoring#DumpCurrentInstanceState. Heavy call (~7s): the
+   * caller must open the connection with a raised `timeout` (the SDK default of
+   * 5s is too short). `.xml` returns the `<elemMonitoring>` element.
+   * @returns {Promise<Element>} the `<elemMonitoring>` element
+   * @throws {CampaignException}
+   */
+  async adapterDumpCurrentInstanceState() {
+    try {
+      return await this.client.NLWS.xml.nlMonitoring.dumpCurrentInstanceState();
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_INFO_SDK_DUMPSTATE_FAILED);
+    }
+  }
+
+  /**
+   * Writes a single record to disk (raw XML, or decomposed per `decompose`),
+   * after blanking any `excludeXPaths`.
+   * @param {Element} childElement - the record element
+   * @param {Object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
+   * @param {boolean} isPreview - when true, compute filenames but write nothing
+   * @returns {string} the base filename of the saved record
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
@@ -462,7 +561,6 @@ class CampaignInstance {
           if (!isPreview) {
             fs.outputFileSync(datapath, elementValue);
           }
-          const decomposedFilenameOnly = path.basename(decomposedFilename);
           // empty element
           lastNode.textContent = "";
         } catch (err) {
@@ -488,15 +586,36 @@ class CampaignInstance {
   }
 
   _computeFilename(configFilename, configAttributes, record) {
-    var filename = configFilename;
+    let filename = configFilename;
     for (let configAttribute of configAttributes) {
       const value = DomUtil.getAttributeAsString(
         record,
         configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
       );
-      filename = filename.replace(`{${configAttribute}}`, value);
+      // The template (configFilename) is trusted and may contain "/" for
+      // subdirectories. The attribute value comes from the server record and is
+      // untrusted, so it must never inject path separators, parent-dir refs or
+      // control chars (path traversal). A function replacer is used so "$"
+      // patterns in the value are not interpreted by String.replaceAll.
+      const safeValue = this._sanitizeFilenameValue(value);
+      filename = filename.replaceAll(`{${configAttribute}}`, () => safeValue);
     }
     return filename;
+  }
+
+  /**
+   * Sanitizes a single attribute value before it is substituted into a filename
+   * template, so untrusted record data cannot escape the download directory.
+   * Only the value is sanitized, never the template (which legitimately carries
+   * "/" for subfolders).
+   * @param {string} value raw attribute value from the record
+   * @returns {string} a value safe to use as a filename component
+   */
+  _sanitizeFilenameValue(value) {
+    return String(value)
+      .replace(/[/\\]/g, "_") // POSIX + Windows path separators
+      .replace(/[\x00-\x1f]/g, "") // NUL + control characters
+      .replace(/^\.+$/, (dots) => "_".repeat(dots.length)); // "." / ".." -> "_" / "__"
   }
 }
 
@@ -549,7 +668,7 @@ class CampaignPullLog {
    */
   parsedFilenames = [];
 
-  constructor(schemaConfig, lineCount, startLine) {
+  constructor(schemaConfig) {
     this.startTime = new Date();
     this.elements = [];
     this.schemaConfig = schemaConfig;

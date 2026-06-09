@@ -10,8 +10,18 @@
     },
     "acc-js-sdk": {
       "type": "object",
+      "not": {
+        "anyOf": [{ "required": ["storage"] }, { "required": ["transport"] }]
+      },
       "properties": {
-        "traceAPICalls": { "type": "boolean" }
+        "traceAPICalls": { "type": "boolean" },
+        "noStorage": { "type": "boolean" },
+        "timeout": { "type": "number" },
+        "instanceKey": { "type": "string" },
+        "extraHttpHeaders": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
       }
     },
     "schemas": {

@@ -5,6 +5,6 @@ export default class AuthIp extends BaseCommand {
 
   async run() {
     await this.parse(AuthIp);
-    await this.auth.ip();
+    this.log(await this.auth.ip()); // The IP is data: print it on stdout (this.log)
   }
 }

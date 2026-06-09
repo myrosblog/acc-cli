@@ -160,6 +160,99 @@ describe("CampaignInstance", () => {
       );
       expect(result).to.deep.equal(base);
     });
+
+    describe("_sanitizeFilenameValue", () => {
+      beforeEach(() => {
+        instance = new CampaignInstance(
+          mockLogger,
+          mockClient,
+          configDefaultFull,
+          optionsFull,
+        );
+      });
+
+      it("leaves a clean value untouched", () => {
+        expect(instance._sanitizeFilenameValue("myDelivery")).to.equal(
+          "myDelivery",
+        );
+      });
+
+      it("replaces POSIX and Windows path separators", () => {
+        expect(instance._sanitizeFilenameValue("a/b\\c")).to.equal("a_b_c");
+      });
+
+      it("neutralizes parent-dir refs so they cannot traverse", () => {
+        expect(instance._sanitizeFilenameValue("..")).to.equal("__");
+        expect(instance._sanitizeFilenameValue(".")).to.equal("_");
+        // separators become "_", so "../" can no longer escape the directory
+        expect(instance._sanitizeFilenameValue("../../etc")).to.equal(
+          ".._.._etc",
+        );
+      });
+
+      it("strips NUL and control characters", () => {
+        expect(instance._sanitizeFilenameValue("a\x00b\x1fc")).to.equal("abc");
+      });
+    });
+
+    describe("_computeFilename", () => {
+      beforeEach(() => {
+        instance = new CampaignInstance(
+          mockLogger,
+          mockClient,
+          configDefaultFull,
+          optionsFull,
+        );
+      });
+
+      const record = (name) =>
+        DomUtil.getFirstChildElement(
+          DomUtil.parse(`<delivery name="${name}"/>`),
+        );
+
+      it("substitutes a clean attribute value", () => {
+        expect(
+          instance._computeFilename(
+            "{@name}.meta.xml",
+            ["@name"],
+            record("DM42"),
+          ),
+        ).to.equal("DM42.meta.xml");
+      });
+
+      it("keeps subdirectories that come from the template", () => {
+        expect(
+          instance._computeFilename(
+            "/Explorer/{@name}.meta.xml",
+            ["@name"],
+            record("foo"),
+          ),
+        ).to.equal("/Explorer/foo.meta.xml");
+      });
+
+      it("prevents path traversal injected through the attribute value", () => {
+        // a malicious @name must not escape the download directory: every
+        // separator becomes "_", so the result stays a single component
+        expect(
+          instance._computeFilename(
+            "{@name}.meta.xml",
+            ["@name"],
+            record("../../etc/passwd"),
+          ),
+        ).to.equal(".._.._etc_passwd.meta.xml");
+      });
+
+      it("does not interpret $ patterns from the value", () => {
+        // record name is XML-escaped; the parsed attribute value is "a$&b"
+        expect(
+          instance._computeFilename(
+            "{@name}.xml",
+            ["@name"],
+            record("a$&amp;b"),
+          ),
+        ).to.equal("a$&b.xml");
+      });
+    });
   });
 
   describe("check", () => {
@@ -873,7 +966,9 @@ describe("CampaignInstance", () => {
       expect(name).to.equal("acc-cli");
       expect(script).to.equal("logInfo('hi')");
       expect(result).to.contain("result");
-      expect(mockLogger.info.called).to.be.true;
+      // The result is returned (for the command to print on stdout) and only
+      // mirrored into the verbose diagnostic trace — never logged at info.
+      expect(mockLogger.verbose.calledWith(result)).to.be.true;
     });
 
     it("should read --file and derive the name from its basename", async () => {
@@ -942,6 +1037,92 @@ describe("CampaignInstance", () => {
       await expect(
         instance.adapterEvaluateJavaScript("n", "s", {}),
       ).to.be.rejectedWith(/EvaluateJavaScript error/);
+    });
+  });
+
+  describe("info", () => {
+    const newInstance = () =>
+      new CampaignInstance(
+        mockLogger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+        mockSpinner,
+      );
+    const cnxInfoEl = DomUtil.getFirstChildElement(
+      DomUtil.parse('<infos><cnx login="admin"/></infos>'),
+    );
+    const stateEl = DomUtil.getFirstChildElement(
+      DomUtil.parse('<elemMonitoring currentInstance="instance1"/>'),
+    );
+
+    const stubAll = (i) => {
+      sinon.stub(i, "adapterTestCnx").resolves(null);
+      sinon
+        .stub(i, "adapterGetServerTime")
+        .resolves(new Date("2026-06-06T14:00:00.000Z"));
+      sinon.stub(i, "adapterGetCnxInfo").resolves(cnxInfoEl);
+      sinon.stub(i, "adapterDumpCurrentInstanceState").resolves(stateEl);
+    };
+
+    it("should render all four sections with no errors on success", async () => {
+      instance = newInstance();
+      stubAll(instance);
+
+      const { text, errors } = await instance.info();
+
+      expect(errors).to.be.empty;
+      expect(text).to.contain("xtk:session#TestCnx");
+      expect(text).to.contain("✅ reachable");
+      expect(text).to.contain("2026-06-06T14:00:00.000Z");
+      expect(text).to.contain("<cnx");
+      expect(text).to.contain("elemMonitoring");
+      // returned for the command to print; mirrored only into verbose trace
+      expect(mockLogger.verbose.calledWith(text)).to.be.true;
+    });
+
+    it("should keep going when one probe fails (best-effort) and collect the error", async () => {
+      instance = newInstance();
+      stubAll(instance);
+      instance.adapterDumpCurrentInstanceState.restore();
+      sinon
+        .stub(instance, "adapterDumpCurrentInstanceState")
+        .rejects(new Error("timeout of 5000ms exceeded"));
+
+      const { text, errors } = await instance.info();
+
+      expect(errors).to.have.lengthOf(1);
+      expect(errors[0].message).to.contain("timeout");
+      // other sections still rendered
+      expect(text).to.contain("✅ reachable");
+      // the failed section shows the warning instead of a body
+      expect(text).to.contain("⚠️ timeout of 5000ms exceeded");
+    });
+
+    it("adapterTestCnx should wrap SDK errors as INSTANCE_INFO_SDK_TESTCNX_FAILED", async () => {
+      instance = newInstance();
+      instance.client = {
+        NLWS: { xtkSession: { testCnx: sinon.stub().rejects(new Error("x")) } },
+      };
+      await expect(instance.adapterTestCnx()).to.be.rejectedWith(
+        /TestCnx error/,
+      );
+    });
+
+    it("adapterDumpCurrentInstanceState should wrap SDK errors as INSTANCE_INFO_SDK_DUMPSTATE_FAILED", async () => {
+      instance = newInstance();
+      instance.client = {
+        NLWS: {
+          xml: {
+            nlMonitoring: {
+              dumpCurrentInstanceState: sinon.stub().rejects(new Error("x")),
+            },
+          },
+        },
+      };
+      await expect(
+        instance.adapterDumpCurrentInstanceState(),
+      ).to.be.rejectedWith(/DumpCurrentInstanceState error/);
     });
   });
 });
