@@ -21,6 +21,12 @@ const {
   INSTANCE_INFO_SDK_SERVERTIME_FAILED,
   INSTANCE_INFO_SDK_CNXINFO_FAILED,
   INSTANCE_INFO_SDK_DUMPSTATE_FAILED,
+  INSTANCE_QUERYDEF_NO_QUERY,
+  INSTANCE_QUERYDEF_BOTH_QUERY,
+  INSTANCE_QUERYDEF_FILE_NOT_FOUND,
+  INSTANCE_QUERYDEF_INVALID_JSON,
+  INSTANCE_QUERYDEF_SDK_CREATE_FAILED,
+  INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED,
 } = codes;
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
@@ -367,6 +373,96 @@ class CampaignInstance {
       );
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_EXEC_SDK_EVALUATE_FAILED);
+    }
+  }
+
+  /**
+   * Runs a read-only query on the instance via xtk:queryDef#ExecuteQuery (the
+   * same SOAP mechanism as pull()). The caller passes a full queryDef as JSON;
+   * it is read-only by construction — ExecuteQuery is `const`, an
+   * operation:"select"/"count" can only read, and it is ACL-enforced (no
+   * server-side scripting right needed, unlike exec()).
+   *
+   * @param {Object} cliOptions - Command-line options
+   * @param {string} [cliOptions.query] - Inline queryDef as a JSON string
+   * @param {string} [cliOptions.file] - Path to a .json file (alternative to query)
+   * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
+   * @returns {Promise<string|Object>} the result collection, as an XML string
+   *   or, when `json` is set, a SimpleJson object
+   * @throws {INSTANCE_QUERYDEF_NO_QUERY, INSTANCE_QUERYDEF_BOTH_QUERY, INSTANCE_QUERYDEF_FILE_NOT_FOUND, INSTANCE_QUERYDEF_INVALID_JSON, INSTANCE_QUERYDEF_SDK_CREATE_FAILED, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
+   */
+  async queryDef(cliOptions) {
+    const { query: inlineQuery, file } = cliOptions;
+    if (!inlineQuery && !file) {
+      throw new INSTANCE_QUERYDEF_NO_QUERY();
+    }
+    if (inlineQuery && file) {
+      throw new INSTANCE_QUERYDEF_BOTH_QUERY();
+    }
+
+    let raw = inlineQuery;
+    if (file) {
+      if (!fs.existsSync(file)) {
+        throw new INSTANCE_QUERYDEF_FILE_NOT_FOUND({ messageValues: [file] });
+      }
+      raw = fs.readFileSync(file, "utf8");
+    }
+
+    // Parse the JSON queryDef and convert it to the XML the SDK expects (same
+    // SimpleJson -> XML path as pull()).
+    let queryDefXml;
+    let queryDefJson;
+    try {
+      queryDefJson = JSON.parse(raw);
+      // queryDefXml = DomUtil.fromJSON("queryDef", queryDefJson, "SimpleJson");
+    } catch (err) {
+      throw new INSTANCE_QUERYDEF_INVALID_JSON({
+        messageValues: [err.message],
+      });
+    }
+
+    const spinner = this.createSpinner(
+      `Executing ${chalk.bgCyan("queryDef")} on the server`,
+    ).start();
+    let resultElement;
+    try {
+      resultElement = await this.adapterExecuteQueryDef(queryDefJson);
+    } catch (err) {
+      spinner.fail(`${chalk.bgCyan("queryDef")} failed`);
+      throw err;
+    }
+    spinner.succeed(`${chalk.bgCyan("queryDef")} executed`);
+
+    // Always trace the raw XML; return XML or SimpleJson depending on --json.
+    // const resultXml = DomUtil.toXMLString(resultElement);
+    this.logger.verbose(resultElement);
+    return cliOptions.json
+      ? resultElement
+      : resultElement;
+  }
+
+  /**
+   * Adapter of xtk:queryDef#create + #ExecuteQuery for:
+   * - easier mocking in unit tests
+   * - SDK error wrapping
+   * Unlike pull's adapterCreateAndExecuteQuery, it does NOT call selectAll: the
+   * caller-supplied queryDef already carries its own `select`. `.xml` returns
+   * the result collection as a DOM Element (one child per row).
+   * @param {Document} queryDefXml created from DomUtil.fromJSON
+   * @returns {Promise<Element>} the result collection element
+   * @throws {CampaignException}
+   */
+  async adapterExecuteQueryDef(queryDefXml) {
+    let query;
+    try {
+      query = this.client.NLWS.json.xtkQueryDef.create(queryDefXml);
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_CREATE_FAILED);
+    }
+    try {
+      return await query.executeQuery();
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED);
     }
   }
 

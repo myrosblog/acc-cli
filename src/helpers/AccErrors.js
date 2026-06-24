@@ -153,6 +153,30 @@ E(
   "INSTANCE_INFO_SDK_DUMPSTATE_FAILED",
   "Instance info failed: nl:monitoring#DumpCurrentInstanceState error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+E(
+  "INSTANCE_QUERYDEF_NO_QUERY",
+  "queryDef failed: no query provided. Use --query <json> or --file <path>.",
+);
+E(
+  "INSTANCE_QUERYDEF_BOTH_QUERY",
+  "queryDef failed: --query and --file are mutually exclusive. Provide only one.",
+);
+E(
+  "INSTANCE_QUERYDEF_FILE_NOT_FOUND",
+  "queryDef failed: queryDef file not found: %s",
+);
+E(
+  "INSTANCE_QUERYDEF_INVALID_JSON",
+  "queryDef failed: invalid queryDef JSON: %s",
+);
+E(
+  "INSTANCE_QUERYDEF_SDK_CREATE_FAILED",
+  "queryDef failed: unable to create the SDK query (xtk:queryDef#create). Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
+E(
+  "INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED",
+  "queryDef failed: server-side xtk:queryDef#ExecuteQuery error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+);
 
 // MONITOR
 E(
