@@ -24,7 +24,6 @@ const {
   INSTANCE_QUERYDEF_NO_QUERY,
   INSTANCE_QUERYDEF_BOTH_QUERY,
   INSTANCE_QUERYDEF_FILE_NOT_FOUND,
-  INSTANCE_QUERYDEF_INVALID_JSON,
   INSTANCE_QUERYDEF_SDK_CREATE_FAILED,
   INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED,
 } = codes;
@@ -389,7 +388,7 @@ class CampaignInstance {
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
    * @returns {Promise<string|Object>} the result collection, as an XML string
    *   or, when `json` is set, a SimpleJson object
-   * @throws {INSTANCE_QUERYDEF_NO_QUERY, INSTANCE_QUERYDEF_BOTH_QUERY, INSTANCE_QUERYDEF_FILE_NOT_FOUND, INSTANCE_QUERYDEF_INVALID_JSON, INSTANCE_QUERYDEF_SDK_CREATE_FAILED, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
+   * @throws {INSTANCE_QUERYDEF_NO_QUERY, INSTANCE_QUERYDEF_BOTH_QUERY, INSTANCE_QUERYDEF_FILE_NOT_FOUND, INSTANCE_QUERYDEF_SDK_CREATE_FAILED, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
    */
   async queryDef(cliOptions) {
     const { query: inlineQuery, file } = cliOptions;

@@ -166,10 +166,6 @@ E(
   "queryDef failed: queryDef file not found: %s",
 );
 E(
-  "INSTANCE_QUERYDEF_INVALID_JSON",
-  "queryDef failed: invalid queryDef JSON: %s",
-);
-E(
   "INSTANCE_QUERYDEF_SDK_CREATE_FAILED",
   "queryDef failed: unable to create the SDK query (xtk:queryDef#create). Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
