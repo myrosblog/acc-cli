@@ -408,25 +408,12 @@ class CampaignInstance {
       raw = fs.readFileSync(file, "utf8");
     }
 
-    // Parse the JSON queryDef and convert it to the XML the SDK expects (same
-    // SimpleJson -> XML path as pull()).
-    let queryDefXml;
-    let queryDefJson;
-    try {
-      queryDefJson = JSON.parse(raw);
-      // queryDefXml = DomUtil.fromJSON("queryDef", queryDefJson, "SimpleJson");
-    } catch (err) {
-      throw new INSTANCE_QUERYDEF_INVALID_JSON({
-        messageValues: [err.message],
-      });
-    }
-
     const spinner = this.createSpinner(
       `Executing ${chalk.bgCyan("queryDef")} on the server`,
     ).start();
-    let resultElement;
+    let result;
     try {
-      resultElement = await this.adapterExecuteQueryDef(queryDefJson);
+      result = await this.adapterExecuteQueryDef(raw, cliOptions.json);
     } catch (err) {
       spinner.fail(`${chalk.bgCyan("queryDef")} failed`);
       throw err;
@@ -435,10 +422,8 @@ class CampaignInstance {
 
     // Always trace the raw XML; return XML or SimpleJson depending on --json.
     // const resultXml = DomUtil.toXMLString(resultElement);
-    this.logger.verbose(resultElement);
-    return cliOptions.json
-      ? resultElement
-      : resultElement;
+    this.logger.verbose(result);
+    return cliOptions.json ? result : DomUtil.toXMLString(result);
   }
 
   /**
@@ -452,10 +437,19 @@ class CampaignInstance {
    * @returns {Promise<Element>} the result collection element
    * @throws {CampaignException}
    */
-  async adapterExecuteQueryDef(queryDefXml) {
+  async adapterExecuteQueryDef(queryDef, jsonEnabled) {
     let query;
     try {
-      query = this.client.NLWS.json.xtkQueryDef.create(queryDefXml);
+      // XML
+      if (!jsonEnabled) {
+        const queryDefXml = DomUtil.parse(queryDef);
+        query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
+      }
+      // JSON
+      else {
+        const queryDefJson = JSON.parse(queryDef);
+        query = this.client.NLWS.json.xtkQueryDef.create(queryDefJson);
+      }
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_CREATE_FAILED);
     }

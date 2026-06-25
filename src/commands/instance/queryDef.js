@@ -38,6 +38,6 @@ export default class InstanceQueryDef extends InstanceCommand {
     if (this.jsonEnabled()) {
       return result;
     }
-    this.log(result);
+    this.log(result); // The result content is data: print it on stdout (this.log)
   }
 }
