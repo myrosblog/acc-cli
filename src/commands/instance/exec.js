@@ -7,7 +7,7 @@ export default class InstanceExec extends InstanceCommand {
 
   static examples = [
     "<%= config.bin %> instance exec --alias staging --file ./scripts/cleanup.js",
-    '<%= config.bin %> instance exec --alias staging --script "logInfo(application.instanceName)"',
+    '<%= config.bin %> instance exec --alias staging --script "context.res = application.instanceName"',
   ];
 
   static flags = {

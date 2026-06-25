@@ -28,6 +28,7 @@ Full documentation available on [Getting started with acc](https://myrosblog.com
 - Download all Marketing content: Campaigns, Deliveries, Web apps, and more!
 - Download all Technical content: Data schemas, Javascript codes & pages, Workflows and more!
 - Replace manual exports with scriptable, auditable, and repeatable operations
+- Query instance data with a read-only `queryDef` (read-only by construction, ACL-enforced — safe on production, and for AI agents)
 - Decompose sources into codes (JS, HTML, CSS) and metadata (fields @created, @lastModified…)
 - Allow local code checkers, highlighters and linters
 - Work on any instance: local, staging, production ; and any OS: Windows, macOS, Linux
@@ -83,6 +84,16 @@ Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for IMS instances)
+
+```bash
+# Run a read-only SQL query with queryDef language
+# Ideal as a production-safe data tool, including for AI agents.
+acc instance queryDef --alias staging -q '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'
+# --json uses JSON as input + output; --file reads the queryDef from a .json file
+acc instance queryDef --alias staging -q '{schema:"xtk:option", operation:"get", select:{node:[{expr:"@stringValue"}]}}' --json
+# -f to read the query from a file
+acc instance queryDef --alias staging -f scripts/queryDef.option.get.json --json
+```
 
 ```bash
 # Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
