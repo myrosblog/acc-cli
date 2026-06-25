@@ -31,6 +31,7 @@ import "./unit/commands/instance-template.spec.js";
 import "./unit/commands/instance-check.spec.js";
 import "./unit/commands/instance-pull.spec.js";
 import "./unit/commands/instance-exec.spec.js";
+import "./unit/commands/instance-querydef.spec.js";
 import "./unit/commands/instance-info.spec.js";
 import "./unit/commands/monitor-test.spec.js";
 
