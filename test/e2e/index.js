@@ -7,4 +7,5 @@ process.env.AIO_LOG_LEVEL = process.env.AIO_LOG_LEVEL || "error";
 import "./auth-login.spec.js";
 import "./instance-exec.spec.js";
 import "./instance-querydef.spec.js";
+import "./instance-soap.spec.js";
 import "./instance-info.spec.js";
