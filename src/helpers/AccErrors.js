@@ -24,7 +24,16 @@ const E = ErrorWrapper(
 );
 
 function wrapSdkError(error, ErrorClass, context = {}) {
+  // The acc-js-sdk throws a CampaignException whose real reason is in
+  // `faultString` (the SOAP <faultstring>) or `errorCode`. aio's ErrorWrapper
+  // DROPS `cause` and never prints `sdkDetails`, so on its own the server's
+  // message is swallowed. Fold it into the message via messageValues: aio fills
+  // a trailing `%s` or, when the template has none, appends it after a space —
+  // so every wrapped SDK error now surfaces the underlying server fault.
+  const detail =
+    error?.faultString || error?.errorCode || error?.message || undefined;
   return new ErrorClass({
+    messageValues: detail ? [detail] : [],
     sdkDetails: {
       ...context,
 
@@ -33,6 +42,9 @@ function wrapSdkError(error, ErrorClass, context = {}) {
       faultCode: error?.faultCode,
       errorCode: error?.errorCode,
       faultString: error?.faultString,
+      // `detail` holds the actionable part (e.g. "WDB-200011 ... record does
+      // not exist" + the SQL); faultString is often just a generic wrapper.
+      detail: error?.detail,
       method: error?.methodCall?.methodName,
       urn: error?.methodCall?.urn,
     },
