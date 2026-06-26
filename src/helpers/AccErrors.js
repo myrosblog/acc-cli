@@ -185,6 +185,19 @@ E(
   "INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED",
   "queryDef failed: server-side xtk:queryDef#ExecuteQuery error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
 );
+E(
+  "INSTANCE_SOAP_NO_TARGET",
+  "soap failed: --schema and --method are both required.",
+);
+E("INSTANCE_SOAP_BAD_ARGS", "soap failed: --args is not valid JSON: %s");
+E(
+  "INSTANCE_SOAP_ARGS_NOT_ARRAY",
+  "soap failed: --args must be a JSON array, e.g. '[1234, \"<params/>\"]'.",
+);
+E(
+  "INSTANCE_SOAP_SDK_CALL_FAILED",
+  "soap failed: could not complete the SOAP call. Check --args (parameter count and types — pass XML parameters with --json so they serialize correctly); note that non-static methods (operating on a loaded entity) are not supported. Enable 'acc-js-sdk.traceAPICalls' for the full trace. Cause:",
+);
 
 // MONITOR
 E(
