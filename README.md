@@ -85,21 +85,25 @@ Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for IMS instances)
 
+Store the alias in `acc.config.json` (`{"alias": "staging"}`) to use it as default for all `acc` commands.
+
 ```bash
 # Run a read-only SQL query with queryDef language
 # Ideal as a production-safe data tool, including for AI agents.
-acc instance queryDef --alias staging -q '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'
+acc instance queryDef -q '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'
 # --json uses JSON as input + output; --file reads the queryDef from a .json file
-acc instance queryDef --alias staging -q '{schema:"xtk:option", operation:"get", select:{node:[{expr:"@stringValue"}]}}' --json
+acc instance queryDef -q '{schema:"xtk:option", operation:"get", select:{node:[{expr:"@stringValue"}]}}' --json
 # -f to read the query from a file
-acc instance queryDef --alias staging -f scripts/queryDef.option.get.json --json
+acc instance queryDef -f scripts/queryDef.option.get.json --json
+```
 ```
 
 ```bash
-# Run server-side JavaScript (xtk:builder#EvaluateJavaScript)
-acc instance exec --alias staging --script "context.@result = application.instanceName"
-acc instance exec --alias staging --script "context.@result = getOption('NmsEmail_DefaultFromAddr')"
-acc instance exec --alias staging --file ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
+# Run server-side JavaScript (xtk:builder#EvaluateJavaScript). Requires admin rights.
+# Use `context` to output results.
+acc instance exec -s "context.@result = application.instanceName"
+acc instance exec -s "context.@result = getOption('NmsEmail_DefaultFromAddr')"
+acc instance exec -f ./Administration/Configuration/JavaScript codes/mynamespace/my-script.js
 ```
 
 ```bash
