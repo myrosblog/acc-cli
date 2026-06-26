@@ -1180,6 +1180,173 @@ describe("CampaignInstance", () => {
     });
   });
 
+  describe("soap", () => {
+    const newInstance = () =>
+      new CampaignInstance(
+        mockLogger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+        mockSpinner,
+      );
+
+    it("_toSchemaKey maps a schema id to the NLWS camelCase key", () => {
+      instance = newInstance();
+      expect(instance._toSchemaKey("nms:delivery")).to.equal("nmsDelivery");
+      expect(instance._toSchemaKey("xtk:queryDef")).to.equal("xtkQueryDef");
+      expect(instance._toSchemaKey("xtk:fileRes")).to.equal("xtkFileRes");
+      // already a key / malformed: passes through untouched
+      expect(instance._toSchemaKey("nmsDelivery")).to.equal("nmsDelivery");
+    });
+
+    it("_serializeSoapResult handles null, scalars, DOM nodes and arrays", () => {
+      instance = newInstance();
+      const el = DomUtil.getFirstChildElement(DomUtil.parse("<preview/>"));
+      expect(instance._serializeSoapResult(null)).to.equal("");
+      expect(instance._serializeSoapResult(undefined)).to.equal("");
+      expect(instance._serializeSoapResult("plain text")).to.equal(
+        "plain text",
+      );
+      expect(instance._serializeSoapResult(42)).to.equal("42");
+      expect(instance._serializeSoapResult(el)).to.contain("<preview");
+      // multi-output methods (e.g. BuildPreviewFromId) return an array
+      const joined = instance._serializeSoapResult([el, "tail"]);
+      expect(joined).to.contain("<preview");
+      expect(joined).to.contain("tail");
+    });
+
+    it("should call the method via the adapter and serialize XML (human mode)", async () => {
+      instance = newInstance();
+      const el = DomUtil.getFirstChildElement(DomUtil.parse("<preview/>"));
+      const adapterStub = sinon.stub(instance, "adapterCallSoap").resolves(el);
+
+      const result = await instance.soap({
+        schema: "nms:delivery",
+        method: "BuildPreviewFromId",
+        args: "[1234]",
+      });
+
+      expect(adapterStub.calledOnce).to.be.true;
+      const [schemaKey, method, args, json] = adapterStub.firstCall.args;
+      expect(schemaKey).to.equal("nmsDelivery"); // mapped from nms:delivery
+      expect(method).to.equal("BuildPreviewFromId");
+      expect(args).to.deep.equal([1234]); // parsed from the JSON array string
+      expect(json).to.not.be.ok;
+      expect(result).to.contain("<preview");
+      expect(mockLogger.verbose.calledWith(el)).to.be.true;
+    });
+
+    it("should return the SimpleJson result as-is when json:true", async () => {
+      instance = newInstance();
+      const jsonResult = { serverTime: "2026-06-26" };
+      const adapterStub = sinon
+        .stub(instance, "adapterCallSoap")
+        .resolves(jsonResult);
+
+      const result = await instance.soap({
+        schema: "xtk:session",
+        method: "GetServerTime",
+        json: true,
+      });
+
+      // no --args: the adapter is called with an empty argument list
+      expect(adapterStub.firstCall.args[2]).to.deep.equal([]);
+      expect(adapterStub.firstCall.args[3]).to.equal(true);
+      expect(result).to.deep.equal(jsonResult);
+    });
+
+    it("should throw INSTANCE_SOAP_NO_TARGET when schema or method is missing", async () => {
+      instance = newInstance();
+      await expect(
+        instance.soap({ method: "GetServerTime" }),
+      ).to.be.rejectedWith(/--schema and --method are both required/);
+      await expect(instance.soap({ schema: "xtk:session" })).to.be.rejectedWith(
+        /--schema and --method are both required/,
+      );
+    });
+
+    it("should throw INSTANCE_SOAP_BAD_ARGS when --args is not valid JSON", async () => {
+      instance = newInstance();
+      await expect(
+        instance.soap({
+          schema: "xtk:session",
+          method: "GetOption",
+          args: "[not json",
+        }),
+      ).to.be.rejectedWith(/--args is not valid JSON/);
+    });
+
+    it("should throw INSTANCE_SOAP_ARGS_NOT_ARRAY when --args is not a JSON array", async () => {
+      instance = newInstance();
+      await expect(
+        instance.soap({
+          schema: "xtk:session",
+          method: "GetOption",
+          args: "5",
+        }),
+      ).to.be.rejectedWith(/--args must be a JSON array/);
+    });
+
+    it("should rethrow and fail the spinner when the adapter rejects", async () => {
+      instance = newInstance();
+      sinon.stub(instance, "adapterCallSoap").rejects(new Error("boom"));
+      await expect(
+        instance.soap({ schema: "xtk:session", method: "GetServerTime" }),
+      ).to.be.rejectedWith(/boom/);
+    });
+
+    it("adapterCallSoap dispatches through the json representation and wraps SDK errors", async () => {
+      instance = newInstance();
+      const getServerTime = sinon.stub().rejects(new Error("soap down"));
+      instance.client = { NLWS: { json: { xtkSession: { getServerTime } } } };
+
+      await expect(
+        instance.adapterCallSoap("xtkSession", "getServerTime", [], true),
+      ).to.be.rejectedWith(/could not complete the SOAP call/);
+      expect(getServerTime.calledOnce).to.be.true;
+    });
+
+    it("adapterCallSoap surfaces the server faultString (no longer swallowed)", async () => {
+      instance = newInstance();
+      const sdkErr = Object.assign(new Error("SOAP fault"), {
+        faultString: "XSV-350013 Required parameter 'deliveryId' is missing",
+        errorCode: "XSV-350013",
+      });
+      const buildPreviewFromId = sinon.stub().rejects(sdkErr);
+      instance.client = {
+        NLWS: { xml: { nmsDelivery: { buildPreviewFromId } } },
+      };
+
+      await expect(
+        instance.adapterCallSoap(
+          "nmsDelivery",
+          "buildPreviewFromId",
+          [],
+          false,
+        ),
+      ).to.be.rejectedWith(/deliveryId/);
+    });
+
+    it("adapterCallSoap spreads args and returns the value (xml representation)", async () => {
+      instance = newInstance();
+      const buildPreviewFromId = sinon.stub().resolves("<preview/>");
+      instance.client = {
+        NLWS: { xml: { nmsDelivery: { buildPreviewFromId } } },
+      };
+
+      const result = await instance.adapterCallSoap(
+        "nmsDelivery",
+        "buildPreviewFromId",
+        [1234, "<params/>"],
+        false,
+      );
+
+      expect(buildPreviewFromId.calledOnceWithExactly(1234, "<params/>")).to.be
+        .true;
+      expect(result).to.equal("<preview/>");
+    });
+  });
+
   describe("info", () => {
     const newInstance = () =>
       new CampaignInstance(

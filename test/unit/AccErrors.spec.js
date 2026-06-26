@@ -11,6 +11,7 @@ describe("AccErrors", () => {
         faultCode: "DLV-490012",
         errorCode: "SDK-000010",
         faultString: "Session has expired",
+        detail: "WDB-200011 The requested database record does not exist",
         methodCall: { methodName: "ExecuteQuery", urn: "xtk:queryDef" },
       };
 
@@ -23,6 +24,9 @@ describe("AccErrors", () => {
       expect(wrapped.sdkDetails.faultCode).to.equal("DLV-490012");
       expect(wrapped.sdkDetails.errorCode).to.equal("SDK-000010");
       expect(wrapped.sdkDetails.faultString).to.equal("Session has expired");
+      expect(wrapped.sdkDetails.detail).to.equal(
+        "WDB-200011 The requested database record does not exist",
+      );
       expect(wrapped.sdkDetails.method).to.equal("ExecuteQuery");
       expect(wrapped.sdkDetails.urn).to.equal("xtk:queryDef");
     });
@@ -56,6 +60,35 @@ describe("AccErrors", () => {
 
       expect(wrapped.sdkDetails.schemaId).to.equal("nms:delivery");
       expect(wrapped.sdkDetails.startLine).to.equal(1);
+    });
+
+    it("should surface the server faultString in the rendered message", () => {
+      // aio drops `cause` and never prints sdkDetails, so the reason is folded
+      // into the message (appended, since these templates have no %s)
+      const sdkError = {
+        faultString: "Session has expired",
+        errorCode: "SDK-000010",
+      };
+      const wrapped = wrapSdkError(
+        sdkError,
+        codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+      );
+      expect(wrapped.message).to.contain("Session has expired");
+    });
+
+    it("should fall back to errorCode, then message, when no faultString", () => {
+      expect(
+        wrapSdkError(
+          { errorCode: "XSV-350013" },
+          codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+        ).message,
+      ).to.contain("XSV-350013");
+      expect(
+        wrapSdkError(
+          new Error("Network timeout"),
+          codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+        ).message,
+      ).to.contain("Network timeout");
     });
   });
 });

@@ -96,6 +96,14 @@ acc instance queryDef -q '{schema:"xtk:option", operation:"get", select:{node:[{
 # -f to read the query from a file
 acc instance queryDef -f scripts/queryDef.option.get.json --json
 ```
+
+```bash
+# Call any SOAP method on any schema (uses the acc-js-sdk NLWS proxy). Static methods only.
+acc instance soap --schema xtk:session --method GetServerTime
+# --args is a JSON array of the method parameters
+acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hi</p>"]'
+# --json switches input + output to JSON (best for methods taking/returning XML)
+acc instance soap -s nms:delivery -m BuildPreviewFromId -a '[1234, "<params/>"]' --json
 ```
 
 ```bash

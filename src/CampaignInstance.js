@@ -26,6 +26,10 @@ const {
   INSTANCE_QUERYDEF_FILE_NOT_FOUND,
   INSTANCE_QUERYDEF_SDK_CREATE_FAILED,
   INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED,
+  INSTANCE_SOAP_NO_TARGET,
+  INSTANCE_SOAP_BAD_ARGS,
+  INSTANCE_SOAP_ARGS_NOT_ARRAY,
+  INSTANCE_SOAP_SDK_CALL_FAILED,
 } = codes;
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
@@ -457,6 +461,125 @@ class CampaignInstance {
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED);
     }
+  }
+
+  /**
+   * Generic SOAP invoker: calls an arbitrary method on any schema via the
+   * acc-js-sdk NLWS proxy. The escape hatch behind the curated `instance`
+   * commands — reaches any method `instance query`/`instance exec` don't wrap.
+   *
+   * Scope: static methods only. The SDK auto-detects static/non-static from the
+   * schema; a non-static method needs a loaded entity as its `this` param, which
+   * this command does not build — the SDK then throws (wrapped as
+   * INSTANCE_SOAP_SDK_CALL_FAILED). Prefer the static *FromId/*ById variants.
+   *
+   * @param {Object} cliOptions - Command-line options
+   * @param {string} cliOptions.schema - schema id, e.g. "nms:delivery"
+   * @param {string} cliOptions.method - method name (PascalCase or camelCase),
+   *   e.g. "BuildPreviewFromId"; the SDK resolves either casing
+   * @param {string} [cliOptions.args] - method arguments as a JSON array string,
+   *   e.g. '[1234, "<params/>"]'. Omitted/empty means no argument.
+   * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
+   * @returns {Promise<string|Object>} the method result: an XML string (or the
+   *   array's parts joined) in human mode, or the SimpleJson value when `json`
+   * @throws {INSTANCE_SOAP_NO_TARGET, INSTANCE_SOAP_BAD_ARGS, INSTANCE_SOAP_ARGS_NOT_ARRAY, INSTANCE_SOAP_SDK_CALL_FAILED}
+   */
+  async soap(cliOptions) {
+    const { schema, method } = cliOptions;
+    if (!schema || !method) {
+      throw new INSTANCE_SOAP_NO_TARGET();
+    }
+
+    // Arguments arrive as a JSON array string and are spread positionally onto
+    // the method. A bare value (e.g. "5") is rejected to steer the user to [].
+    let args = [];
+    if (cliOptions.args !== undefined && cliOptions.args !== "") {
+      try {
+        args = JSON.parse(cliOptions.args);
+      } catch (err) {
+        throw new INSTANCE_SOAP_BAD_ARGS({ messageValues: [err.message] });
+      }
+      if (!Array.isArray(args)) {
+        throw new INSTANCE_SOAP_ARGS_NOT_ARRAY();
+      }
+    }
+
+    const schemaKey = this._toSchemaKey(schema);
+    const label = `${schema}#${method}`;
+    const spinner = this.createSpinner(
+      `Calling ${chalk.bgCyan(label)} on the server`,
+    ).start();
+    let result;
+    try {
+      result = await this.adapterCallSoap(
+        schemaKey,
+        method,
+        args,
+        cliOptions.json,
+      );
+    } catch (err) {
+      spinner.fail(`${chalk.bgCyan(label)} failed`);
+      throw err;
+    }
+    spinner.succeed(`${chalk.bgCyan(label)} succeeded`);
+
+    this.logger.verbose(result);
+    return cliOptions.json ? result : this._serializeSoapResult(result);
+  }
+
+  /**
+   * Adapter of the NLWS proxy dispatch for `soap()`:
+   * - easier mocking in unit tests
+   * - SDK error wrapping
+   * The representation (xml vs json) drives how the SDK marshals both the input
+   * parameters and the return value. The schema key is the camelCase namespace
+   * the proxy expects (e.g. "nmsDelivery" for "nms:delivery").
+   * @param {string} schemaKey camelCase schema key, e.g. "nmsDelivery"
+   * @param {string} method method name (the SDK resolves either casing)
+   * @param {Array} args positional arguments
+   * @param {boolean} jsonEnabled when true use the SimpleJson representation
+   * @returns {Promise<*>} DOM node / scalar / array (xml) or SimpleJson (json)
+   * @throws {CampaignException}
+   */
+  async adapterCallSoap(schemaKey, method, args, jsonEnabled) {
+    try {
+      const nlws = jsonEnabled ? this.client.NLWS.json : this.client.NLWS.xml;
+      return await nlws[schemaKey][method](...args);
+    } catch (err) {
+      throw wrapSdkError(err, INSTANCE_SOAP_SDK_CALL_FAILED);
+    }
+  }
+
+  /**
+   * Maps a schema id to the camelCase namespace key the NLWS proxy expects,
+   * e.g. "nms:delivery" -> "nmsDelivery", "xtk:queryDef" -> "xtkQueryDef".
+   * Inverse of the SDK's Util.schemaIdFromNamespace.
+   * @param {string} schema schema id ("namespace:entity")
+   * @returns {string} the proxy key
+   */
+  _toSchemaKey(schema) {
+    const [ns, entity] = schema.split(":");
+    if (!entity) return schema; // already a key (or malformed): pass through
+    return ns + entity.charAt(0).toUpperCase() + entity.slice(1);
+  }
+
+  /**
+   * Serialises a SOAP result for human (XML) mode. A method may return nothing
+   * (null), a scalar, a DOM node, or — for multi-output methods like
+   * BuildPreviewFromId — an array of those. DOM nodes are stringified; arrays
+   * are stringified part-by-part and joined.
+   * @param {*} result the raw NLWS return value
+   * @returns {string}
+   */
+  _serializeSoapResult(result) {
+    if (result === null || result === undefined) return "";
+    if (Array.isArray(result)) {
+      return result.map((r) => this._serializeSoapResult(r)).join("\n");
+    }
+    if (typeof result === "object" && result.nodeType) {
+      return DomUtil.toXMLString(result);
+    }
+    return String(result);
   }
 
   /**
