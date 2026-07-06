@@ -95,12 +95,20 @@ E(
   "Login failed: IMS bearer token missing for this instance. Re-run 'acc auth init' or update 'acc.auth.instances' with a valid token.",
 );
 E(
+  "AUTH_LOGIN_IMS_CREDENTIALS_MISSING",
+  "Login failed: incomplete IMS Server-to-Server credentials for this instance. Re-run 'acc auth init' with --client-id, --client-secret, --org-id and --scopes.",
+);
+E(
+  "AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED",
+  "Login failed: could not generate an IMS access token (OAuth Server-to-Server). Check the clientId/clientSecret/orgId/scopes stored in 'acc.auth.instances'. Cause:",
+);
+E(
   "AUTH_LOGIN_INVALID_METHOD",
-  "Login failed: unknown authMethod. Expected 'UserPassword' or 'ImsBearerToken'.",
+  "Login failed: unknown authMethod. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
 );
 E(
   "AUTH_INIT_INVALID_METHOD",
-  "Init failed: unsupported auth method. Expected 'UserPassword' or 'ImsBearerToken'.",
+  "Init failed: unsupported auth method. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
 );
 
 // CONFIG

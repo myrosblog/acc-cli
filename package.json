@@ -42,6 +42,7 @@
     "@adobe/acc-js-sdk": "^1.2",
     "@adobe/aio-cli-plugin-config": "^5.0.2",
     "@adobe/aio-cli-plugin-info": "^4.0.2",
+    "@adobe/aio-lib-core-auth": "^1.1.0",
     "@adobe/aio-lib-core-config": "^5.0.1",
     "@adobe/aio-lib-core-errors": "^4.0.1",
     "@adobe/aio-lib-core-logging": "^3.0.2",
