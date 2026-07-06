@@ -51,7 +51,7 @@ First time authentication:
 # process list).
 acc auth init
 # Host (i.e. https://instance1.campaign.adobe.com):
-# Authentication method: (User / password | IMS bearer token)
+# Authentication method: (User / password | IMS bearer token | IMS Server-to-Server)
 # Username:
 # Password:
 # Alias (i.e. staging):
@@ -68,6 +68,31 @@ acc auth init --method ImsBearerToken --host https://instance.campaign.adobe.com
 > Re-run `acc auth init` (or update `acc.auth.instances` via `acc config`) when
 > it expires. Existing user/password instances keep working unchanged.
 
+For unattended use (CI, cron, AI agents), skip the manual token dance entirely:
+store **OAuth Server-to-Server** credentials once and acc-cli mints (and
+refreshes) the IMS access token for you on every command:
+
+```bash
+acc auth init --method ImsServerToServer \
+  --host https://instance.campaign.adobe.com \
+  --client-id "$IMS_CLIENT_ID" \
+  --client-secret "$IMS_CLIENT_SECRET" \
+  --org-id "XXABC123@AdobeOrg" \
+  --scopes "openid,AdobeID,..." \
+  --alias prod
+```
+
+Create the credentials in the [Adobe Developer Console](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/):
+add an **OAuth Server-to-Server** credential to your project, then copy its
+`Client ID`, `Client Secret`, `Organization ID` (`…@AdobeOrg`) and `Scopes`.
+
+> With `ImsServerToServer`, only the credentials are stored — never a long-lived
+> token. acc-cli mints a fresh IMS access token through
+> [`@adobe/aio-lib-core-auth`](https://github.com/adobe/aio-lib-core-auth) and
+> caches it (under `acc.auth.imsTokens`) until shortly before it expires, so
+> tokens refresh automatically with no manual step. Add `--ims-env stage` to
+> target the IMS stage environment.
+
 Then, recurring pulls:
 
 ```bash
@@ -83,7 +108,9 @@ acc instance pull --alias staging
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
-(or `--method ImsBearerToken --token '...'` for IMS instances)
+(or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
+`--method ImsServerToServer --client-id ... --client-secret ... --org-id '...@AdobeOrg' --scopes '...'`
+to auto-mint IMS tokens from OAuth Server-to-Server credentials)
 
 Store the alias in `acc.config.json` (`{"alias": "staging"}`) to use it as default for all `acc` commands.
 
