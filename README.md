@@ -68,6 +68,15 @@ acc auth init --method ImsBearerToken --host https://instance.campaign.adobe.com
 > Re-run `acc auth init` (or update `acc.auth.instances` via `acc config`) when
 > it expires. Existing user/password instances keep working unchanged.
 
+Debugging an IMS token? Decode it to JSON to inspect its claims and check
+whether it is expired (base64 → JSON; the signature is **not** verified):
+
+```bash
+acc auth decode "$IMS_BEARER_TOKEN"
+# Header / Payload as JSON, then an Expiry block (Issued at / Expires at / Status)
+acc auth decode "$IMS_BEARER_TOKEN" --json | jq .expiry
+```
+
 Then, recurring pulls:
 
 ```bash
