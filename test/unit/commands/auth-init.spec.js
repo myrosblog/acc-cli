@@ -17,12 +17,17 @@ describe("AuthInit", () => {
     expect(AuthInit.flags.pass.required).to.not.be.true;
     expect(AuthInit.flags.method.required).to.not.be.true;
     expect(AuthInit.flags.token.required).to.not.be.true;
+    expect(AuthInit.flags["client-id"].required).to.not.be.true;
+    expect(AuthInit.flags["client-secret"].required).to.not.be.true;
+    expect(AuthInit.flags["org-id"].required).to.not.be.true;
+    expect(AuthInit.flags.scopes.required).to.not.be.true;
   });
 
   it("should restrict --method to the supported auth methods", () => {
     expect(AuthInit.flags.method.options).to.deep.equal([
       "UserPassword",
       "ImsBearerToken",
+      "ImsServerToServer",
     ]);
   });
 
@@ -44,6 +49,39 @@ describe("AuthInit", () => {
     expect(authInitStub.firstCall.args[0]).to.include({
       method: "ImsBearerToken",
       token: "ims-token",
+    });
+    sinon.restore();
+  });
+
+  it("should normalize kebab-case S2S flags to camelCase for init", async () => {
+    const argv = [
+      "--alias",
+      "s2s",
+      "--host",
+      "http://test.com",
+      "--method",
+      "ImsServerToServer",
+      "--client-id",
+      "cid",
+      "--client-secret",
+      "sec",
+      "--org-id",
+      "org@AdobeOrg",
+      "--scopes",
+      "openid,AdobeID",
+      "--ims-env",
+      "stage",
+    ];
+    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
+    await AuthInit.run(argv);
+    expect(authInitStub.calledOnce).to.be.true;
+    expect(authInitStub.firstCall.args[0]).to.include({
+      method: "ImsServerToServer",
+      clientId: "cid",
+      clientSecret: "sec",
+      orgId: "org@AdobeOrg",
+      scopes: "openid,AdobeID",
+      imsEnv: "stage",
     });
     sinon.restore();
   });

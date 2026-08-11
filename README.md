@@ -73,7 +73,9 @@ acc instance pull --alias staging
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli/use-cases?utm_campaign=readme)
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
-(or `--method ImsBearerToken --token '...'` for IMS instances)
+(or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
+`--method ImsServerToServer --client-id ... --client-secret ... --org-id '...@AdobeOrg' --scopes '...'`
+to auto-mint IMS tokens from OAuth Server-to-Server credentials)
 
 Store the alias in `acc.config.json` (`{"alias": "staging"}`) to use it as default for all `acc` commands.
 

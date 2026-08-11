@@ -19,6 +19,8 @@ const {
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
   AUTH_LOGIN_TOKEN_MISSING,
+  AUTH_LOGIN_IMS_CREDENTIALS_MISSING,
+  AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
   AUTH_LOGIN_INVALID_METHOD,
 } = codes;
 // helpers
@@ -520,6 +522,121 @@ describe("CampaignAuth", function () {
     });
   });
 
+  describe("login (ImsServerToServer)", function () {
+    const s2sCreds = {
+      host: "http://localhost",
+      authMethod: "ImsServerToServer",
+      json: {
+        ORG_ID: "org@AdobeOrg",
+        CLIENT_SECRETS: ["sec"],
+        CLIENT_ID: "cid",
+        SCOPES: ["openid", "AdobeID"],
+        TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+        TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+      },
+    };
+
+    // Build a CampaignAuth wired with a stubbed IMS token minter, plus the
+    // instance record and (optional) persisted token cache it should read.
+    const makeAuth = (imsAuth, tokenCache) => {
+      mockConfig.get.withArgs("acc.auth.instances").returns({ s2s: s2sCreds });
+      mockConfig.get.withArgs("acc.auth.imsTokens").returns(tokenCache);
+      return new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+        imsAuth,
+      );
+    };
+
+    it("mints a token, feeds it to the SDK and caches it", async function () {
+      const imsAuth = {
+        generateAccessToken: sinon
+          .stub()
+          .resolves({ access_token: "minted", expires_in: 86400 }),
+      };
+      auth = makeAuth(imsAuth, undefined);
+      const prep = sinon.spy(auth, "_prepareConnectionParameters");
+
+      const client = await auth.login({ alias: "s2s" });
+
+      expect(client).to.exist;
+      expect(imsAuth.generateAccessToken.calledOnce).to.be.true;
+      expect(imsAuth.generateAccessToken.firstCall.args[0]).to.deep.equal({
+        clientId: "cid",
+        clientSecret: "sec",
+        orgId: "org@AdobeOrg",
+        scopes: ["openid", "AdobeID"],
+      });
+      // The minted token is handed to the connection as the bearer token.
+      expect(prep.firstCall.args[3]).to.equal("minted");
+      // The token is persisted (with an expiry) under acc.auth.imsTokens.s2s.
+      const setCall = mockConfig.set
+        .getCalls()
+        .find((c) => c.args[0] === "acc.auth.imsTokens.s2s");
+      expect(setCall, "token cache write").to.exist;
+      expect(setCall.args[1].accessToken).to.equal("minted");
+      expect(setCall.args[1].expiresAt).to.be.a("number");
+    });
+
+    it("re-uses a cached token that is comfortably valid", async function () {
+      const imsAuth = { generateAccessToken: sinon.stub().resolves({}) };
+      auth = makeAuth(imsAuth, {
+        s2s: { accessToken: "cached", expiresAt: Date.now() + 60 * 60 * 1000 },
+      });
+      const prep = sinon.spy(auth, "_prepareConnectionParameters");
+
+      await auth.login({ alias: "s2s" });
+
+      expect(imsAuth.generateAccessToken.notCalled).to.be.true;
+      expect(prep.firstCall.args[3]).to.equal("cached");
+    });
+
+    it("re-mints when the cached token is within the safety margin", async function () {
+      const imsAuth = {
+        generateAccessToken: sinon
+          .stub()
+          .resolves({ access_token: "fresh", expires_in: 86400 }),
+      };
+      // 5 minutes left < 10-minute safety margin => must re-mint.
+      auth = makeAuth(imsAuth, {
+        s2s: { accessToken: "stale", expiresAt: Date.now() + 5 * 60 * 1000 },
+      });
+      const prep = sinon.spy(auth, "_prepareConnectionParameters");
+
+      await auth.login({ alias: "s2s" });
+
+      expect(imsAuth.generateAccessToken.calledOnce).to.be.true;
+      expect(prep.firstCall.args[3]).to.equal("fresh");
+    });
+
+    it("throws AUTH_LOGIN_IMS_CREDENTIALS_MISSING when credentials are incomplete", async function () {
+      mockConfig.get.withArgs("acc.auth.instances").returns({
+        s2s: {
+          host: "http://localhost",
+          authMethod: "ImsServerToServer",
+          clientId: "cid",
+        },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      await expect(auth.login({ alias: "s2s" })).to.be.rejectedWith(
+        AUTH_LOGIN_IMS_CREDENTIALS_MISSING,
+      );
+    });
+
+    it("wraps a minting failure as AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED", async function () {
+      const imsAuth = {
+        generateAccessToken: sinon.stub().rejects(new Error("invalid_client")),
+      };
+      auth = makeAuth(imsAuth, undefined);
+      await expect(auth.login({ alias: "s2s" })).to.be.rejectedWith(
+        AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
+      );
+    });
+  });
+
   describe("init prompting", function () {
     it("should prompt for missing fields (masked password) when interactive", async function () {
       mockConfig.get.returns(null);
@@ -584,6 +701,82 @@ describe("CampaignAuth", function () {
       });
     });
 
+    it("should prompt for S2S credentials when method is ImsServerToServer", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub(),
+        select: sinon.stub().resolves("ImsServerToServer"),
+      };
+      // Prompt order: host -> method -> json -> alias
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost") // host
+        .onCall(1)
+        .resolves(
+          '{"ORG_ID":"org@AdobeOrg","CLIENT_SECRETS":["sec"],"CLIENT_ID":"cid","SCOPES":["openid","AdobeID"],"TECHNICAL_ACCOUNT_ID":"id@techacct.adobe.com","TECHNICAL_ACCOUNT_EMAIL":"em@techacct.adobe.com"}',
+        ) // JSON
+        .onCall(2)
+        .resolves("prod"); // alias
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        authMethod: "ImsServerToServer",
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
+      });
+    });
+
+    it("should store S2S JSON (non-interactive)", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(false),
+        input: sinon.stub(),
+        password: sinon.stub(),
+        select: sinon.stub(),
+      };
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({
+        alias: "s2s",
+        host: "http://localhost",
+        method: "ImsServerToServer",
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
+      });
+
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        authMethod: "ImsServerToServer",
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
+      });
+    });
+
     it("should not prompt and keep provided options when non-interactive", async function () {
       mockConfig.get.returns(null);
       const mockPrompt = {
@@ -639,13 +832,27 @@ describe("CampaignAuth", function () {
     it("should prepare an IMS bearer token connection with sessionInfo", async () => {
       const actual = auth._prepareConnectionParameters(
         "ImsBearerToken",
-        { host: "host", token: "ims-token" },
+        { host: "host" },
         { traceAPICalls: true },
+        "ims-token",
       );
       expect(actual).to.be.an.instanceof(ConnectionParameters);
       expect(actual._credentials._type).to.equal("ImsBearerToken");
       expect(actual._options.sessionInfo).to.equal(true);
       expect(actual._options.traceAPICalls).to.equal(true);
+    });
+
+    it("should prepare an S2S connection from the minted bearer token", async () => {
+      const actual = auth._prepareConnectionParameters(
+        "ImsServerToServer",
+        { host: "host" },
+        { traceAPICalls: true },
+        "minted-token",
+      );
+      expect(actual).to.be.an.instanceof(ConnectionParameters);
+      // S2S reuses the IMS bearer path once the token has been minted.
+      expect(actual._credentials._type).to.equal("ImsBearerToken");
+      expect(actual._options.sessionInfo).to.equal(true);
     });
   });
 

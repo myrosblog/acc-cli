@@ -15,12 +15,15 @@ const {
   AUTH_LOGIN_SDK_SERVERINFO_FAILED,
   AUTH_LOGIN_SDK_SERVERINFO_EMPTY,
   AUTH_LOGIN_TOKEN_MISSING,
+  AUTH_LOGIN_IMS_CREDENTIALS_MISSING,
+  AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
   AUTH_LOGIN_INVALID_METHOD,
   AUTH_INIT_INVALID_METHOD,
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import PromptAdapter from "./adapters/PromptAdapter.js";
+import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
 import AccCache from "./helpers/AccCache.js";
 import soapLogObserver from "./helpers/soapLogObserver.js";
 
@@ -32,19 +35,38 @@ import soapLogObserver from "./helpers/soapLogObserver.js";
 export const AUTH_INSTANCES_KEY = "acc.auth.instances";
 
 /**
+ * Config key (dot path) under which minted IMS access tokens are cached,
+ * separately from the credentials in AUTH_INSTANCES_KEY so that secrets and
+ * volatile tokens never mix (and `acc auth list` never sees a token). Each
+ * alias holds `{ accessToken, expiresAt }`, reused until close to expiry.
+ * @type {string}
+ * @since 1.5.0
+ */
+export const AUTH_IMS_TOKENS_KEY = "acc.auth.imsTokens";
+
+/**
  * Supported authentication methods, stored per-instance under `authMethod`.
  * Legacy instances without `authMethod` are treated as `UserPassword`.
- * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string }}
+ * `ImsServerToServer` stores OAuth Server-to-Server credentials and mints an
+ * IMS access token on demand (since 1.5.0); `ImsBearerToken` stores a token the
+ * user pasted by hand.
+ * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string, IMS_SERVER_TO_SERVER: string }}
  * @since 1.2.0
  */
 export const AUTH_METHODS = {
   USER_PASSWORD: "UserPassword",
   IMS_BEARER_TOKEN: "ImsBearerToken",
+  IMS_SERVER_TO_SERVER: "ImsServerToServer",
 };
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
  * Provides authentication, instance management, and connection capabilities.
+ *
+ * Works with 3 methods:
+ * - IMS OAuth Server-to-Server (Client Id, Secret, Org Id, Scopes)
+ * - IMS Access token (JWT, starts with 'eyJ...')
+ * - Operator (User, password)
  *
  * @class CampaignAuth
  * @classdesc Main class for interacting with ACC instances
@@ -73,12 +95,14 @@ class CampaignAuth {
    * @param {Object} sdk - Raw ACC JS SDK instance
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
+   * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
+   * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token minter (injectable for tests)
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, prompt, makeCache) {
+  constructor(logger, sdk, config, prompt, makeCache, imsAuth) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -88,6 +112,7 @@ class CampaignAuth {
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
+    this.imsAuth = imsAuth || new ImsAuthAdapter();
     this.logger.info(
       `🔑 Reading authentication from ${this.config.global()?.file}`,
     );
@@ -202,6 +227,9 @@ class CampaignAuth {
     // UserPassword by definition, so default keeps them working untouched.
     const authMethod = auth.authMethod || AUTH_METHODS.USER_PASSWORD;
     const { host, user, token } = auth;
+    // The bearer token handed to the SDK. For ImsBearerToken it is the token the
+    // user stored; for ImsServerToServer it is minted (and cached) on the fly.
+    let bearerToken;
     if (authMethod === AUTH_METHODS.USER_PASSWORD) {
       if (!host || !user || !auth.password) {
         throw new AUTH_LOGIN_ALIAS_INVALID();
@@ -215,6 +243,13 @@ class CampaignAuth {
         throw new AUTH_LOGIN_TOKEN_MISSING();
       }
       this.logger.info(`↔️ Connecting to ${host} via IMS bearer token...`);
+      bearerToken = token;
+    } else if (authMethod === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
+      if (!host || !auth.json) {
+        throw new AUTH_LOGIN_IMS_CREDENTIALS_MISSING();
+      }
+      this.logger.info(`↔️ Connecting to ${host} via IMS server-to-server...`);
+      bearerToken = await this._resolveImsToken(cliOptions.alias, auth);
     } else {
       throw new AUTH_LOGIN_INVALID_METHOD();
     }
@@ -234,6 +269,7 @@ class CampaignAuth {
         authMethod,
         auth,
         sdkOptions,
+        bearerToken,
       );
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED);
@@ -267,6 +303,71 @@ class CampaignAuth {
   }
 
   /**
+   * Resolves an IMS access token for an `ImsServerToServer` instance. Reuses a
+   * previously minted token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
+   * is within a 10-minute safety margin of expiry (mirrors aio-lib-ims);
+   * otherwise mints a fresh one via @adobe/aio-lib-core-auth and persists it.
+   * This gives cross-process reuse, which the library's in-memory 5-minute cache
+   * cannot provide (each CLI invocation is a new process).
+   *
+   * @param {string} alias - instance alias, used as the token cache key
+   * @param {Object} auth - stored instance ({ clientId, clientSecret, orgId, scopes, imsEnv? })
+   * @returns {Promise<string>} a valid IMS access token
+   * @throws {AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED}
+   */
+  async _resolveImsToken(alias, auth) {
+    // A generous margin avoids handing out a token that expires mid-session.
+    const SAFETY_MARGIN_MS = 10 * 60 * 1000;
+    const cache = this.config.get(AUTH_IMS_TOKENS_KEY) || {};
+    const cached = cache[alias];
+    // check cached validity
+    if (
+      cached?.accessToken &&
+      cached.expiresAt > Date.now() + SAFETY_MARGIN_MS
+    ) {
+      const friendlyDate = new Date(cached.expiresAt).toISOString();
+      this.logger.info(
+        `🔐 Re-using IMS access token (expires on ${friendlyDate})`,
+      );
+      return cached.accessToken;
+    }
+    if (cached) {
+      const friendlyDate = new Date(cached.expiresAt).toISOString();
+      this.logger.info(
+        `🔐 IMS access token expired on ${friendlyDate}. Generating a new one.`,
+      );
+    }
+    let resp;
+    try {
+      resp = await this.imsAuth.generateAccessToken(
+        {
+          clientId: auth.json.CLIENT_ID,
+          clientSecret: auth.json.CLIENT_SECRETS[0],
+          orgId: auth.json.ORG_ID,
+          scopes: auth.json.SCOPES,
+        },
+        auth.imsEnv,
+      );
+    } catch (error) {
+      throw wrapSdkError(error, AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED);
+    }
+    // generateAccessToken resolves the full IMS response { access_token,
+    // expires_in }
+    const accessToken = resp?.access_token ?? resp;
+    const expiresInMs = (resp?.expires_in ?? 0) * 1000;
+    const expiresAt = Date.now() + expiresInMs;
+    this.config.set(`${AUTH_IMS_TOKENS_KEY}.${alias}`, {
+      accessToken,
+      expiresAt,
+    });
+    const friendlyDate = new Date(expiresAt).toISOString();
+    this.logger.info(
+      `🔐 Generated a new IMS access token for ${alias} (expires on ${friendlyDate})`,
+    );
+    return accessToken;
+  }
+
+  /**
    * Fills in any missing init options by prompting the user, but only when
    * attached to an interactive terminal. The password is always collected via
    * a masked prompt so it never lands in shell history or the process list.
@@ -289,8 +390,18 @@ class CampaignAuth {
     }
     if (missing(opts.method)) {
       opts.method = await this.prompt.select("Authentication method", [
-        { name: "User / password", value: AUTH_METHODS.USER_PASSWORD },
-        { name: "IMS access token", value: AUTH_METHODS.IMS_BEARER_TOKEN },
+        {
+          name: `IMS OAuth Server-to-Server (Client Id, Secret)`,
+          value: AUTH_METHODS.IMS_SERVER_TO_SERVER,
+        },
+        {
+          name: "IMS Access token (eyJhbG...)",
+          value: AUTH_METHODS.IMS_BEARER_TOKEN,
+        },
+        {
+          name: "Operator (User, password)",
+          value: AUTH_METHODS.USER_PASSWORD,
+        },
       ]);
     }
     if (opts.method === AUTH_METHODS.IMS_BEARER_TOKEN) {
@@ -298,6 +409,24 @@ class CampaignAuth {
         opts.token = await this.prompt.password(
           "IMS access token (JWT, starts with 'eyJ…')",
         );
+      }
+    } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
+      if (missing(opts.json)) {
+        const maxAttempts = 10;
+        let attempts = 0;
+        let jsonParsed = null;
+        do {
+          const jsonString = await this.prompt.input(
+            `IMS OAuth Server-to-Server JSON (starts with {"ORG_ID":...})`,
+          );
+          try {
+            jsonParsed = JSON.parse(jsonString);
+          } catch (e) {
+            this.logger.error("Invalid JSON provided: " + e.message);
+          }
+          attempts++;
+        } while (jsonParsed === null && attempts < maxAttempts);
+        opts.json = jsonParsed;
       }
     } else {
       if (missing(opts.user)) {
@@ -317,18 +446,25 @@ class CampaignAuth {
 
   /**
    * Builds SDK ConnectionParameters for the given auth method.
+   * Both IMS methods authenticate with a bearer token (pasted for
+   * ImsBearerToken, minted for ImsServerToServer), so they share the same
+   * ofImsBearerToken path.
    * @param {string} authMethod - one of AUTH_METHODS
-   * @param {Object} auth - stored instance ({ host, user, password } | { host, token })
+   * @param {Object} auth - stored instance ({ host, user, password } | { host, ... })
    * @param {Object} sdkOptions - acc-js-sdk connection options
+   * @param {string} [bearerToken] - resolved IMS bearer token (both IMS methods)
    * @returns {ConnectionParameters}
    */
-  _prepareConnectionParameters(authMethod, auth, sdkOptions) {
-    if (authMethod === AUTH_METHODS.IMS_BEARER_TOKEN) {
+  _prepareConnectionParameters(authMethod, auth, sdkOptions, bearerToken) {
+    if (
+      authMethod === AUTH_METHODS.IMS_BEARER_TOKEN ||
+      authMethod === AUTH_METHODS.IMS_SERVER_TO_SERVER
+    ) {
       // sessionInfo:true is required: without it ofImsBearerToken performs no
       // SOAP logon and getSessionInfo().serverInfo stays empty, which would
       // trip AUTH_LOGIN_SDK_SERVERINFO_EMPTY downstream. Available since SDK
       // 1.1.35 (we depend on ^1.2).
-      return ConnectionParameters.ofImsBearerToken(auth.host, auth.token, {
+      return ConnectionParameters.ofImsBearerToken(auth.host, bearerToken, {
         ...sdkOptions,
         sessionInfo: true,
       });
@@ -351,6 +487,18 @@ class CampaignAuth {
     const authMethod = opts.method || AUTH_METHODS.USER_PASSWORD;
     if (authMethod === AUTH_METHODS.IMS_BEARER_TOKEN) {
       return { host: opts.host, authMethod, token: opts.token };
+    }
+    if (authMethod === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
+      const instance = {
+        host: opts.host,
+        authMethod,
+        json: opts.json,
+      };
+      // Optional IMS environment override (prod|stage); default is prod.
+      if (opts.imsEnv) {
+        instance.imsEnv = opts.imsEnv;
+      }
+      return instance;
     }
     if (authMethod === AUTH_METHODS.USER_PASSWORD) {
       return {
