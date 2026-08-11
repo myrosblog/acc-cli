@@ -63,6 +63,11 @@ export const AUTH_METHODS = {
  * Campaign CLI class for managing ACC (Campaign Classic) instances.
  * Provides authentication, instance management, and connection capabilities.
  *
+ * Works with 3 methods:
+ * - IMS OAuth Server-to-Server (Client Id, Secret, Org Id, Scopes)
+ * - IMS Access token (JWT, starts with 'eyJ...')
+ * - Operator (User, password)
+ *
  * @class CampaignAuth
  * @classdesc Main class for interacting with ACC instances
  * @see Credentials in node_modules/@adobe/acc-js-sdk/src/client.js
@@ -240,13 +245,7 @@ class CampaignAuth {
       this.logger.info(`↔️ Connecting to ${host} via IMS bearer token...`);
       bearerToken = token;
     } else if (authMethod === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
-      if (
-        !host ||
-        !auth.clientId ||
-        !auth.clientSecret ||
-        !auth.orgId ||
-        !auth.scopes?.length
-      ) {
+      if (!host || !auth.json) {
         throw new AUTH_LOGIN_IMS_CREDENTIALS_MISSING();
       }
       this.logger.info(`↔️ Connecting to ${host} via IMS server-to-server...`);
@@ -321,29 +320,39 @@ class CampaignAuth {
     const SAFETY_MARGIN_MS = 10 * 60 * 1000;
     const cache = this.config.get(AUTH_IMS_TOKENS_KEY) || {};
     const cached = cache[alias];
+    // check cached validity
     if (
       cached?.accessToken &&
       cached.expiresAt > Date.now() + SAFETY_MARGIN_MS
     ) {
-      this.logger.verbose(`Re-using cached IMS access token for ${alias}.`);
+      const friendlyDate = new Date(cached.expiresAt).toISOString();
+      this.logger.info(
+        `🔐 Re-using IMS access token (expires on ${friendlyDate})`,
+      );
       return cached.accessToken;
+    }
+    if (cached) {
+      const friendlyDate = new Date(cached.expiresAt).toISOString();
+      this.logger.info(
+        `🔐 IMS access token expired on ${friendlyDate}. Generating a new one.`,
+      );
     }
     let resp;
     try {
       resp = await this.imsAuth.generateAccessToken(
         {
-          clientId: auth.clientId,
-          clientSecret: auth.clientSecret,
-          orgId: auth.orgId,
-          scopes: auth.scopes,
+          clientId: auth.json.CLIENT_ID,
+          clientSecret: auth.json.CLIENT_SECRETS[0],
+          orgId: auth.json.ORG_ID,
+          scopes: auth.json.SCOPES,
         },
         auth.imsEnv,
       );
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED);
     }
-    // generateAccessToken resolves the full IMS response ({ access_token,
-    // expires_in }); tolerate a bare token string defensively.
+    // generateAccessToken resolves the full IMS response { access_token,
+    // expires_in }
     const accessToken = resp?.access_token ?? resp;
     const expiresInMs = (resp?.expires_in ?? 0) * 1000;
     const expiresAt = Date.now() + expiresInMs;
@@ -351,10 +360,9 @@ class CampaignAuth {
       accessToken,
       expiresAt,
     });
+    const friendlyDate = new Date(expiresAt).toISOString();
     this.logger.info(
-      `🔐 Minted a new IMS access token for ${alias} (expires in ~${Math.round(
-        expiresInMs / 60000,
-      )} min).`,
+      `🔐 Generated a new IMS access token for ${alias} (expires on ${friendlyDate})`,
     );
     return accessToken;
   }
@@ -382,11 +390,17 @@ class CampaignAuth {
     }
     if (missing(opts.method)) {
       opts.method = await this.prompt.select("Authentication method", [
-        { name: "User / password", value: AUTH_METHODS.USER_PASSWORD },
-        { name: "IMS access token", value: AUTH_METHODS.IMS_BEARER_TOKEN },
         {
-          name: "IMS Server-to-Server (auto-refreshed token)",
+          name: `IMS OAuth Server-to-Server (Client Id, Secret)`,
           value: AUTH_METHODS.IMS_SERVER_TO_SERVER,
+        },
+        {
+          name: "IMS Access token (eyJhbG...)",
+          value: AUTH_METHODS.IMS_BEARER_TOKEN,
+        },
+        {
+          name: "Operator (User, password)",
+          value: AUTH_METHODS.USER_PASSWORD,
         },
       ]);
     }
@@ -397,23 +411,19 @@ class CampaignAuth {
         );
       }
     } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
-      if (missing(opts.clientId)) {
-        opts.clientId = await this.prompt.input(
-          "IMS OAuth Server-to-Server client id",
-        );
-      }
-      if (missing(opts.clientSecret)) {
-        opts.clientSecret = await this.prompt.password("IMS client secret");
-      }
-      if (missing(opts.orgId)) {
-        opts.orgId = await this.prompt.input(
-          "IMS organization id (e.g. XXXX@AdobeOrg)",
-        );
-      }
-      if (missing(opts.scopes)) {
-        opts.scopes = await this.prompt.input(
-          "Scopes (comma-separated, copied from the Developer Console credential)",
-        );
+      if (missing(opts.json)) {
+        let jsonParsed = null;
+        do {
+          const jsonString = await this.prompt.input(
+            `IMS OAuth Server-to-Server JSON (starts with {"ORG_ID":...})`,
+          );
+          try {
+            jsonParsed = JSON.parse(jsonString);
+          } catch (e) {
+            this.logger.error("Invalid JSON provided: " + e.message);
+          }
+        } while (jsonParsed === null);
+        opts.json = jsonParsed;
       }
     } else {
       if (missing(opts.user)) {
@@ -479,10 +489,7 @@ class CampaignAuth {
       const instance = {
         host: opts.host,
         authMethod,
-        clientId: opts.clientId,
-        clientSecret: opts.clientSecret,
-        orgId: opts.orgId,
-        scopes: this._normalizeScopes(opts.scopes),
+        json: opts.json,
       };
       // Optional IMS environment override (prod|stage); default is prod.
       if (opts.imsEnv) {
@@ -499,25 +506,6 @@ class CampaignAuth {
       };
     }
     throw new AUTH_INIT_INVALID_METHOD();
-  }
-
-  /**
-   * Normalizes scopes into an array of trimmed, non-empty strings. Accepts a
-   * comma-separated string (from a flag or prompt) or an already-parsed array.
-   * @param {string|string[]|undefined} scopes
-   * @returns {string[]}
-   */
-  _normalizeScopes(scopes) {
-    if (Array.isArray(scopes)) {
-      return scopes;
-    }
-    if (typeof scopes === "string") {
-      return scopes
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    return [];
   }
 }
 
