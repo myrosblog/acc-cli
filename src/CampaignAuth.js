@@ -412,6 +412,8 @@ class CampaignAuth {
       }
     } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
       if (missing(opts.json)) {
+        const maxAttempts = 10;
+        let attempts = 0;
         let jsonParsed = null;
         do {
           const jsonString = await this.prompt.input(
@@ -422,7 +424,8 @@ class CampaignAuth {
           } catch (e) {
             this.logger.error("Invalid JSON provided: " + e.message);
           }
-        } while (jsonParsed === null);
+          attempts++;
+        } while (jsonParsed === null && attempts < maxAttempts);
         opts.json = jsonParsed;
       }
     } else {
