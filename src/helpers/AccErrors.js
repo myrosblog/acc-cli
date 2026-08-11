@@ -110,6 +110,10 @@ E(
   "AUTH_INIT_INVALID_METHOD",
   "Init failed: unsupported auth method. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
 );
+E(
+  "AUTH_DECODE_INVALID",
+  "Decode failed: not a valid JWT (expected 3 dot-separated base64url segments). Cause: %s",
+);
 
 // CONFIG
 E(

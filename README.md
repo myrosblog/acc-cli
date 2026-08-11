@@ -28,14 +28,14 @@ Full documentation available on [Getting started with acc](https://myrosblog.com
 - Download all Marketing content: Campaigns, Deliveries, Web apps, and more!
 - Download all Technical content: Data schemas, Javascript codes & pages, Workflows and more!
 - Replace manual exports with scriptable, auditable, and repeatable operations
-- Query instance data with a read-only `queryDef` (read-only by construction, ACL-enforced — safe on production, and for AI agents)
+- Query instance data with a read-only `queryDef` (read-only by construction, safe on production, and for AI agents)
 - Decompose sources into codes (JS, HTML, CSS) and metadata (fields @created, @lastModified…)
 - Allow local code checkers, highlighters and linters
 - Work on any instance: local, staging, production ; and any OS: Windows, macOS, Linux
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation & Update
 
 ```bash
 npm install -g campaign-cli
@@ -46,52 +46,17 @@ npm install -g campaign-cli
 First time authentication:
 
 ```bash
-# Interactive: prompts for any missing value; the password / IMS token is
-# entered hidden (never stored in your shell history or visible in the
-# process list).
 acc auth init
 # Host (i.e. https://instance1.campaign.adobe.com):
-# Authentication method: (User / password | IMS bearer token | IMS Server-to-Server)
-# Username:
-# Password:
+# Authentication method: (IMS bearer token, User + password)
+# IMS bearer token (i.e. eyJhbG...):
 # Alias (i.e. staging):
 ```
 
-Campaign 8.5+ instances migrating to [IMS](https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration)
-authenticate with an IMS bearer token instead of a password:
-
-```bash
-acc auth init --method ImsBearerToken --host https://instance.campaign.adobe.com --token "$IMS_BEARER_TOKEN" --alias prod
-```
-
-> The IMS bearer token is stored as-is and is short-lived (typically ~24h).
-> Re-run `acc auth init` (or update `acc.auth.instances` via `acc config`) when
-> it expires. Existing user/password instances keep working unchanged.
-
-For unattended use (CI, cron, AI agents), skip the manual token dance entirely:
-store **OAuth Server-to-Server** credentials once and acc-cli mints (and
-refreshes) the IMS access token for you on every command:
-
-```bash
-acc auth init --method ImsServerToServer \
-  --host https://instance.campaign.adobe.com \
-  --client-id "$IMS_CLIENT_ID" \
-  --client-secret "$IMS_CLIENT_SECRET" \
-  --org-id "XXABC123@AdobeOrg" \
-  --scopes "openid,AdobeID,..." \
-  --alias prod
-```
-
-Create the credentials in the [Adobe Developer Console](https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/):
-add an **OAuth Server-to-Server** credential to your project, then copy its
-`Client ID`, `Client Secret`, `Organization ID` (`…@AdobeOrg`) and `Scopes`.
-
-> With `ImsServerToServer`, only the credentials are stored — never a long-lived
-> token. acc-cli mints a fresh IMS access token through
-> [`@adobe/aio-lib-core-auth`](https://github.com/adobe/aio-lib-core-auth) and
-> caches it (under `acc.auth.imsTokens`) until shortly before it expires, so
-> tokens refresh automatically with no manual step. Add `--ims-env stage` to
-> target the IMS stage environment.
+> The IMS bearer token is configured in the Adobe Developer Console and is short-lived (typically ~24h).
+> Update `acc.auth.instances` via `acc config` when it expires.
+> Debugging an IMS token? Check the advanced section to decode it to JSON and inspect its claims.
+> When using user/password instances, no change is expected so keep working unchanged.
 
 Then, recurring pulls:
 
@@ -105,7 +70,7 @@ acc instance pull --alias staging
 
 ### 🔧 Advanced Configuration
 
-Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli-use-cases?utm_campaign=readme)
+Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli/use-cases?utm_campaign=readme)
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
@@ -149,6 +114,13 @@ acc instance exec -f ./Administration/Configuration/JavaScript codes/mynamespace
 acc instance info --alias staging
 ```
 
+Check any IMS token whether it is expired (base64 → JSON; the signature is **not** verified):
+
+```bash
+acc auth decode eyJhbG...
+acc auth decode eyJhbG... --json | jq .expiry
+```
+
 ## 📖 Command reference
 
 The full command reference (every command, flag and example) lives in the
@@ -157,15 +129,15 @@ You can also run `acc --help` or `acc <topic> --help` for inline help.
 
 ## 🗓️ Roadmap
 
-Read the [acc Roadmap](https://myrosblog.com/adobe-campaign/acc-cli-roadmap?utm_campaign=readme).
+Read the [acc Roadmap](https://myrosblog.com/adobe-campaign/acc-cli/roadmap?utm_campaign=readme).
 
 ## 🔒 Architecture & Security
 
-Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-cli-architecture?utm_campaign=readme).
+Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-cli/architecture?utm_campaign=readme).
 
 ## 📋 Changelog
 
-Read the [acc Changelog](https://myrosblog.com/adobe-campaign/acc-cli-changelog?utm_campaign=readme).
+Read the [acc Changelog](https://myrosblog.com/adobe-campaign/acc-cli/changelog?utm_campaign=readme).
 
 ## 🤝 Contributing
 
