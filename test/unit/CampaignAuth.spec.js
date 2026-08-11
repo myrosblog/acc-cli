@@ -526,10 +526,14 @@ describe("CampaignAuth", function () {
     const s2sCreds = {
       host: "http://localhost",
       authMethod: "ImsServerToServer",
-      clientId: "cid",
-      clientSecret: "sec",
-      orgId: "org@AdobeOrg",
-      scopes: ["openid", "AdobeID"],
+      json: {
+        ORG_ID: "org@AdobeOrg",
+        CLIENT_SECRETS: ["sec"],
+        CLIENT_ID: "cid",
+        SCOPES: ["openid", "AdobeID"],
+        TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+        TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+      },
     };
 
     // Build a CampaignAuth wired with a stubbed IMS token minter, plus the
@@ -702,39 +706,39 @@ describe("CampaignAuth", function () {
       const mockPrompt = {
         isInteractive: sinon.stub().returns(true),
         input: sinon.stub(),
-        password: sinon.stub().resolves("sec"),
+        password: sinon.stub(),
         select: sinon.stub().resolves("ImsServerToServer"),
       };
-      // Prompt order: host -> method -> clientId -> (masked secret) -> orgId
-      // -> scopes -> alias
+      // Prompt order: host -> method -> json -> alias
       mockPrompt.input
         .onCall(0)
         .resolves("http://localhost") // host
         .onCall(1)
-        .resolves("cid") // clientId
+        .resolves(
+          '{"ORG_ID":"org@AdobeOrg","CLIENT_SECRETS":["sec"],"CLIENT_ID":"cid","SCOPES":["openid","AdobeID"],"TECHNICAL_ACCOUNT_ID":"id@techacct.adobe.com","TECHNICAL_ACCOUNT_EMAIL":"em@techacct.adobe.com"}',
+        ) // JSON
         .onCall(2)
-        .resolves("org@AdobeOrg") // orgId
-        .onCall(3)
-        .resolves("openid, AdobeID") // scopes
-        .onCall(4)
         .resolves("prod"); // alias
       auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
 
-      expect(mockPrompt.password.calledOnce).to.be.true;
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
         authMethod: "ImsServerToServer",
-        clientId: "cid",
-        clientSecret: "sec",
-        orgId: "org@AdobeOrg",
-        scopes: ["openid", "AdobeID"],
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
       });
     });
 
-    it("should store S2S scopes as a normalized array (non-interactive)", async function () {
+    it("should store S2S JSON (non-interactive)", async function () {
       mockConfig.get.returns(null);
       const mockPrompt = {
         isInteractive: sinon.stub().returns(false),
@@ -749,21 +753,27 @@ describe("CampaignAuth", function () {
         alias: "s2s",
         host: "http://localhost",
         method: "ImsServerToServer",
-        clientId: "cid",
-        clientSecret: "sec",
-        orgId: "org@AdobeOrg",
-        scopes: "openid, AdobeID , session",
-        imsEnv: "stage",
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
       });
 
       expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
         host: "http://localhost",
         authMethod: "ImsServerToServer",
-        clientId: "cid",
-        clientSecret: "sec",
-        orgId: "org@AdobeOrg",
-        scopes: ["openid", "AdobeID", "session"],
-        imsEnv: "stage",
+        json: {
+          ORG_ID: "org@AdobeOrg",
+          CLIENT_SECRETS: ["sec"],
+          CLIENT_ID: "cid",
+          SCOPES: ["openid", "AdobeID"],
+          TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+          TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+        },
       });
     });
 
