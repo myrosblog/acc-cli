@@ -5,6 +5,7 @@ process.env.ACC_NO_FILE_LOG = "1";
 process.env.AIO_LOG_LEVEL = process.env.AIO_LOG_LEVEL || "error";
 
 import "./auth-login.spec.js";
+import "./auth-init-s2s.spec.js";
 import "./instance-exec.spec.js";
 import "./instance-querydef.spec.js";
 import "./instance-soap.spec.js";

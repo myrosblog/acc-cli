@@ -51,6 +51,14 @@ ACC_E2E_S2S_JSON=~/Downloads/oauth-s2s.json npm run test:e2e
 - **No Campaign logon by default.** The token is minted before the SOAP logon,
   so the suite targets an unreachable host on purpose and asserts on the mint.
   Set `ACC_E2E_S2S_HOST` to an IMS-enabled instance to also assert a real logon.
+- **`SOP-330023` on the live logon is inconclusive, not red.** That fault is
+  Campaign's "you don't have the required rights to view the detail" wrapper:
+  it masks the real exception, which only exists in the instance's web log
+  (`var/<instance>/log/`, or Adobe support for a hosted instance) — usually a
+  technical account not mapped to an operator. The test asserts the IMS mint
+  first, then skips on that specific code, so a regression in our own token
+  path still fails while an instance-side provisioning gap does not. Any other
+  logon error fails normally.
 - **Secret hygiene.** The stored config holds `CLIENT_SECRETS`, so assertions
   target individual identifier fields (`CLIENT_ID`, `ORG_ID`) — never the whole
   object, which chai would print on failure. Command stderr is safe to echo:
