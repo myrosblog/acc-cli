@@ -1,6 +1,8 @@
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
+import fs from "fs-extra";
+import tmp from "tmp";
 // sdk
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
@@ -22,6 +24,10 @@ const {
   AUTH_LOGIN_IMS_CREDENTIALS_MISSING,
   AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
   AUTH_LOGIN_INVALID_METHOD,
+  AUTH_INIT_JSON_FILE_NOT_FOUND,
+  AUTH_INIT_JSON_FILE_INVALID,
+  AUTH_INIT_JSON_FILE_SHAPE,
+  AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
 // helpers
 import { makeLogger } from "../helpers.js";
@@ -637,6 +643,219 @@ describe("CampaignAuth", function () {
     });
   });
 
+  describe("init with --json-file", function () {
+    // Shape of the credential downloaded from the Adobe Developer Console
+    // (Credentials > OAuth Server-to-Server > Download JSON).
+    const consoleJson = {
+      ORG_ID: "org@AdobeOrg",
+      CLIENT_SECRETS: ["p8e-sec"],
+      CLIENT_ID: "cid",
+      SCOPES: [
+        "AdobeID",
+        "openid",
+        "adobeio_api",
+        "campaign_sdk",
+        "campaign_config_server_general",
+      ],
+      TECHNICAL_ACCOUNT_ID: "id@techacct.adobe.com",
+      TECHNICAL_ACCOUNT_EMAIL: "em@techacct.adobe.com",
+    };
+    let files;
+
+    /**
+     * Writes a throwaway credential file and returns its path. Reading a real
+     * path is the unit under test here, so the filesystem cannot be stubbed
+     * away; `tmp` keeps it out of the repo (same idiom as CampaignConfig.spec).
+     * @param {string|Object} content - JSON value, or raw text to write as-is
+     * @returns {string} path to the file
+     */
+    const writeJsonFile = (content) => {
+      const file = tmp.tmpNameSync({ postfix: ".json" });
+      fs.writeFileSync(
+        file,
+        typeof content === "string" ? content : JSON.stringify(content),
+      );
+      files.push(file);
+      return file;
+    };
+
+    beforeEach(function () {
+      files = [];
+      sinon.stub(auth, "login").resolves();
+    });
+
+    afterEach(function () {
+      files.forEach((file) => fs.removeSync(file));
+    });
+
+    it("should load the Developer Console JSON and store it unchanged", async function () {
+      const file = writeJsonFile(consoleJson);
+
+      await auth.init({
+        alias: "s2s",
+        host: "http://localhost",
+        method: "ImsServerToServer",
+        jsonFile: file,
+      });
+
+      expect(mockConfig.set.firstCall.args[0]).to.equal(
+        "acc.auth.instances.s2s",
+      );
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        authMethod: "ImsServerToServer",
+        json: consoleJson,
+      });
+    });
+
+    it("should infer method ImsServerToServer when --method is omitted", async function () {
+      const file = writeJsonFile(consoleJson);
+
+      await auth.init({
+        alias: "s2s",
+        host: "http://localhost",
+        jsonFile: file,
+      });
+
+      expect(mockConfig.set.firstCall.args[1]).to.include({
+        authMethod: "ImsServerToServer",
+      });
+    });
+
+    it("should keep the optional imsEnv override alongside the file", async function () {
+      const file = writeJsonFile(consoleJson);
+
+      await auth.init({
+        alias: "s2s",
+        host: "http://localhost",
+        jsonFile: file,
+        imsEnv: "stage",
+      });
+
+      expect(mockConfig.set.firstCall.args[1]).to.include({ imsEnv: "stage" });
+    });
+
+    it("should reject a --method that contradicts the file", async function () {
+      const file = writeJsonFile(consoleJson);
+
+      await expect(
+        auth.init({
+          alias: "s2s",
+          host: "http://localhost",
+          method: "UserPassword",
+          jsonFile: file,
+        }),
+      ).to.be.rejectedWith(AUTH_INIT_JSON_FILE_METHOD_CONFLICT);
+      expect(mockConfig.set.called).to.be.false;
+    });
+
+    it("should throw AUTH_INIT_JSON_FILE_NOT_FOUND naming the path", async function () {
+      const error = await auth
+        .init({
+          alias: "s2s",
+          host: "http://localhost",
+          jsonFile: "/nope.json",
+        })
+        .then(
+          () => null,
+          (e) => e,
+        );
+
+      expect(error).to.be.instanceOf(AUTH_INIT_JSON_FILE_NOT_FOUND);
+      expect(error.message).to.contain("/nope.json");
+    });
+
+    it("should throw AUTH_INIT_JSON_FILE_INVALID on malformed JSON", async function () {
+      const file = writeJsonFile("{ not json");
+
+      await expect(
+        auth.init({ alias: "s2s", host: "http://localhost", jsonFile: file }),
+      ).to.be.rejectedWith(AUTH_INIT_JSON_FILE_INVALID);
+    });
+
+    it("should list every missing key rather than failing later at IMS", async function () {
+      // A credential missing CLIENT_ID, with SCOPES and CLIENT_SECRETS emptied:
+      // all three are consumed by _resolveImsToken, so catching them here fails
+      // at init naming the keys, instead of as an IMS 400 on the next login.
+      const file = writeJsonFile({
+        ...consoleJson,
+        CLIENT_ID: undefined,
+        CLIENT_SECRETS: [],
+        SCOPES: [],
+      });
+
+      const error = await auth
+        .init({ alias: "s2s", host: "http://localhost", jsonFile: file })
+        .then(
+          () => null,
+          (e) => e,
+        );
+
+      expect(error).to.be.instanceOf(AUTH_INIT_JSON_FILE_SHAPE);
+      expect(error.message).to.contain("CLIENT_ID");
+      expect(error.message).to.contain("CLIENT_SECRETS");
+      expect(error.message).to.contain("SCOPES");
+      expect(error.message).to.not.contain("ORG_ID");
+    });
+
+    it("should accept a file path from the interactive prompt", async function () {
+      const file = writeJsonFile(consoleJson);
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub(),
+        select: sinon.stub().resolves("ImsServerToServer"),
+      };
+      // Prompt order: host -> method -> file path -> alias (no paste step)
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost")
+        .onCall(1)
+        .resolves(`  ${file}  `) // surrounding blanks are trimmed
+        .onCall(2)
+        .resolves("prod");
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockPrompt.input.callCount).to.equal(3);
+      expect(mockConfig.set.firstCall.args[1]).to.deep.equal({
+        host: "http://localhost",
+        authMethod: "ImsServerToServer",
+        json: consoleJson,
+      });
+    });
+
+    it("should re-prompt when the interactive file path is wrong", async function () {
+      const file = writeJsonFile(consoleJson);
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub(),
+        select: sinon.stub().resolves("ImsServerToServer"),
+      };
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost")
+        .onCall(1)
+        .resolves("/typo.json") // does not exist -> logged, ask again
+        .onCall(2)
+        .resolves(file)
+        .onCall(3)
+        .resolves("prod");
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockLogger.error.called).to.be.true;
+      expect(mockConfig.set.firstCall.args[1].json).to.deep.equal(consoleJson);
+    });
+  });
+
   describe("init prompting", function () {
     it("should prompt for missing fields (masked password) when interactive", async function () {
       mockConfig.get.returns(null);
@@ -709,15 +928,17 @@ describe("CampaignAuth", function () {
         password: sinon.stub(),
         select: sinon.stub().resolves("ImsServerToServer"),
       };
-      // Prompt order: host -> method -> json -> alias
+      // Prompt order: host -> method -> file path -> (empty: paste JSON) -> alias
       mockPrompt.input
         .onCall(0)
         .resolves("http://localhost") // host
         .onCall(1)
+        .resolves("") // no file path: fall back to pasting
+        .onCall(2)
         .resolves(
           '{"ORG_ID":"org@AdobeOrg","CLIENT_SECRETS":["sec"],"CLIENT_ID":"cid","SCOPES":["openid","AdobeID"],"TECHNICAL_ACCOUNT_ID":"id@techacct.adobe.com","TECHNICAL_ACCOUNT_EMAIL":"em@techacct.adobe.com"}',
         ) // JSON
-        .onCall(2)
+        .onCall(3)
         .resolves("prod"); // alias
       auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();

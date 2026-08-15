@@ -31,6 +31,40 @@ configured alias (see `acc auth list`):
 ACC_E2E_ALIAS=staging npm run test:e2e
 ```
 
+### E2E OAuth Server-to-Server credentials
+
+[auth-init-s2s.spec.js](auth-init-s2s.spec.js) is the one suite that talks to
+**Adobe IMS** rather than to Campaign. Point it at a credential downloaded from
+the Developer Console (Credentials → OAuth Server-to-Server → Download JSON) and
+it runs `acc auth init --json-file` for real: an access token is minted,
+persisted, and re-used by a second process.
+
+```bash
+ACC_E2E_S2S_JSON=~/Downloads/oauth-s2s.json npm run test:e2e
+```
+
+- **Opt-in.** Without `ACC_E2E_S2S_JSON` the suite reports as _pending_, so CI
+  and contributors without a credential are not affected.
+- **Never touches your config.** The suite runs with `AIO_CONFIG_FILE` pointed
+  at a `mkdtemp` directory, so the credential it stores (and the temp copy of
+  the client secret) is deleted in `after()` — your `~/.config/aio` is untouched.
+- **No Campaign logon by default.** The token is minted before the SOAP logon,
+  so the suite targets an unreachable host on purpose and asserts on the mint.
+  Set `ACC_E2E_S2S_HOST` to an IMS-enabled instance to also assert a real logon.
+- **`SOP-330023` on the live logon is skipped, not failed.** That fault is
+  Campaign's "you don't have the required rights to view the detail" wrapper:
+  it masks the real exception, which is only in the instance's web log
+  (`var/<instance>/log/`, or Adobe support for a hosted instance), usually a
+  technical account not mapped to an operator. The test checks the IMS mint
+  first, then skips on that specific code, so a regression in our own token
+  path still fails while a provisioning gap on the instance does not. Any other
+  logon error fails normally.
+- **Secrets.** The stored config holds `CLIENT_SECRETS`, so assertions target
+  individual fields (`CLIENT_ID`, `ORG_ID`), never the whole object, which chai
+  would print on failure. Command stderr is safe to print: nothing logs the
+  secret, and IMS's own reason ("invalid client_id parameter", an expired
+  secret, ...) is what you need when a credential is refused.
+
 ### E2E Conventions
 
 - **CLI-only.** Each spec drives the `acc` binary via `runAcc()` (see

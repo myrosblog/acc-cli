@@ -9,7 +9,7 @@ export default class AuthInit extends BaseCommand {
   static examples = [
     "<%= config.bin %> auth init --alias local --host http://localhost:8080 --method UserPassword --user admin",
     "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsBearerToken --token eyJ...",
-    '<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsServerToServer --client-id abc --client-secret *** --org-id XXXX@AdobeOrg --scopes "openid,AdobeID,..."',
+    "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsServerToServer --json-file ./oauth-s2s.json",
   ];
 
   static flags = {
@@ -39,20 +39,9 @@ export default class AuthInit extends BaseCommand {
       description:
         "IMS bearer token (ImsBearerToken method), a JWT starting with 'eyJ'. Omit on an interactive terminal to be prompted securely.",
     }),
-    "client-id": Flags.string({
-      description: "IMS OAuth Server-to-Server client id (ImsServerToServer).",
-    }),
-    "client-secret": Flags.string({
+    "json-file": Flags.string({
       description:
-        "IMS OAuth Server-to-Server client secret (ImsServerToServer). Omit on an interactive terminal to be prompted securely.",
-    }),
-    "org-id": Flags.string({
-      description:
-        "IMS organization id, e.g. XXXX@AdobeOrg (ImsServerToServer).",
-    }),
-    scopes: Flags.string({
-      description:
-        "Comma-separated IMS scopes copied from the Developer Console credential (ImsServerToServer).",
+        "Path to the OAuth Server-to-Server JSON downloaded from the Developer Console (Credentials > OAuth Server-to-Server > Download JSON). Implies --method ImsServerToServer. Keeps the client secret out of your shell history, unlike passing it on the command line.",
     }),
     "ims-env": Flags.string({
       options: ["prod", "stage"],
@@ -64,13 +53,7 @@ export default class AuthInit extends BaseCommand {
   async run() {
     const { flags } = await this.parse(AuthInit);
     // Normalize kebab-case CLI flags into the camelCase shape CampaignAuth uses.
-    const {
-      "client-id": clientId,
-      "client-secret": clientSecret,
-      "org-id": orgId,
-      "ims-env": imsEnv,
-      ...rest
-    } = flags;
-    await this.auth.init({ ...rest, clientId, clientSecret, orgId, imsEnv });
+    const { "json-file": jsonFile, "ims-env": imsEnv, ...rest } = flags;
+    await this.auth.init({ ...rest, jsonFile, imsEnv });
   }
 }
