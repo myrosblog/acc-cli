@@ -382,9 +382,9 @@ class CampaignAuth {
   /**
    * Applies `--json-file`: loads the OAuth Server-to-Server credential from disk
    * into `opts.json`, which is what {@link _buildStoredInstance} persists and
-   * {@link _resolveImsToken} consumes. Supplying the file is unambiguous, so the
-   * method is inferred when `--method` was omitted; an explicit, conflicting
-   * `--method` is rejected rather than silently ignoring the file.
+   * {@link _resolveImsToken} consumes. The file only holds S2S credentials, so
+   * the method is inferred when `--method` was omitted; an explicit,
+   * conflicting `--method` is rejected rather than silently ignoring the file.
    *
    * Runs before {@link _collectInitOptions} so the flag works unattended (that
    * method returns untouched on a non-interactive terminal).
@@ -413,10 +413,10 @@ class CampaignAuth {
    * Adobe Developer Console (Credentials → OAuth Server-to-Server → Download
    * JSON). Only the four keys {@link _resolveImsToken} actually consumes are
    * required; TECHNICAL_ACCOUNT_ID / TECHNICAL_ACCOUNT_EMAIL are informational,
-   * and the file is stored verbatim so nothing is lost.
+   * and the file is stored as-is.
    *
-   * Validating here turns a typo into an actionable message at init time,
-   * instead of an opaque IMS 400 on the next login.
+   * Validating here means a typo fails at init naming the missing key, instead
+   * of failing as an IMS 400 on the next login.
    *
    * @param {string} filePath - path to the downloaded JSON file
    * @returns {Object} the parsed credential
@@ -501,8 +501,8 @@ class CampaignAuth {
     } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
       if (missing(opts.json)) {
         // Two ways in: point at the file downloaded from the Developer Console
-        // (the common case, and the only one --json-file supports), or paste the
-        // blob for the copy/paste crowd. An empty answer picks the paste flow.
+        // (the common case, and the only one --json-file supports), or paste
+        // the JSON. An empty answer picks the paste flow.
         const maxAttempts = 10;
         let attempts = 0;
         let jsonParsed = null;

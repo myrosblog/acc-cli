@@ -688,7 +688,7 @@ describe("CampaignAuth", function () {
       files.forEach((file) => fs.removeSync(file));
     });
 
-    it("should load the Developer Console JSON and store it verbatim", async function () {
+    it("should load the Developer Console JSON and store it unchanged", async function () {
       const file = writeJsonFile(consoleJson);
 
       await auth.init({
@@ -775,8 +775,8 @@ describe("CampaignAuth", function () {
 
     it("should list every missing key rather than failing later at IMS", async function () {
       // A credential missing CLIENT_ID, with SCOPES and CLIENT_SECRETS emptied:
-      // all three are consumed by _resolveImsToken, so catching them here turns
-      // an opaque IMS 400 on the next login into an actionable init error.
+      // all three are consumed by _resolveImsToken, so catching them here fails
+      // at init naming the keys, instead of as an IMS 400 on the next login.
       const file = writeJsonFile({
         ...consoleJson,
         CLIENT_ID: undefined,

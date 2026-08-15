@@ -1,6 +1,6 @@
-// e2e for `acc auth init --json-file`, against the REAL Adobe IMS: it feeds an
+// e2e for `acc auth init --json-file`, against the real Adobe IMS: it feeds an
 // OAuth Server-to-Server credential downloaded from the Developer Console and
-// checks a genuine access token comes back. Suite docs (how to run, gating,
+// checks an access token comes back. Suite docs (how to run, gating,
 // conventions): see ./README.md
 import { join } from "node:path";
 import os from "node:os";
@@ -8,22 +8,22 @@ import fs from "node:fs";
 import { expect, config as chaiConfig } from "chai";
 import { runAcc } from "./helpers.js";
 
-// Path to YOUR credential file (Developer Console > Credentials > OAuth
+// Path to your own credential file (Developer Console > Credentials > OAuth
 // Server-to-Server > Download JSON). Unset => the whole suite is skipped, so
-// CI and contributors without a credential stay green.
+// CI and contributors without a credential are not affected.
 const JSON_PATH = process.env.ACC_E2E_S2S_JSON;
 // Optional: an IMS-enabled Campaign host. When set, the minted token is also
 // used for a real logon; otherwise the suite stops at the IMS round-trip.
 const HOST = process.env.ACC_E2E_S2S_HOST;
 // Unreachable on purpose. The token is minted and persisted *before* the SOAP
-// logon, so an instant ECONNREFUSED isolates the IMS exchange from whether the
-// target instance happens to accept IMS at all.
+// logon, so an instant ECONNREFUSED separates the IMS exchange from whether
+// the instance accepts IMS.
 const DEAD_HOST = "http://127.0.0.1:1";
 const ALIAS = "e2e-s2s";
 const LIVE_ALIAS = "e2e-s2s-live";
 
 describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
-  // A cold IMS mint plus a refused TCP connect; generous but bounded.
+  // One IMS call plus a refused connection. 60s is plenty.
   this.timeout(60000);
 
   let cwd, configFile, credential, truncateThreshold;
@@ -33,8 +33,8 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
       this.skip(); // opt-in, like the rest of the suite
     }
     // When IMS refuses a credential its reason sits deep in a multi-line
-    // stderr, which chai would truncate to "…" — exactly the part the tester
-    // needs. Restored in after() so sibling specs keep the default.
+    // stderr, which chai would truncate to "…", and that is the part you need.
+    // Restored in after() so sibling specs keep the default.
     truncateThreshold = chaiConfig.truncateThreshold;
     chaiConfig.truncateThreshold = 0;
     credential = JSON.parse(fs.readFileSync(JSON_PATH, "utf8"));
@@ -46,7 +46,7 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
   });
 
   after(() => {
-    // Takes the temp copy of the client secret with it.
+    // Deletes the temp copy of the client secret too.
     if (cwd) {
       fs.rmSync(cwd, { recursive: true, force: true });
     }
@@ -65,11 +65,10 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
     return stdout.trim() ? JSON.parse(stdout) : undefined;
   };
 
-  // Secret hygiene: stderr is safe to echo on failure (nothing logs the client
-  // secret, and at AIO_LOG_LEVEL=info the IMS fault string is exactly what a
-  // tester with a bad credential needs to see), but the *config* holds
-  // CLIENT_SECRETS — so assert on individual identifier fields, never on the
-  // whole object, which chai would print.
+  // stderr is safe to print on failure: nothing logs the client secret, and at
+  // AIO_LOG_LEVEL=info it carries the IMS reason for a refused credential. The
+  // config does hold CLIENT_SECRETS, so assert on individual fields there,
+  // never on the whole object, which chai would print.
 
   it("mints a real IMS access token from the Developer Console JSON", async () => {
     const err = await acc(
@@ -88,8 +87,8 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
       (e) => e,
     );
 
-    // The unreachable host makes the SOAP logon fail, which is expected and is
-    // the point: the mint above it must already have succeeded.
+    // The unreachable host makes the SOAP logon fail, which is expected: the
+    // mint before it must have succeeded.
     expect(err, "expected a non-zero exit on the unreachable host").to.not.be
       .null;
     // A credential IMS refuses fails here, and stderr carries its reason
@@ -178,19 +177,17 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
     );
     const { stdout = "", stderr = "" } = result;
 
-    // Our half of the exchange is asserted unconditionally, before any
-    // special-casing: the credential file must still have produced a real
-    // token. A regression in the --json-file / mint path therefore keeps
-    // failing loudly instead of hiding behind the skip below.
+    // Check the mint first, before the SOP-330023 case below: the credential
+    // file must still have produced a token. A regression in the --json-file
+    // or mint path still fails instead of being hidden by the skip.
     expect(stderr, "IMS mint").to.match(/Generated a new IMS access token/);
 
     // SOP-330023 is Campaign's "you don't have the required rights to view the
-    // detail" wrapper: it caught a real exception and deliberately masked it.
-    // The cause exists only in the instance's web log (typically a technical
-    // account not mapped to an operator), so from here the client cannot tell
-    // a provisioning gap from any other server-side fault — and failing would
-    // blame acc-cli for something it can neither see nor fix. Narrow on
-    // purpose: any *other* logon error still fails, since that could be ours.
+    // detail" wrapper: it caught an exception and masked it. The cause is only
+    // in the instance's web log (usually a technical account not mapped to an
+    // operator), so the client cannot tell it apart from any other server-side
+    // fault, and failing here would point at acc-cli for a server problem.
+    // Only this code is skipped: any other logon error still fails.
     if (/SOP-330023/.test(stderr)) {
       console.warn(
         `      ↳ skipped: ${HOST} answered SOP-330023 (masked error). IMS auth\n` +
