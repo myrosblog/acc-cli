@@ -1,3 +1,5 @@
+// npm
+import fs from "fs-extra";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { ConnectionParameters } = accSdk;
@@ -19,6 +21,10 @@ const {
   AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
   AUTH_LOGIN_INVALID_METHOD,
   AUTH_INIT_INVALID_METHOD,
+  AUTH_INIT_JSON_FILE_NOT_FOUND,
+  AUTH_INIT_JSON_FILE_INVALID,
+  AUTH_INIT_JSON_FILE_SHAPE,
+  AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
@@ -177,6 +183,8 @@ class CampaignAuth {
    * @param {string} options.host - URL of ACC root (e.g., 'http://localhost:8080')
    * @param {string} options.user - Operator username
    * @param {string} options.password - Operator password
+   * @param {string} [options.jsonFile] - Path to the OAuth Server-to-Server JSON
+   *   downloaded from the Developer Console; implies method ImsServerToServer
    * @returns {Promise<void>} Resolves when instance is initialized and logged in
    * @throws {AUTH_INIT_EXISTING_ALIAS} Throws if instance with alias already exists
    *
@@ -189,7 +197,10 @@ class CampaignAuth {
    * });
    */
   async init(authOptions, sdkOptions, cliOptions) {
-    authOptions = await this._collectInitOptions(authOptions || {});
+    // Resolve --json-file first: it works in both modes, whereas
+    // _collectInitOptions() is a no-op on a non-interactive terminal.
+    authOptions = this._resolveJsonFile(authOptions || {});
+    authOptions = await this._collectInitOptions(authOptions);
     if (this.instanceIds.includes(authOptions.alias)) {
       throw new AUTH_INIT_EXISTING_ALIAS();
     }
@@ -311,7 +322,8 @@ class CampaignAuth {
    * cannot provide (each CLI invocation is a new process).
    *
    * @param {string} alias - instance alias, used as the token cache key
-   * @param {Object} auth - stored instance ({ clientId, clientSecret, orgId, scopes, imsEnv? })
+   * @param {Object} auth - stored instance ({ json: the Developer Console
+   *   credential (ORG_ID, CLIENT_ID, CLIENT_SECRETS, SCOPES), imsEnv? })
    * @returns {Promise<string>} a valid IMS access token
    * @throws {AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED}
    */
@@ -368,6 +380,82 @@ class CampaignAuth {
   }
 
   /**
+   * Applies `--json-file`: loads the OAuth Server-to-Server credential from disk
+   * into `opts.json`, which is what {@link _buildStoredInstance} persists and
+   * {@link _resolveImsToken} consumes. Supplying the file is unambiguous, so the
+   * method is inferred when `--method` was omitted; an explicit, conflicting
+   * `--method` is rejected rather than silently ignoring the file.
+   *
+   * Runs before {@link _collectInitOptions} so the flag works unattended (that
+   * method returns untouched on a non-interactive terminal).
+   *
+   * @param {Object} opts - partial init options, possibly carrying `jsonFile`
+   * @returns {Object} the same options, with `json` (and maybe `method`) set
+   * @throws {AUTH_INIT_JSON_FILE_METHOD_CONFLICT}
+   * @since 1.7.0
+   */
+  _resolveJsonFile(opts) {
+    if (!opts.jsonFile) {
+      return opts;
+    }
+    if (opts.method && opts.method !== AUTH_METHODS.IMS_SERVER_TO_SERVER) {
+      throw new AUTH_INIT_JSON_FILE_METHOD_CONFLICT({
+        messageValues: [opts.method],
+      });
+    }
+    opts.json = this._loadS2SJsonFile(opts.jsonFile);
+    opts.method = AUTH_METHODS.IMS_SERVER_TO_SERVER;
+    return opts;
+  }
+
+  /**
+   * Reads and validates an OAuth Server-to-Server credential downloaded from the
+   * Adobe Developer Console (Credentials → OAuth Server-to-Server → Download
+   * JSON). Only the four keys {@link _resolveImsToken} actually consumes are
+   * required; TECHNICAL_ACCOUNT_ID / TECHNICAL_ACCOUNT_EMAIL are informational,
+   * and the file is stored verbatim so nothing is lost.
+   *
+   * Validating here turns a typo into an actionable message at init time,
+   * instead of an opaque IMS 400 on the next login.
+   *
+   * @param {string} filePath - path to the downloaded JSON file
+   * @returns {Object} the parsed credential
+   * @throws {AUTH_INIT_JSON_FILE_NOT_FOUND|AUTH_INIT_JSON_FILE_INVALID|AUTH_INIT_JSON_FILE_SHAPE}
+   * @since 1.7.0
+   */
+  _loadS2SJsonFile(filePath) {
+    if (!fs.existsSync(filePath)) {
+      throw new AUTH_INIT_JSON_FILE_NOT_FOUND({ messageValues: [filePath] });
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    } catch (error) {
+      throw new AUTH_INIT_JSON_FILE_INVALID({
+        messageValues: [filePath, error.message],
+      });
+    }
+    const present = (value) =>
+      Array.isArray(value)
+        ? value.length > 0
+        : value !== undefined && value !== null && value !== "";
+    const missingKeys = [
+      ["ORG_ID", parsed?.ORG_ID],
+      ["CLIENT_ID", parsed?.CLIENT_ID],
+      ["CLIENT_SECRETS", parsed?.CLIENT_SECRETS?.[0]],
+      ["SCOPES", parsed?.SCOPES],
+    ]
+      .filter(([, value]) => !present(value))
+      .map(([key]) => key);
+    if (missingKeys.length > 0) {
+      throw new AUTH_INIT_JSON_FILE_SHAPE({
+        messageValues: [filePath, missingKeys.join(", ")],
+      });
+    }
+    return parsed;
+  }
+
+  /**
    * Fills in any missing init options by prompting the user, but only when
    * attached to an interactive terminal. The password is always collected via
    * a masked prompt so it never lands in shell history or the process list.
@@ -412,17 +500,31 @@ class CampaignAuth {
       }
     } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
       if (missing(opts.json)) {
+        // Two ways in: point at the file downloaded from the Developer Console
+        // (the common case, and the only one --json-file supports), or paste the
+        // blob for the copy/paste crowd. An empty answer picks the paste flow.
         const maxAttempts = 10;
         let attempts = 0;
         let jsonParsed = null;
         do {
-          const jsonString = await this.prompt.input(
-            `IMS OAuth Server-to-Server JSON (starts with {"ORG_ID":...})`,
+          const filePath = await this.prompt.input(
+            "Path to the OAuth Server-to-Server JSON downloaded from the Developer Console (leave empty to paste it instead)",
           );
-          try {
-            jsonParsed = JSON.parse(jsonString);
-          } catch (e) {
-            this.logger.error("Invalid JSON provided: " + e.message);
+          if (missing(filePath)) {
+            const jsonString = await this.prompt.input(
+              `IMS OAuth Server-to-Server JSON (starts with {"ORG_ID":...})`,
+            );
+            try {
+              jsonParsed = JSON.parse(jsonString);
+            } catch (e) {
+              this.logger.error("Invalid JSON provided: " + e.message);
+            }
+          } else {
+            try {
+              jsonParsed = this._loadS2SJsonFile(filePath.trim());
+            } catch (e) {
+              this.logger.error(e.message);
+            }
           }
           attempts++;
         } while (jsonParsed === null && attempts < maxAttempts);

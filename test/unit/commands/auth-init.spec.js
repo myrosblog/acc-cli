@@ -17,10 +17,8 @@ describe("AuthInit", () => {
     expect(AuthInit.flags.pass.required).to.not.be.true;
     expect(AuthInit.flags.method.required).to.not.be.true;
     expect(AuthInit.flags.token.required).to.not.be.true;
-    expect(AuthInit.flags["client-id"].required).to.not.be.true;
-    expect(AuthInit.flags["client-secret"].required).to.not.be.true;
-    expect(AuthInit.flags["org-id"].required).to.not.be.true;
-    expect(AuthInit.flags.scopes.required).to.not.be.true;
+    expect(AuthInit.flags["json-file"].required).to.not.be.true;
+    expect(AuthInit.flags["ims-env"].required).to.not.be.true;
   });
 
   it("should restrict --method to the supported auth methods", () => {
@@ -61,14 +59,8 @@ describe("AuthInit", () => {
       "http://test.com",
       "--method",
       "ImsServerToServer",
-      "--client-id",
-      "cid",
-      "--client-secret",
-      "sec",
-      "--org-id",
-      "org@AdobeOrg",
-      "--scopes",
-      "openid,AdobeID",
+      "--json-file",
+      "./oauth-s2s.json",
       "--ims-env",
       "stage",
     ];
@@ -77,12 +69,13 @@ describe("AuthInit", () => {
     expect(authInitStub.calledOnce).to.be.true;
     expect(authInitStub.firstCall.args[0]).to.include({
       method: "ImsServerToServer",
-      clientId: "cid",
-      clientSecret: "sec",
-      orgId: "org@AdobeOrg",
-      scopes: "openid,AdobeID",
+      jsonFile: "./oauth-s2s.json",
       imsEnv: "stage",
     });
+    // The kebab-case originals must not leak through: CampaignAuth reads
+    // camelCase only, so a stray "json-file" key would silently do nothing.
+    expect(authInitStub.firstCall.args[0]).to.not.have.property("json-file");
+    expect(authInitStub.firstCall.args[0]).to.not.have.property("ims-env");
     sinon.restore();
   });
 

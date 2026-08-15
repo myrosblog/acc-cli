@@ -48,10 +48,15 @@ First time authentication:
 ```bash
 acc auth init
 # Host (i.e. https://instance1.campaign.adobe.com):
-# Authentication method: (IMS bearer token, User + password)
-# IMS bearer token (i.e. eyJhbG...):
+# Authentication method: (OAuth Server-to-Server, IMS bearer token, User + password)
+# Path to the OAuth Server-to-Server JSON (i.e. ~/Downloads/oauth-s2s.json):
 # Alias (i.e. staging):
 ```
+
+> For OAuth Server-to-Server, download the credential as JSON from the Adobe
+> Developer Console (Credentials → OAuth Server-to-Server → Download JSON) and
+> give `acc` its path. `acc` then mints and refreshes the IMS access tokens for
+> you. Leave the path empty to paste the JSON instead.
 
 > The IMS bearer token is configured in the Adobe Developer Console and is short-lived (typically ~24h).
 > Update `acc.auth.instances` via `acc config` when it expires.
@@ -74,8 +79,10 @@ Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
-`--method ImsServerToServer --client-id ... --client-secret ... --org-id '...@AdobeOrg' --scopes '...'`
-to auto-mint IMS tokens from OAuth Server-to-Server credentials)
+`--method ImsServerToServer --json-file ./oauth-s2s.json` to auto-mint IMS tokens
+from the OAuth Server-to-Server credential downloaded from the Developer Console
+— `--json-file` implies that method, and keeps the client secret out of your
+shell history)
 
 Store the alias in `acc.config.json` (`{"alias": "staging"}`) to use it as default for all `acc` commands.
 
@@ -151,6 +158,7 @@ git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
 npm install
 npm test # unit tests & integration tests with XML samples
 ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against a real instance
+ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a real Developer Console credential
 ```
 
 Coding conventions, project structure and contributor guidelines live in

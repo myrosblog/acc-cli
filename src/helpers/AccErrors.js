@@ -96,11 +96,11 @@ E(
 );
 E(
   "AUTH_LOGIN_IMS_CREDENTIALS_MISSING",
-  "Login failed: incomplete IMS Server-to-Server credentials for this instance. Re-run 'acc auth init' with --client-id, --client-secret, --org-id and --scopes.",
+  "Login failed: incomplete IMS Server-to-Server credentials for this instance. Re-run 'acc auth init' with --json-file <path to the Developer Console JSON>.",
 );
 E(
   "AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED",
-  "Login failed: could not generate an IMS access token (OAuth Server-to-Server). Check the clientId/clientSecret/orgId/scopes stored in 'acc.auth.instances'. Cause:",
+  "Login failed: could not generate an IMS access token (OAuth Server-to-Server). Check the CLIENT_ID/CLIENT_SECRETS/ORG_ID/SCOPES stored in 'acc.auth.instances', or re-run 'acc auth init' with a freshly downloaded --json-file. Cause:",
 );
 E(
   "AUTH_LOGIN_INVALID_METHOD",
@@ -109,6 +109,22 @@ E(
 E(
   "AUTH_INIT_INVALID_METHOD",
   "Init failed: unsupported auth method. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
+);
+E(
+  "AUTH_INIT_JSON_FILE_NOT_FOUND",
+  "Init failed: OAuth Server-to-Server JSON file not found: %s",
+);
+E(
+  "AUTH_INIT_JSON_FILE_INVALID",
+  "Init failed: OAuth Server-to-Server JSON file is not valid JSON (%s). Cause: %s",
+);
+E(
+  "AUTH_INIT_JSON_FILE_SHAPE",
+  "Init failed: %s is missing the key(s) %s. Download the credential as JSON from the Adobe Developer Console (Credentials > OAuth Server-to-Server > Download JSON).",
+);
+E(
+  "AUTH_INIT_JSON_FILE_METHOD_CONFLICT",
+  "Init failed: --json-file holds OAuth Server-to-Server credentials and cannot be combined with --method %s. Drop --method, or use --method ImsServerToServer.",
 );
 E(
   "AUTH_DECODE_INVALID",
