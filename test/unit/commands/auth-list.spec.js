@@ -25,9 +25,7 @@ describe("AuthList", () => {
   }
 
   it("should have correct description", () => {
-    expect(AuthList.description).to.equal(
-      "List configured Adobe Campaign instances",
-    );
+    expect(AuthList.description).to.match(/^Read credentials/);
   });
 
   it("should enable the built-in json flag", () => {

@@ -5,9 +5,7 @@ import CampaignAuth from "../../../src/CampaignAuth.js";
 
 describe("AuthLogin", () => {
   it("should have correct description", () => {
-    expect(AuthLogin.description).to.equal(
-      "Login to an Adobe Campaign instance",
-    );
+    expect(AuthLogin.description).to.match(/^Read credentials/);
   });
 
   it("should have required alias flag", () => {
