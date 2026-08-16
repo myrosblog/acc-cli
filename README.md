@@ -55,8 +55,8 @@ acc auth init
 
 > For OAuth Server-to-Server, download the credential as JSON from the Adobe
 > Developer Console (Credentials → OAuth Server-to-Server → Download JSON) and
-> give `acc` its path. `acc` then mints and refreshes the IMS access tokens for
-> you. Leave the path empty to paste the JSON instead.
+> give `acc` its path. `acc` then generates and refreshes the IMS access tokens
+> for you. Leave the path empty to paste the JSON instead.
 
 > The IMS bearer token is configured in the Adobe Developer Console and is short-lived (typically ~24h).
 > Update `acc.auth.instances` via `acc config` when it expires.
@@ -79,8 +79,9 @@ Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
-`--method ImsServerToServer --json-file ./oauth-s2s.json` to auto-mint IMS tokens
-from the OAuth Server-to-Server credential downloaded from the Developer Console.
+`--method ImsServerToServer --json-file ./oauth-s2s.json` to generate IMS tokens
+automatically from the OAuth Server-to-Server credential downloaded from the
+Developer Console.
 `--json-file` implies that method and keeps the client secret out of your
 shell history)
 

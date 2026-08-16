@@ -41,7 +41,7 @@ import soapLogObserver from "./helpers/soapLogObserver.js";
 export const AUTH_INSTANCES_KEY = "acc.auth.instances";
 
 /**
- * Config key (dot path) under which minted IMS access tokens are cached,
+ * Config key (dot path) under which generated IMS access tokens are cached,
  * separately from the credentials in AUTH_INSTANCES_KEY so that secrets and
  * volatile tokens never mix (and `acc auth list` never sees a token). Each
  * alias holds `{ accessToken, expiresAt }`, reused until close to expiry.
@@ -53,7 +53,7 @@ export const AUTH_IMS_TOKENS_KEY = "acc.auth.imsTokens";
 /**
  * Supported authentication methods, stored per-instance under `authMethod`.
  * Legacy instances without `authMethod` are treated as `UserPassword`.
- * `ImsServerToServer` stores OAuth Server-to-Server credentials and mints an
+ * `ImsServerToServer` stores OAuth Server-to-Server credentials and generates an
  * IMS access token on demand (since 1.5.0); `ImsBearerToken` stores a token the
  * user pasted by hand.
  * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string, IMS_SERVER_TO_SERVER: string }}
@@ -102,7 +102,7 @@ class CampaignAuth {
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
    * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
-   * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token minter (injectable for tests)
+   * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token generator (injectable for tests)
    * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
    *   each login stage. Defaults to a no-op for callers rendering no progress.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
@@ -274,7 +274,7 @@ class CampaignAuth {
     const authMethod = auth.authMethod || AUTH_METHODS.USER_PASSWORD;
     const { host, user, token } = auth;
     // The bearer token handed to the SDK. For ImsBearerToken it is the token the
-    // user stored; for ImsServerToServer it is minted (and cached) on the fly.
+    // user stored; for ImsServerToServer it is generated (and cached) on the fly.
     let bearerToken;
     if (authMethod === AUTH_METHODS.USER_PASSWORD) {
       if (!host || !user || !auth.password) {
@@ -352,9 +352,9 @@ class CampaignAuth {
 
   /**
    * Resolves an IMS access token for an `ImsServerToServer` instance. Reuses a
-   * previously minted token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
+   * previously generated token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
    * is within a 10-minute safety margin of expiry (mirrors aio-lib-ims);
-   * otherwise mints a fresh one via @adobe/aio-lib-core-auth and persists it.
+   * otherwise generates a fresh one via @adobe/aio-lib-core-auth and persists it.
    * This gives cross-process reuse, which the library's in-memory 5-minute cache
    * cannot provide (each CLI invocation is a new process).
    *
@@ -586,7 +586,7 @@ class CampaignAuth {
   /**
    * Builds SDK ConnectionParameters for the given auth method.
    * Both IMS methods authenticate with a bearer token (pasted for
-   * ImsBearerToken, minted for ImsServerToServer), so they share the same
+   * ImsBearerToken, generated for ImsServerToServer), so they share the same
    * ofImsBearerToken path.
    * @param {string} authMethod - one of AUTH_METHODS
    * @param {Object} auth - stored instance ({ host, user, password } | { host, ... })

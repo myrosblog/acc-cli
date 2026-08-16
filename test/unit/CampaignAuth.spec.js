@@ -610,7 +610,7 @@ describe("CampaignAuth", function () {
       },
     };
 
-    // Build a CampaignAuth wired with a stubbed IMS token minter, plus the
+    // Build a CampaignAuth wired with a stubbed IMS token generator, plus the
     // instance record and (optional) persisted token cache it should read.
     const makeAuth = (imsAuth, tokenCache) => {
       mockConfig.get.withArgs("acc.auth.instances").returns({ s2s: s2sCreds });
@@ -625,7 +625,7 @@ describe("CampaignAuth", function () {
       );
     };
 
-    it("mints a token, feeds it to the SDK and caches it", async function () {
+    it("generates a token, feeds it to the SDK and caches it", async function () {
       const imsAuth = {
         generateAccessToken: sinon
           .stub()
@@ -644,7 +644,7 @@ describe("CampaignAuth", function () {
         orgId: "org@AdobeOrg",
         scopes: ["openid", "AdobeID"],
       });
-      // The minted token is handed to the connection as the bearer token.
+      // The generated token is handed to the connection as the bearer token.
       expect(prep.firstCall.args[3]).to.equal("minted");
       // The token is persisted (with an expiry) under acc.auth.imsTokens.s2s.
       const setCall = mockConfig.set
@@ -668,13 +668,13 @@ describe("CampaignAuth", function () {
       expect(prep.firstCall.args[3]).to.equal("cached");
     });
 
-    it("re-mints when the cached token is within the safety margin", async function () {
+    it("generates a new token when the cached one is within the safety margin", async function () {
       const imsAuth = {
         generateAccessToken: sinon
           .stub()
           .resolves({ access_token: "fresh", expires_in: 86400 }),
       };
-      // 5 minutes left < 10-minute safety margin => must re-mint.
+      // 5 minutes left < 10-minute safety margin => must generate a new one.
       auth = makeAuth(imsAuth, {
         s2s: { accessToken: "stale", expiresAt: Date.now() + 5 * 60 * 1000 },
       });
@@ -700,7 +700,7 @@ describe("CampaignAuth", function () {
       );
     });
 
-    it("wraps a minting failure as AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED", async function () {
+    it("wraps a generation failure as AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED", async function () {
       const imsAuth = {
         generateAccessToken: sinon.stub().rejects(new Error("invalid_client")),
       };
@@ -1131,7 +1131,7 @@ describe("CampaignAuth", function () {
       expect(actual._options.traceAPICalls).to.equal(true);
     });
 
-    it("should prepare an S2S connection from the minted bearer token", async () => {
+    it("should prepare an S2S connection from the generated bearer token", async () => {
       const actual = auth._prepareConnectionParameters(
         "ImsServerToServer",
         { host: "host" },
@@ -1139,7 +1139,7 @@ describe("CampaignAuth", function () {
         "minted-token",
       );
       expect(actual).to.be.an.instanceof(ConnectionParameters);
-      // S2S reuses the IMS bearer path once the token has been minted.
+      // S2S reuses the IMS bearer path once the token has been generated.
       expect(actual._credentials._type).to.equal("ImsBearerToken");
       expect(actual._options.sessionInfo).to.equal(true);
     });
