@@ -52,59 +52,19 @@ function wrapSdkError(error, ErrorClass, context = {}) {
   });
 }
 
+/**
+ * Troubleshooting documentation for a SOAP call that already went out.
+ * @type {string}
+ * @see soapLogObserver
+ */
+const TRACED = "Review HTTP requests/responses (SOAP) saved in logs. Cause:";
+
 // AUTH
 E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize CampaignAuth.");
+// auth init
 E(
   "AUTH_INIT_EXISTING_ALIAS",
-  "Instance with alias already exists. Use 'acc config get acc.auth.instances' to see all configured instances.",
-);
-E(
-  "AUTH_LOGIN_ALIAS_MISSING",
-  "Instance with alias not found. Use 'acc config get acc.auth.instances' to see all configured instances.",
-);
-E(
-  "AUTH_LOGIN_ALIAS_EMPTY",
-  "Login failed: alias empty. Use 'acc config get acc.auth.instances' to see the path to the authentication file.",
-);
-E(
-  "AUTH_LOGIN_ALIAS_INVALID",
-  "Login failed: alias invalid. Use 'acc config get acc.auth.instances' to see the path to the authentication file.",
-);
-E(
-  "AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED",
-  "Login failed: Invalid connection parameters. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
-);
-E(
-  "AUTH_LOGIN_SDK_INIT_FAILED",
-  "Login failed: SDK.init error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
-);
-E(
-  "AUTH_LOGIN_SDK_LOGON_FAILED",
-  "Login failed: SDK.logon error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
-);
-E(
-  "AUTH_LOGIN_SDK_SERVERINFO_FAILED",
-  "Login failed: Getting server info error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
-);
-E(
-  "AUTH_LOGIN_SDK_SERVERINFO_EMPTY",
-  "Login failed: Getting empty server info. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
-);
-E(
-  "AUTH_LOGIN_TOKEN_MISSING",
-  "Login failed: IMS bearer token missing for this instance. Re-run 'acc auth init' or update 'acc.auth.instances' with a valid token.",
-);
-E(
-  "AUTH_LOGIN_IMS_CREDENTIALS_MISSING",
-  "Login failed: incomplete IMS Server-to-Server credentials for this instance. Re-run 'acc auth init' with --json-file <path to the Developer Console JSON>.",
-);
-E(
-  "AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED",
-  "Login failed: could not generate an IMS access token (OAuth Server-to-Server). Check the CLIENT_ID/CLIENT_SECRETS/ORG_ID/SCOPES stored in 'acc.auth.instances', or re-run 'acc auth init' with a freshly downloaded --json-file. Cause:",
-);
-E(
-  "AUTH_LOGIN_INVALID_METHOD",
-  "Login failed: unknown authMethod. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
+  "Init failed: Instance with alias already exists. Troubleshoot with 'acc auth list' to see all configured instances.",
 );
 E(
   "AUTH_INIT_INVALID_METHOD",
@@ -126,6 +86,56 @@ E(
   "AUTH_INIT_JSON_FILE_METHOD_CONFLICT",
   "Init failed: --json-file holds OAuth Server-to-Server credentials and cannot be combined with --method %s. Drop --method, or use --method ImsServerToServer.",
 );
+// auth login
+E(
+  "AUTH_LOGIN_ALIAS_MISSING",
+  "Login failed: Instance with alias not found. Troubleshoot with 'acc auth list' to see all configured instances.",
+);
+E(
+  "AUTH_LOGIN_ALIAS_EMPTY",
+  "Login failed: Instance with alias found but empty. Troubleshoot with 'acc auth list' to see all configured instances.",
+);
+E(
+  "AUTH_LOGIN_ALIAS_INVALID",
+  "Login failed: Instance with alias found invalid. Troubleshoot with 'acc auth list' to see all configured instances.",
+);
+E(
+  "AUTH_LOGIN_SDK_CONNECTIONPARAMETERS_FAILED",
+  "Login failed: SDK.ConnectionParameters error. Nothing was sent to the instance yet. Cause:",
+);
+E(
+  "AUTH_LOGIN_SDK_INIT_FAILED",
+  "Login failed: SDK.init error. Nothing was sent to the instance yet. Cause:",
+);
+E(
+  "AUTH_LOGIN_SDK_LOGON_FAILED",
+  `Login failed: SDK.logon error, the instance refused the connection. ${TRACED}`,
+);
+E(
+  "AUTH_LOGIN_SDK_SERVERINFO_FAILED",
+  `Login failed: Getting server info error, after the logon succeeded. ${TRACED}`,
+);
+E(
+  "AUTH_LOGIN_SDK_SERVERINFO_EMPTY",
+  `Login failed: Getting empty server info, after the logon succeeded. ${TRACED}`,
+);
+E(
+  "AUTH_LOGIN_TOKEN_MISSING",
+  "Login failed: IMS bearer token missing for this instance. Re-run 'acc auth init' or update 'acc.auth.instances' with a valid token.",
+);
+E(
+  "AUTH_LOGIN_IMS_CREDENTIALS_MISSING",
+  "Login failed: incomplete IMS Server-to-Server credentials for this instance. Re-run 'acc auth init' with --json-file <path to the Developer Console JSON>.",
+);
+E(
+  "AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED",
+  "Login failed: could not generate an IMS access token (OAuth Server-to-Server). Check the CLIENT_ID/CLIENT_SECRETS/ORG_ID/SCOPES stored in 'acc.auth.instances', or re-run 'acc auth init' with a freshly downloaded --json-file. Cause:",
+);
+E(
+  "AUTH_LOGIN_INVALID_METHOD",
+  "Login failed: unknown authMethod. Expected 'UserPassword', 'ImsBearerToken' or 'ImsServerToServer'.",
+);
+// auth decode
 E(
   "AUTH_DECODE_INVALID",
   "Decode failed: not a valid JWT (expected 3 dot-separated base64url segments). Cause: %s",
@@ -154,11 +164,11 @@ E(
 );
 E(
   "INSTANCE_PULL_SDK_SELECTALL_FAILED",
-  "Pull failed: unable to select all fields with SDK query. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Pull failed: unable to select all fields with SDK query. ${TRACED}`,
 );
 E(
   "INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED",
-  "Pull failed: unable to execute SDK query. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Pull failed: unable to execute SDK query. ${TRACED}`,
 );
 E(
   "INSTANCE_EXEC_NO_SCRIPT",
@@ -171,7 +181,7 @@ E(
 E("INSTANCE_EXEC_FILE_NOT_FOUND", "Exec failed: script file not found: %s");
 E(
   "INSTANCE_EXEC_SDK_EVALUATE_FAILED",
-  "Exec failed: server-side EvaluateJavaScript error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Exec failed: server-side EvaluateJavaScript error. ${TRACED}`,
 );
 E(
   "INSTANCE_ALIAS_UNRESOLVED",
@@ -179,19 +189,19 @@ E(
 );
 E(
   "INSTANCE_INFO_SDK_TESTCNX_FAILED",
-  "Instance info failed: xtk:session#TestCnx error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Instance info failed: xtk:session#TestCnx error. ${TRACED}`,
 );
 E(
   "INSTANCE_INFO_SDK_SERVERTIME_FAILED",
-  "Instance info failed: xtk:session#GetServerTime error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Instance info failed: xtk:session#GetServerTime error. ${TRACED}`,
 );
 E(
   "INSTANCE_INFO_SDK_CNXINFO_FAILED",
-  "Instance info failed: xtk:session#GetCnxInfo error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Instance info failed: xtk:session#GetCnxInfo error. ${TRACED}`,
 );
 E(
   "INSTANCE_INFO_SDK_DUMPSTATE_FAILED",
-  "Instance info failed: nl:monitoring#DumpCurrentInstanceState error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `Instance info failed: nl:monitoring#DumpCurrentInstanceState error. ${TRACED}`,
 );
 E(
   "INSTANCE_QUERYDEF_NO_QUERY",
@@ -207,11 +217,11 @@ E(
 );
 E(
   "INSTANCE_QUERYDEF_SDK_CREATE_FAILED",
-  "queryDef failed: unable to create the SDK query (xtk:queryDef#create). Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `queryDef failed: unable to create the SDK query (xtk:queryDef#create). ${TRACED}`,
 );
 E(
   "INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED",
-  "queryDef failed: server-side xtk:queryDef#ExecuteQuery error. Add the config option 'acc-js-sdk.traceAPICalls' to troubleshoot.",
+  `queryDef failed: server-side xtk:queryDef#ExecuteQuery error. ${TRACED}`,
 );
 E(
   "INSTANCE_SOAP_NO_TARGET",
@@ -224,7 +234,7 @@ E(
 );
 E(
   "INSTANCE_SOAP_SDK_CALL_FAILED",
-  "soap failed: could not complete the SOAP call. Check --args (parameter count and types, pass XML parameters with --json so they serialize correctly); note that non-static methods (operating on a loaded entity) are not supported. Enable 'acc-js-sdk.traceAPICalls' for the full trace. Cause:",
+  `soap failed: could not complete the SOAP call. Check --args (parameter count and types, pass XML parameters with --json so they serialize correctly); note that non-static methods (operating on a loaded entity) are not supported. ${TRACED}`,
 );
 
 // MONITOR
