@@ -4,12 +4,38 @@ import { AUTH_METHODS } from "../../CampaignAuth.js";
 
 export default class AuthInit extends BaseCommand {
   static description =
-    "Initialize authentication for an Adobe Campaign instance";
+    "Authenticate an Adobe Campaign instance, save credentials (in local .aio file), and calls `auth login`.\n\n" +
+    "The currently supported authentication methods are:\n\n" +
+    "- OAuth Server-to-Server (preferred): a JSON file from the Adobe Developer Console, for instances with an IMS identity provider.\n" +
+    "- OAuth Access Token: a JWT token pasted by hand, for instances with an IMS identity provider.\n" +
+    "- Operator User/Password: the classic operator login, for local instances or instances without IMS.\n" +
+    "\n" +
+    "The `auth init` command saves credentials in the local .aio file, and then logs in to the instance. " +
+    "The `auth login` command can be used later to re-login without re-entering credentials.";
 
   static examples = [
-    "<%= config.bin %> auth init --alias local --host http://localhost:8080 --method UserPassword --user admin",
-    "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsBearerToken --token eyJ...",
-    "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsServerToServer --json-file ./oauth-s2s.json",
+    {
+      command: "<%= config.bin %> auth init",
+      description: "Initialize authentication with menu selection (preferred).",
+    },
+    {
+      command:
+        "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsServerToServer --json-file ./oauth-s2s.json",
+      description:
+        "For CI/CD: Initialize authentication with OAuth Server-to-Server method.",
+    },
+    {
+      command:
+        "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsBearerToken --token eyJ...",
+      description:
+        "For CI/CD: Initialize authentication with OAuth Access Token method.",
+    },
+    {
+      command:
+        "<%= config.bin %> auth init --alias local --host http://localhost:8080 --method UserPassword --user admin",
+      description:
+        "For CI/CD: Initialize authentication with Operator User/Password method.",
+    },
   ];
 
   static flags = {
@@ -26,7 +52,7 @@ export default class AuthInit extends BaseCommand {
         AUTH_METHODS.IMS_SERVER_TO_SERVER,
       ],
       description:
-        "Authentication method. Defaults to UserPassword. Use ImsServerToServer to login via tokens from the Developer Console OAuth Server-to-Server credentials, or use ImsBearerToken for a token pasted by hand.",
+        "Authentication method. Defaults to UserPassword. Use ImsServerToServer to login via JSON from the Developer Console OAuth Server-to-Server credentials, or use ImsBearerToken for a token pasted by hand.",
     }),
     user: Flags.string({
       description: "Operator username (UserPassword method)",
