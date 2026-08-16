@@ -104,8 +104,7 @@ class CampaignAuth {
    * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
    * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token minter (injectable for tests)
    * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
-   *   each login stage. Defaults to a no-op so callers that don't render
-   *   progress (tests, library use) need not pass one.
+   *   each login stage. Defaults to a no-op for callers rendering no progress.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
@@ -122,7 +121,7 @@ class CampaignAuth {
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
     this.imsAuth = imsAuth || new ImsAuthAdapter();
-    // Inert by default: same shape as ora, so _stage() needs no null checks.
+    // No-op default with the ora shape, so _stage() needs no null checks.
     this.createSpinner =
       createSpinner ||
       (() => ({
@@ -140,12 +139,9 @@ class CampaignAuth {
   }
 
   /**
-   * Runs one login stage under a spinner, so a failure is marked on the stage
-   * that broke. Without it the login is a flat list of info lines and the user
-   * has to guess whether the token, the connection or the logon failed — the
-   * gap the "enable traceAPICalls" advice used to paper over.
-   *
-   * Mirrors what CampaignInstance already does around its SOAP calls.
+   * Runs one login stage under a spinner so a failure is marked on the stage
+   * that broke, instead of being reported only at the end. Same pattern as the
+   * SOAP calls in CampaignInstance.
    *
    * @param {string} label - stage name, shown while running and once settled
    * @param {Function} fn - stage body

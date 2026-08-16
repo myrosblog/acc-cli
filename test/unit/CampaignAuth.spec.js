@@ -371,8 +371,7 @@ describe("CampaignAuth", function () {
         AUTH_LOGIN_SDK_LOGON_FAILED,
       );
 
-      // The stage names the host, so the user sees which step broke rather
-      // than a bare "SDK.logon error".
+      // The stage names the host, so the user sees which step broke.
       expect(createSpinner.firstCall.args[0]).to.contain("Logon");
       expect(createSpinner.firstCall.args[0]).to.contain("http://localhost");
       expect(spinner.fail.calledOnce).to.be.true;

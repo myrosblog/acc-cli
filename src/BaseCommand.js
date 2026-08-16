@@ -58,8 +58,7 @@ export default class BaseCommand extends Command {
           ),
         ),
       undefined,
-      // Marks each login stage, the same way InstanceCommand wires the SOAP
-      // calls of CampaignInstance.
+      // Marks each login stage, as InstanceCommand does for CampaignInstance.
       (text) => this.spinner(text),
     ));
   }
