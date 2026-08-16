@@ -22,6 +22,12 @@
   ],
   "main": "src/index.js",
   "oclif": {
+    "additionalHelpFlags": [
+      "-h"
+    ],
+    "additionalVersionFlags": [
+      "-v"
+    ],
     "commands": "./src/commands",
     "bin": "acc",
     "topicSeparator": " ",
