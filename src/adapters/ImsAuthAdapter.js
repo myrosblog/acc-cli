@@ -3,10 +3,11 @@ import { generateAccessToken, invalidateCache } from "@adobe/aio-lib-core-auth";
 /**
  * Adapter around @adobe/aio-lib-core-auth. Encapsulates IMS OAuth
  * Server-to-Server (client_credentials) token generation behind a clean,
- * mockable interface so business services (e.g. CampaignAuth) can mint access
- * tokens without coupling to a specific library, and so tests can stub it.
+ * mockable interface so business services (e.g. CampaignAuth) can generate
+ * access tokens without coupling to a specific library, and so tests can stub
+ * it.
  *
- * The library mints a token via the client_credentials grant against
+ * The library generates a token via the client_credentials grant against
  * `/ims/token/v2` and caches it in-process for 5 minutes. acc-cli adds its own
  * cross-process persistence on top (aio config), since each CLI invocation is a
  * fresh process and the in-memory cache does not survive.
@@ -16,7 +17,7 @@ import { generateAccessToken, invalidateCache } from "@adobe/aio-lib-core-auth";
  */
 class ImsAuthAdapter {
   /**
-   * Mints an IMS access token via the OAuth Server-to-Server (client
+   * Generates an IMS access token via the OAuth Server-to-Server (client
    * credentials) grant. Returns the full IMS token response.
    *
    * @param {Object} params

@@ -57,6 +57,9 @@ export default class BaseCommand extends Command {
             encodeURIComponent(alias),
           ),
         ),
+      undefined,
+      // Marks each login stage, as InstanceCommand does for CampaignInstance.
+      (text) => this.spinner(text),
     ));
   }
 

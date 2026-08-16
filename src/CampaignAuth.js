@@ -41,7 +41,7 @@ import soapLogObserver from "./helpers/soapLogObserver.js";
 export const AUTH_INSTANCES_KEY = "acc.auth.instances";
 
 /**
- * Config key (dot path) under which minted IMS access tokens are cached,
+ * Config key (dot path) under which generated IMS access tokens are cached,
  * separately from the credentials in AUTH_INSTANCES_KEY so that secrets and
  * volatile tokens never mix (and `acc auth list` never sees a token). Each
  * alias holds `{ accessToken, expiresAt }`, reused until close to expiry.
@@ -53,7 +53,7 @@ export const AUTH_IMS_TOKENS_KEY = "acc.auth.imsTokens";
 /**
  * Supported authentication methods, stored per-instance under `authMethod`.
  * Legacy instances without `authMethod` are treated as `UserPassword`.
- * `ImsServerToServer` stores OAuth Server-to-Server credentials and mints an
+ * `ImsServerToServer` stores OAuth Server-to-Server credentials and generates an
  * IMS access token on demand (since 1.5.0); `ImsBearerToken` stores a token the
  * user pasted by hand.
  * @type {{ USER_PASSWORD: string, IMS_BEARER_TOKEN: string, IMS_SERVER_TO_SERVER: string }}
@@ -102,13 +102,15 @@ class CampaignAuth {
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
    * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
-   * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token minter (injectable for tests)
+   * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token generator (injectable for tests)
+   * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
+   *   each login stage. Defaults to a no-op for callers rendering no progress.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, prompt, makeCache, imsAuth) {
+  constructor(logger, sdk, config, prompt, makeCache, imsAuth, createSpinner) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -119,11 +121,42 @@ class CampaignAuth {
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
     this.imsAuth = imsAuth || new ImsAuthAdapter();
+    // No-op default with the ora shape, so _stage() needs no null checks.
+    this.createSpinner =
+      createSpinner ||
+      (() => ({
+        start() {
+          return this;
+        },
+        succeed() {},
+        fail() {},
+      }));
     this.logger.info(
       `🔑 Reading authentication from ${this.config.global()?.file}`,
     );
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
+  }
+
+  /**
+   * Runs one login stage under a spinner so a failure is marked on the stage
+   * that broke, instead of being reported only at the end. Same pattern as the
+   * SOAP calls in CampaignInstance.
+   *
+   * @param {string} label - stage name, shown while running and once settled
+   * @param {Function} fn - stage body
+   * @returns {Promise<*>} whatever fn resolves to
+   */
+  async _stage(label, fn) {
+    const spinner = this.createSpinner(label).start();
+    try {
+      const result = await fn();
+      spinner.succeed(label);
+      return result;
+    } catch (error) {
+      spinner.fail(label);
+      throw error;
+    }
   }
 
   async ip() {
@@ -241,7 +274,7 @@ class CampaignAuth {
     const authMethod = auth.authMethod || AUTH_METHODS.USER_PASSWORD;
     const { host, user, token } = auth;
     // The bearer token handed to the SDK. For ImsBearerToken it is the token the
-    // user stored; for ImsServerToServer it is minted (and cached) on the fly.
+    // user stored; for ImsServerToServer it is generated (and cached) on the fly.
     let bearerToken;
     if (authMethod === AUTH_METHODS.USER_PASSWORD) {
       if (!host || !user || !auth.password) {
@@ -262,7 +295,9 @@ class CampaignAuth {
         throw new AUTH_LOGIN_IMS_CREDENTIALS_MISSING();
       }
       this.logger.info(`↔️ Connecting to ${host} via IMS server-to-server...`);
-      bearerToken = await this._resolveImsToken(cliOptions.alias, auth);
+      bearerToken = await this._stage("IMS access token", () =>
+        this._resolveImsToken(cliOptions.alias, auth),
+      );
     } else {
       throw new AUTH_LOGIN_INVALID_METHOD();
     }
@@ -296,7 +331,7 @@ class CampaignAuth {
     // Trace SOAP calls into the logger (secret hidden and length-capped)
     client.registerObserver(soapLogObserver(this.logger));
     try {
-      await client.logon();
+      await this._stage(`Logon to ${host}`, () => client.logon());
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_LOGON_FAILED);
     }
@@ -317,9 +352,9 @@ class CampaignAuth {
 
   /**
    * Resolves an IMS access token for an `ImsServerToServer` instance. Reuses a
-   * previously minted token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
+   * previously generated token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
    * is within a 10-minute safety margin of expiry (mirrors aio-lib-ims);
-   * otherwise mints a fresh one via @adobe/aio-lib-core-auth and persists it.
+   * otherwise generates a fresh one via @adobe/aio-lib-core-auth and persists it.
    * This gives cross-process reuse, which the library's in-memory 5-minute cache
    * cannot provide (each CLI invocation is a new process).
    *
@@ -551,7 +586,7 @@ class CampaignAuth {
   /**
    * Builds SDK ConnectionParameters for the given auth method.
    * Both IMS methods authenticate with a bearer token (pasted for
-   * ImsBearerToken, minted for ImsServerToServer), so they share the same
+   * ImsBearerToken, generated for ImsServerToServer), so they share the same
    * ofImsBearerToken path.
    * @param {string} authMethod - one of AUTH_METHODS
    * @param {Object} auth - stored instance ({ host, user, password } | { host, ... })

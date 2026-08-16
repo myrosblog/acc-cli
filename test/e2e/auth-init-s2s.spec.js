@@ -12,10 +12,10 @@ import { runAcc } from "./helpers.js";
 // Server-to-Server > Download JSON). Unset => the whole suite is skipped, so
 // CI and contributors without a credential are not affected.
 const JSON_PATH = process.env.ACC_E2E_S2S_JSON;
-// Optional: an IMS-enabled Campaign host. When set, the minted token is also
+// Optional: an IMS-enabled Campaign host. When set, the generated token is also
 // used for a logon; otherwise the suite stops at the IMS round-trip.
 const HOST = process.env.ACC_E2E_S2S_HOST;
-// Intentionally unreachable. The token is minted and persisted *before* the SOAP
+// Intentionally unreachable. The token is generated and persisted *before* the SOAP
 // logon, so an instant ECONNREFUSED separates the IMS exchange from whether
 // the instance accepts IMS.
 const DEAD_HOST = "http://127.0.0.1:1";
@@ -70,7 +70,7 @@ describe("acc auth init --json-file (e2e CLI, IMS)", function () {
   // config does hold CLIENT_SECRETS, so assert on individual fields there,
   // never on the whole object, which chai would print.
 
-  it("mints an IMS access token from the Developer Console JSON", async () => {
+  it("generates an IMS access token from the Developer Console JSON", async () => {
     const err = await acc(
       "auth",
       "init",
@@ -88,12 +88,14 @@ describe("acc auth init --json-file (e2e CLI, IMS)", function () {
     );
 
     // The unreachable host makes the SOAP logon fail, which is expected: the
-    // mint before it must have succeeded.
+    // token generation before it must have succeeded.
     expect(err, "expected a non-zero exit on the unreachable host").to.not.be
       .null;
     // A credential IMS refuses fails here, and stderr carries its reason
     // ("invalid client_id parameter", expired secret, ...).
-    expect(err.stderr, "IMS mint").to.match(/Generated a new IMS access token/);
+    expect(err.stderr, "IMS token generation").to.match(
+      /Generated a new IMS access token/,
+    );
     expect(err.stderr, "logon against the dead host").to.match(/Login failed/);
   });
 
@@ -127,7 +129,7 @@ describe("acc auth init --json-file (e2e CLI, IMS)", function () {
     expect(err, "expected a non-zero exit on the unreachable host").to.not.be
       .null;
     expect(err.stderr, "token cache hit").to.match(/Re-using IMS access token/);
-    expect(err.stderr, "no second mint").to.not.match(
+    expect(err.stderr, "no second generation").to.not.match(
       /Generated a new IMS access token/,
     );
   });
@@ -177,10 +179,13 @@ describe("acc auth init --json-file (e2e CLI, IMS)", function () {
     );
     const { stdout = "", stderr = "" } = result;
 
-    // Check the mint first, before the SOP-330023 case below: the credential
-    // file must still have produced a token. A regression in the --json-file
-    // or mint path still fails instead of being hidden by the skip.
-    expect(stderr, "IMS mint").to.match(/Generated a new IMS access token/);
+    // Check the token generation first, before the SOP-330023 case below: the
+    // credential file must still have produced a token. A regression in the
+    // --json-file or generation path still fails instead of being hidden by
+    // the skip.
+    expect(stderr, "IMS token generation").to.match(
+      /Generated a new IMS access token/,
+    );
 
     // SOP-330023 is Campaign's "you don't have the required rights to view the
     // detail" wrapper: it caught an exception and masked it. The cause is only
