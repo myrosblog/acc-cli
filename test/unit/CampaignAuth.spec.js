@@ -339,6 +339,75 @@ describe("CampaignAuth", function () {
       );
     });
 
+    it("should mark the failing stage on the spinner", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      mockSdk.init.resolves({
+        registerObserver: sinon.stub(),
+        logon: sinon.stub().rejects(new Error("ECONNREFUSED")),
+      });
+      const spinner = {
+        start: sinon.stub().returnsThis(),
+        succeed: sinon.stub(),
+        fail: sinon.stub(),
+      };
+      const createSpinner = sinon.stub().returns(spinner);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+        undefined,
+        createSpinner,
+      );
+
+      await expect(auth.login({ alias: "local" })).to.be.rejectedWith(
+        AUTH_LOGIN_SDK_LOGON_FAILED,
+      );
+
+      // The stage names the host, so the user sees which step broke rather
+      // than a bare "SDK.logon error".
+      expect(createSpinner.firstCall.args[0]).to.contain("Logon");
+      expect(createSpinner.firstCall.args[0]).to.contain("http://localhost");
+      expect(spinner.fail.calledOnce).to.be.true;
+      expect(spinner.succeed.called).to.be.false;
+    });
+
+    it("should mark the stage succeeded when the logon works", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      const spinner = {
+        start: sinon.stub().returnsThis(),
+        succeed: sinon.stub(),
+        fail: sinon.stub(),
+      };
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+        undefined,
+        () => spinner,
+      );
+
+      await auth.login({ alias: "local" });
+
+      expect(spinner.succeed.calledOnce).to.be.true;
+      expect(spinner.fail.called).to.be.false;
+    });
+
     it("should throw AUTH_LOGIN_SDK_SERVERINFO_FAILED when server info is unavailable", async function () {
       mockConfig.get.returns({
         local: {

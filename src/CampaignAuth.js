@@ -103,12 +103,15 @@ class CampaignAuth {
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
    * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
    * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token minter (injectable for tests)
+   * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
+   *   each login stage. Defaults to a no-op so callers that don't render
+   *   progress (tests, library use) need not pass one.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
-  constructor(logger, sdk, config, prompt, makeCache, imsAuth) {
+  constructor(logger, sdk, config, prompt, makeCache, imsAuth, createSpinner) {
     if (!sdk) {
       throw new AUTH_CONSTR_SDK_MISSING();
     }
@@ -119,11 +122,45 @@ class CampaignAuth {
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache || (() => new AccCache());
     this.imsAuth = imsAuth || new ImsAuthAdapter();
+    // Inert by default: same shape as ora, so _stage() needs no null checks.
+    this.createSpinner =
+      createSpinner ||
+      (() => ({
+        start() {
+          return this;
+        },
+        succeed() {},
+        fail() {},
+      }));
     this.logger.info(
       `🔑 Reading authentication from ${this.config.global()?.file}`,
     );
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
+  }
+
+  /**
+   * Runs one login stage under a spinner, so a failure is marked on the stage
+   * that broke. Without it the login is a flat list of info lines and the user
+   * has to guess whether the token, the connection or the logon failed — the
+   * gap the "enable traceAPICalls" advice used to paper over.
+   *
+   * Mirrors what CampaignInstance already does around its SOAP calls.
+   *
+   * @param {string} label - stage name, shown while running and once settled
+   * @param {Function} fn - stage body
+   * @returns {Promise<*>} whatever fn resolves to
+   */
+  async _stage(label, fn) {
+    const spinner = this.createSpinner(label).start();
+    try {
+      const result = await fn();
+      spinner.succeed(label);
+      return result;
+    } catch (error) {
+      spinner.fail(label);
+      throw error;
+    }
   }
 
   async ip() {
@@ -262,7 +299,9 @@ class CampaignAuth {
         throw new AUTH_LOGIN_IMS_CREDENTIALS_MISSING();
       }
       this.logger.info(`↔️ Connecting to ${host} via IMS server-to-server...`);
-      bearerToken = await this._resolveImsToken(cliOptions.alias, auth);
+      bearerToken = await this._stage("IMS access token", () =>
+        this._resolveImsToken(cliOptions.alias, auth),
+      );
     } else {
       throw new AUTH_LOGIN_INVALID_METHOD();
     }
@@ -296,7 +335,7 @@ class CampaignAuth {
     // Trace SOAP calls into the logger (secret hidden and length-capped)
     client.registerObserver(soapLogObserver(this.logger));
     try {
-      await client.logon();
+      await this._stage(`Logon to ${host}`, () => client.logon());
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_LOGON_FAILED);
     }
