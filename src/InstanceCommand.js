@@ -50,6 +50,9 @@ export default class InstanceCommand extends BaseCommand {
     // Seed the alias into a freshly created config so it needn't be retyped.
     if (flags.alias) {
       config.seedAlias(flags.alias);
+      this.logger.info(`🏷️ Instance alias "${alias}" (from CLI)`);
+    } else {
+      this.logger.info(`🏷️ Instance alias "${alias}" (from config)`);
     }
     const resolvedFlags = { ...flags, alias };
     const client = await this.auth.login(resolvedFlags, {

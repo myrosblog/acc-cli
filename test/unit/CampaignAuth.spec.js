@@ -663,7 +663,7 @@ describe("CampaignAuth", function () {
     let files;
 
     /**
-     * Writes a throwaway credential file and returns its path. Reading a real
+     * Writes a throwaway credential file and returns its path. Reading a
      * path is the unit under test here, so the filesystem cannot be stubbed
      * away; `tmp` keeps it out of the repo (same idiom as CampaignConfig.spec).
      * @param {string|Object} content - JSON value, or raw text to write as-is

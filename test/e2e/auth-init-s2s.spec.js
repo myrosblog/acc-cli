@@ -1,4 +1,4 @@
-// e2e for `acc auth init --json-file`, against the real Adobe IMS: it feeds an
+// e2e for `acc auth init --json-file`, against Adobe IMS: it feeds an
 // OAuth Server-to-Server credential downloaded from the Developer Console and
 // checks an access token comes back. Suite docs (how to run, gating,
 // conventions): see ./README.md
@@ -13,16 +13,16 @@ import { runAcc } from "./helpers.js";
 // CI and contributors without a credential are not affected.
 const JSON_PATH = process.env.ACC_E2E_S2S_JSON;
 // Optional: an IMS-enabled Campaign host. When set, the minted token is also
-// used for a real logon; otherwise the suite stops at the IMS round-trip.
+// used for a logon; otherwise the suite stops at the IMS round-trip.
 const HOST = process.env.ACC_E2E_S2S_HOST;
-// Unreachable on purpose. The token is minted and persisted *before* the SOAP
+// Intentionally unreachable. The token is minted and persisted *before* the SOAP
 // logon, so an instant ECONNREFUSED separates the IMS exchange from whether
 // the instance accepts IMS.
 const DEAD_HOST = "http://127.0.0.1:1";
 const ALIAS = "e2e-s2s";
 const LIVE_ALIAS = "e2e-s2s-live";
 
-describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
+describe("acc auth init --json-file (e2e CLI, IMS)", function () {
   // One IMS call plus a refused connection. 60s is plenty.
   this.timeout(60000);
 
@@ -40,7 +40,7 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
     credential = JSON.parse(fs.readFileSync(JSON_PATH, "utf8"));
     // `auth init` persists credentials, so this suite gets a throwaway cwd
     // (no acc.config.json in the repo) AND a throwaway aio config file: the
-    // developer's real ~/.config/aio must never be written to.
+    // developer's ~/.config/aio must never be written to.
     cwd = fs.mkdtempSync(join(os.tmpdir(), "acc-e2e-s2s-"));
     configFile = join(cwd, "aio");
   });
@@ -70,7 +70,7 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
   // config does hold CLIENT_SECRETS, so assert on individual fields there,
   // never on the whole object, which chai would print.
 
-  it("mints a real IMS access token from the Developer Console JSON", async () => {
+  it("mints an IMS access token from the Developer Console JSON", async () => {
     const err = await acc(
       "auth",
       "init",
@@ -101,7 +101,7 @@ describe("acc auth init --json-file (e2e CLI, real IMS)", function () {
     const stored = await configGet(`acc.auth.instances.${ALIAS}`);
     expect(stored.authMethod).to.equal("ImsServerToServer");
     expect(stored.host).to.equal(DEAD_HOST);
-    // Identifiers only — never assert on (or print) CLIENT_SECRETS.
+    // Identifiers only, never assert on or print CLIENT_SECRETS.
     expect(stored.json.CLIENT_ID).to.equal(credential.CLIENT_ID);
     expect(stored.json.ORG_ID).to.equal(credential.ORG_ID);
     expect(stored.json.SCOPES).to.deep.equal(credential.SCOPES);

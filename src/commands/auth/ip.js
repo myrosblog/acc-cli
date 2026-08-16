@@ -1,7 +1,8 @@
 import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthIp extends BaseCommand {
-  static description = "Get IP address of the current machine";
+  static description =
+    "Call api.db-ip.com and output your public IP address. Use it to troubleshoot IP whitelisting issues.";
 
   async run() {
     await this.parse(AuthIp);

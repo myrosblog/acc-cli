@@ -6,7 +6,7 @@ const { AUTH_DECODE_INVALID } = codes;
  * Decodes a JSON Web Token (JWT) into its header and payload WITHOUT verifying
  * the signature. This is a debugging aid: it answers "what is inside this
  * token?" (claims, scopes, expiry), not "is it authentic?". Never gate a
- * security decision on the result — a real `verify` path (checking the RS256
+ * security decision on the result. A verify path (checking the RS256
  * signature against the IMS public key) would be needed for that. No external
  * dependency is required: Node's `base64url` decoder handles the URL-safe,
  * unpadded segments a JWT uses.
@@ -61,7 +61,7 @@ function decodeSegment(segment, label) {
  *   - RFC 7519 standard: `iat` / `exp` in **seconds** since epoch;
  *   - Adobe IMS access tokens: `created_at` (epoch **milliseconds**) +
  *     `expires_in` (lifetime in **milliseconds**), both usually strings.
- * Missing claims yield `null` rather than throwing — a token may carry neither.
+ * Missing claims yield `null` rather than throwing, a token may carry neither.
  *
  * @param {Object} payload - a decoded JWT payload
  * @param {number} [now=Date.now()] - reference time in ms (injectable for tests)
@@ -96,7 +96,7 @@ function toIssuedAtMs(p) {
 
 /**
  * Expiry time in ms: `exp` (RFC, seconds) then `created_at + expires_in` (IMS,
- * both ms — note this is the in-JWT convention, unlike the OAuth token response
+ * both ms, note this is the in-JWT convention, unlike the OAuth token response
  * where `expires_in` is seconds).
  * @param {Object} p - decoded payload
  * @returns {number|null}
@@ -127,21 +127,21 @@ function isNumeric(v) {
 /**
  * Renders an expiry summary as a 3-line block (Issued at / Expires at / Status)
  * for human output. The Status line uses the same emoji-marker style as the
- * other diagnostic reports in the CLI. Pure string builder — no I/O — so it is
+ * other diagnostic reports in the CLI. Pure string builder, no I/O, so it is
  * unit-testable in isolation.
  * @param {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }} summary
  * @returns {string}
  */
 export function formatExpiry(summary) {
-  const issued = summary.issuedAt ? summary.issuedAt.toISOString() : "—";
-  const expires = summary.expiresAt ? summary.expiresAt.toISOString() : "—";
+  const issued = summary.issuedAt ? summary.issuedAt.toISOString() : "-";
+  const expires = summary.expiresAt ? summary.expiresAt.toISOString() : "-";
   let status;
   if (summary.expiresAt === null) {
-    status = "— no exp/created_at claim to determine expiry";
+    status = "- no exp/created_at claim to determine expiry";
   } else if (summary.isExpired) {
     status = `⚠️ EXPIRED ${humanizeDuration(-summary.expiresInMs)} ago`;
   } else {
-    status = `✅ valid — expires in ${humanizeDuration(summary.expiresInMs)}`;
+    status = `✅ valid, expires in ${humanizeDuration(summary.expiresInMs)}`;
   }
   return [
     `Issued at:  ${issued}`,

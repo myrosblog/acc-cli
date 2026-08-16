@@ -25,7 +25,7 @@ const ALL_LEVELS = [
  *   filtered by AIO_LOG_LEVEL (default "info"). This keeps **stdout** reserved
  *   for command results emitted via oclif's `this.log()`.
  * - **file**: a rotating `acc.log` under the CLI cache dir capturing the full
- *   trace at all levels, regardless of the console level — for audit/post-mortem.
+ *   trace at all levels, regardless of the console level, for audit/post-mortem.
  *
  * @param {string} [cacheDir] oclif cache dir (`this.config.cacheDir`). When set,
  *   the rotating file transport is added. Skip the file with `ACC_NO_FILE_LOG=1`.

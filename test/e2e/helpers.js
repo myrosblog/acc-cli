@@ -1,4 +1,4 @@
-// Shared helpers for the e2e suite (runs the real `acc` binary).
+// Shared helpers for the e2e suite (runs the `acc` binary).
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -12,7 +12,7 @@ export const BIN = join(__dirname, "../../bin/acc");
 export const ALIAS = process.env.ACC_E2E_ALIAS || "local";
 
 /**
- * Run the real `acc` binary as a subprocess.
+ * Run the `acc` binary as a subprocess.
  *
  * Diagnostics are forced to info level so the stdout(result)/stderr(diagnostics)
  * routing can be asserted; ACC_NO_FILE_LOG is inherited from the e2e entrypoint.

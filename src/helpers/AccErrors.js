@@ -24,11 +24,11 @@ const E = ErrorWrapper(
 );
 
 function wrapSdkError(error, ErrorClass, context = {}) {
-  // The acc-js-sdk throws a CampaignException whose real reason is in
+  // The acc-js-sdk throws a CampaignException whose actual reason is in
   // `faultString` (the SOAP <faultstring>) or `errorCode`. aio's ErrorWrapper
   // DROPS `cause` and never prints `sdkDetails`, so on its own the server's
   // message is swallowed. Fold it into the message via messageValues: aio fills
-  // a trailing `%s` or, when the template has none, appends it after a space —
+  // a trailing `%s` or, when the template has none, appends it after a space,
   // so every wrapped SDK error now surfaces the underlying server fault.
   const detail =
     error?.faultString || error?.errorCode || error?.message || undefined;
@@ -224,7 +224,7 @@ E(
 );
 E(
   "INSTANCE_SOAP_SDK_CALL_FAILED",
-  "soap failed: could not complete the SOAP call. Check --args (parameter count and types — pass XML parameters with --json so they serialize correctly); note that non-static methods (operating on a loaded entity) are not supported. Enable 'acc-js-sdk.traceAPICalls' for the full trace. Cause:",
+  "soap failed: could not complete the SOAP call. Check --args (parameter count and types, pass XML parameters with --json so they serialize correctly); note that non-static methods (operating on a loaded entity) are not supported. Enable 'acc-js-sdk.traceAPICalls' for the full trace. Cause:",
 );
 
 // MONITOR

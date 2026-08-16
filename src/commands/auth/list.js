@@ -2,10 +2,20 @@ import Table from "cli-table3";
 import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthList extends BaseCommand {
-  static description = "List configured Adobe Campaign instances";
+  static description =
+    "Read credentials (from local .aio file) and output configured Adobe Campaign instances. Must be ran after `auth init`.";
 
-  // Enables the built-in oclif `--json` flag: when set, oclif serialises the
-  // value returned by run() instead of printing the human table below.
+  static examples = [
+    {
+      command: "<%= config.bin %> auth list",
+      description: "Output as table",
+    },
+    {
+      command: "<%= config.bin %> auth list --json",
+      description: "For CI/CD: Output as json",
+    },
+  ];
+
   static enableJsonFlag = true;
 
   // Columns shown both in the table and in --json output. No password ever:

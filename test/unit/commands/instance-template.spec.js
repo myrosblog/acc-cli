@@ -6,7 +6,7 @@ import InstanceTemplate from "../../../src/commands/instance/template.js";
 describe("InstanceTemplate", () => {
   it("should have correct description", () => {
     expect(InstanceTemplate.description).to.equal(
-      "Generate a template configuration file",
+      "Output a template configuration file",
     );
   });
 

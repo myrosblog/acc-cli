@@ -5,9 +5,7 @@ import CampaignAuth from "../../../src/CampaignAuth.js";
 
 describe("AuthIp", () => {
   it("should have correct description", () => {
-    expect(AuthIp.description).to.equal(
-      "Get IP address of the current machine",
-    );
+    expect(AuthIp.description).to.match(/^Call api.db-ip.com/);
   });
 
   it("should have no flags", () => {

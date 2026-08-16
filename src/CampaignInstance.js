@@ -382,7 +382,7 @@ class CampaignInstance {
   /**
    * Runs a read-only query on the instance via xtk:queryDef#ExecuteQuery (the
    * same SOAP mechanism as pull()). The caller passes a full queryDef as JSON;
-   * it is read-only by construction — ExecuteQuery is `const`, an
+   * it is read-only by construction: ExecuteQuery is `const`, an
    * operation:"select"/"count" can only read, and it is ACL-enforced (no
    * server-side scripting right needed, unlike exec()).
    *
@@ -466,11 +466,11 @@ class CampaignInstance {
   /**
    * Generic SOAP invoker: calls an arbitrary method on any schema via the
    * acc-js-sdk NLWS proxy. The escape hatch behind the curated `instance`
-   * commands — reaches any method `instance query`/`instance exec` don't wrap.
+   * commands, reaches any method `instance query`/`instance exec` don't wrap.
    *
    * Scope: static methods only. The SDK auto-detects static/non-static from the
    * schema; a non-static method needs a loaded entity as its `this` param, which
-   * this command does not build — the SDK then throws (wrapped as
+   * this command does not build: the SDK then throws (wrapped as
    * INSTANCE_SOAP_SDK_CALL_FAILED). Prefer the static *FromId/*ById variants.
    *
    * @param {Object} cliOptions - Command-line options
@@ -565,8 +565,8 @@ class CampaignInstance {
 
   /**
    * Serialises a SOAP result for human (XML) mode. A method may return nothing
-   * (null), a scalar, a DOM node, or — for multi-output methods like
-   * BuildPreviewFromId — an array of those. DOM nodes are stringified; arrays
+   * (null), a scalar, a DOM node or, for multi-output methods like
+   * BuildPreviewFromId, an array of those. DOM nodes are stringified; arrays
    * are stringified part-by-part and joined.
    * @param {*} result the raw NLWS return value
    * @returns {string}

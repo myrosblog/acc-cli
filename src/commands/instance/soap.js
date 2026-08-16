@@ -3,7 +3,9 @@ import InstanceCommand from "../../InstanceCommand.js";
 
 export default class InstanceSoap extends InstanceCommand {
   static description =
-    "Call an arbitrary SOAP method on an Adobe Campaign instance via the acc-js-sdk NLWS proxy (e.g. nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime). The generic escape hatch behind the curated `instance` commands. Static methods only — non-static methods operate on a loaded entity and are not supported; prefer a static *FromId/*ById variant. Powerful: it can reach destructive methods, use with care.";
+    "Call an arbitrary SOAP method on an Adobe Campaign instance via the acc-js-sdk NLWS proxy (e.g. nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime). " +
+    "The generic escape hatch behind the curated `instance` commands. Static methods only: non-static methods operate on a loaded entity and are not supported; " +
+    "prefer a static *FromId/*ById variant. Powerful: it can reach destructive methods, use with care.";
 
   static examples = [
     "<%= config.bin %> instance soap --schema xtk:session --method GetServerTime",

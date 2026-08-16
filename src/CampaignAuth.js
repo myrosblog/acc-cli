@@ -127,7 +127,9 @@ class CampaignAuth {
   }
 
   async ip() {
-    this.logger.info(`Fetching IP address...`);
+    this.logger.info(
+      `Fetching IP address with the Adobe SDK (from https://api.db-ip.com/v2/free/self)...`,
+    );
     const ip = await this.sdk.ip();
     return ip;
   }

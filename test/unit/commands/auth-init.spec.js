@@ -5,8 +5,8 @@ import CampaignAuth from "../../../src/CampaignAuth.js";
 
 describe("AuthInit", () => {
   it("should have correct description", () => {
-    expect(AuthInit.description).to.equal(
-      "Initialize authentication for an Adobe Campaign instance",
+    expect(AuthInit.description).to.match(
+      /^Authenticate an Adobe Campaign instance/,
     );
   });
 

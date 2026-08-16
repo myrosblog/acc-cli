@@ -22,12 +22,18 @@
   ],
   "main": "src/index.js",
   "oclif": {
+    "additionalHelpFlags": [
+      "-h"
+    ],
+    "additionalVersionFlags": [
+      "-v"
+    ],
     "commands": "./src/commands",
     "bin": "acc",
     "topicSeparator": " ",
     "topics": {
       "auth": {
-        "description": "Initialize and troubleshoot authentications to your instances"
+        "description": "Initialize and troubleshoot authentications to your instances. Also log the path to the credentials (local .aio file)."
       },
       "instance": {
         "description": "Pull metadata, run SQL queries and SOAP requests in your instances"
