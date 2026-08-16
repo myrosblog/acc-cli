@@ -12,7 +12,7 @@ class AccCache {
    *
    * acc-js-sdk keys embed the instance endpoint and schema ids, e.g.
    * `acc.js.sdk.1.2.1.localhost:8080/.cache.XtkEntityCache$xtk:schema|xtk:session`.
-   * The `:` and `/` would fail with ENOENT — and the SDK swallows that error
+   * The `:` and `/` would fail with ENOENT, and the SDK swallows that error.
    * encodeURIComponent makes every key a single valid filename and is symmetric across set/get/remove.
    * @since 1.1.2
    * @param {string} key

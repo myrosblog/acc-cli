@@ -388,7 +388,7 @@ describe("CampaignInstance", () => {
       const sdkError = new Error("SOAP call failed");
       adapterExecuteQueryStub.rejects(sdkError);
 
-      // pull() must not throw — errors are captured in pullLog
+      // pull() must not throw, errors are captured in pullLog
       await instance.pull(true);
 
       expect(instance.pullLogs.length).to.equal(1);
@@ -416,7 +416,7 @@ describe("CampaignInstance", () => {
       const sdkError = new Error("SOAP call failed");
       adapterExecuteQueryStub.rejects(sdkError);
 
-      // pull() must not throw — errors are captured in pullLog
+      // pull() must not throw, errors are captured in pullLog
       await instance.pull(true);
 
       expect(instance.pullLogs.length).to.equal(1);
@@ -918,7 +918,7 @@ describe("CampaignInstance", () => {
       );
       sinon.stub(fs, "outputFileSync"); // no disk write
 
-      // xtkSqlCreatedb has a <data> element — target it without '@' prefix
+      // xtkSqlCreatedb has a <data> element, target it without '@' prefix
       const schemaConfig = {
         ...configDefaultFull.schemas.find((x) => x.schemaId === "xtk:sql"),
         excludeXPaths: ["data"], // element, NOT an attribute
@@ -967,7 +967,7 @@ describe("CampaignInstance", () => {
       expect(script).to.equal("logInfo('hi')");
       expect(result).to.contain("result");
       // The result is returned (for the command to print on stdout) and only
-      // mirrored into the verbose diagnostic trace — never logged at info.
+      // mirrored into the verbose diagnostic trace, never logged at info.
       expect(mockLogger.verbose.calledWith(result)).to.be.true;
     });
 

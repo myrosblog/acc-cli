@@ -17,10 +17,10 @@ import CampaignMonitor from "./CampaignMonitor.js";
  *
  * Provides lazily-constructed shared services (logger, auth, spinner) and a
  * config factory, so that *importing* a command (e.g. for help generation or
- * in unit tests) has no side effects — services are only built on first use,
+ * in unit tests) has no side effects, services are only built on first use,
  * inside run().
  *
- * Lives in src/ (NOT src/commands/) on purpose: every file under src/commands
+ * Lives in src/ (NOT src/commands/): every file under src/commands
  * is registered by oclif as a runnable command.
  *
  * @class BaseCommand

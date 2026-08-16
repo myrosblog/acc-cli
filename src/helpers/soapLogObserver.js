@@ -2,7 +2,7 @@
  * Maximum number of characters logged per SOAP request/response body.
  *
  * The file transport writes at `silly`, so every SOAP trace lands in acc.log
- * regardless of AIO_LOG_LEVEL — and acc.log is a bounded 1MB×5 rotating buffer.
+ * regardless of AIO_LOG_LEVEL, and acc.log is a bounded 1MBx5 rotating buffer.
  * An untruncated multi-MB delivery payload would, in a single line, evict the
  * whole history. Capping keeps thousands of calls within the rotation.
  * @type {number}
@@ -11,7 +11,7 @@ export const SOAP_LOG_MAX = 1000;
 
 /**
  * Caps a string to SOAP_LOG_MAX, appending a marker with the dropped length so
- * the trace flags both that it was cut and the real payload size.
+ * the trace flags both that it was cut and the actual payload size.
  * @param {string} str
  * @param {number} [max]
  * @returns {string}

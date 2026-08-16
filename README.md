@@ -80,8 +80,8 @@ Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
 `--method ImsServerToServer --json-file ./oauth-s2s.json` to auto-mint IMS tokens
-from the OAuth Server-to-Server credential downloaded from the Developer Console
-— `--json-file` implies that method, and keeps the client secret out of your
+from the OAuth Server-to-Server credential downloaded from the Developer Console.
+`--json-file` implies that method and keeps the client secret out of your
 shell history)
 
 Store the alias in `acc.config.json` (`{"alias": "staging"}`) to use it as default for all `acc` commands.
@@ -157,8 +157,8 @@ Contributions are welcome! Please open a Github Pull Request!
 git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
 npm install
 npm test # unit tests & integration tests with XML samples
-ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against a real instance
-ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a real Developer Console credential
+ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against an instance
+ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a Developer Console credential
 ```
 
 Coding conventions, project structure and contributor guidelines live in
@@ -168,8 +168,8 @@ Coding conventions, project structure and contributor guidelines live in
 
 `acc` follows the Unix convention so its output is safe to script:
 
-- **stdout** carries the command **result only** — e.g. the XML returned by
-  `acc instance exec`, or the IP from `acc auth ip` — raw and undecorated, so it
+- **stdout** carries the command **result only**, e.g. the XML returned by
+  `acc instance exec` or the IP from `acc auth ip, raw and undecorated, so it
   pipes cleanly.
 - **stderr** carries everything else: progress spinners, status, warnings and
   errors. Verbosity is controlled by `AIO_LOG_LEVEL` (`info` by default; set

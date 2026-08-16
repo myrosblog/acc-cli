@@ -58,7 +58,7 @@ describe("helpers/jwt", () => {
       expires_in: String(EXPIRES_IN),
     };
 
-    it("reads Adobe IMS created_at/expires_in (milliseconds) — valid token", () => {
+    it("reads Adobe IMS created_at/expires_in (milliseconds), valid token", () => {
       const now = CREATED_AT + 3600000; // 1h after issue
       const s = summarizeExpiry(imsPayload, now);
 
@@ -118,7 +118,7 @@ describe("helpers/jwt", () => {
         isExpired: false,
         expiresInMs: 3 * 3600000 + 20 * 60000, // 3h 20m
       });
-      expect(out).to.include("✅ valid — expires in 3h 20m");
+      expect(out).to.include("✅ valid, expires in 3h 20m");
       expect(out).to.include(at.toISOString());
     });
 
@@ -140,8 +140,8 @@ describe("helpers/jwt", () => {
         expiresInMs: null,
       });
       expect(out).to.include("no exp/created_at claim");
-      expect(out).to.include("Issued at:  —");
-      expect(out).to.include("Expires at: —");
+      expect(out).to.include("Issued at:  -");
+      expect(out).to.include("Expires at: -");
     });
 
     it("humanizes days, minutes and seconds granularities", () => {

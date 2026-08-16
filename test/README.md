@@ -6,12 +6,12 @@
 | ----------- | ------------------- | ------------------------------------ | ---------------------------------------- |
 | unit        | `test/unit/`        | everything mocked                    | return shapes, error wrapping, branching |
 | integration | `test/integration/` | SDK faked with recorded XML fixtures | multi-unit pipelines without a server    |
-| **e2e**     | `test/e2e/`         | **live instance**                    | the real CLI stack + SOAP calls          |
+| **e2e**     | `test/e2e/`         | **live instance**                    | the CLI stack + SOAP calls               |
 
 ## E2E tests: end-to-end
 
-These tests run the **real `acc` binary** as a subprocess against a **live
-running Adobe Campaign instance**. They are the only tier that touches a genuine
+These tests run the `acc` binary as a subprocess against a live
+running Adobe Campaign instance. They are the only tier that touches an
 external system.
 
 ### E2E Running
@@ -36,7 +36,7 @@ ACC_E2E_ALIAS=staging npm run test:e2e
 [auth-init-s2s.spec.js](auth-init-s2s.spec.js) is the one suite that talks to
 **Adobe IMS** rather than to Campaign. Point it at a credential downloaded from
 the Developer Console (Credentials → OAuth Server-to-Server → Download JSON) and
-it runs `acc auth init --json-file` for real: an access token is minted,
+it runs `acc auth init --json-file`: an access token is minted,
 persisted, and re-used by a second process.
 
 ```bash
@@ -47,13 +47,13 @@ ACC_E2E_S2S_JSON=~/Downloads/oauth-s2s.json npm run test:e2e
   and contributors without a credential are not affected.
 - **Never touches your config.** The suite runs with `AIO_CONFIG_FILE` pointed
   at a `mkdtemp` directory, so the credential it stores (and the temp copy of
-  the client secret) is deleted in `after()` — your `~/.config/aio` is untouched.
+  the client secret) is deleted in `after()`, your `~/.config/aio` is untouched.
 - **No Campaign logon by default.** The token is minted before the SOAP logon,
-  so the suite targets an unreachable host on purpose and asserts on the mint.
-  Set `ACC_E2E_S2S_HOST` to an IMS-enabled instance to also assert a real logon.
+  so the suite targets an intentionally unreachable host and asserts on the mint.
+  Set `ACC_E2E_S2S_HOST` to an IMS-enabled instance to also assert a logon.
 - **`SOP-330023` on the live logon is skipped, not failed.** That fault is
   Campaign's "you don't have the required rights to view the detail" wrapper:
-  it masks the real exception, which is only in the instance's web log
+  it masks the actual exception, which is only in the instance's web log
   (`var/<instance>/log/`, or Adobe support for a hosted instance), usually a
   technical account not mapped to an operator. The test checks the IMS mint
   first, then skips on that specific code, so a regression in our own token

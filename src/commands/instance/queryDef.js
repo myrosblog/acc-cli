@@ -3,7 +3,8 @@ import InstanceCommand from "../../InstanceCommand.js";
 
 export default class InstanceQueryDef extends InstanceCommand {
   static description =
-    "Run a read-only query on an Adobe Campaign instance (xtk:queryDef#ExecuteQuery). Pass a queryDef as JSON; it is read-only by construction (no writes, ACL-enforced) — a safe alternative to `instance exec`.";
+    "Run a read-only query on an Adobe Campaign instance (xtk:queryDef#ExecuteQuery). " +
+    "Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.";
 
   static examples = [
     `<%= config.bin %> instance queryDef --alias staging --query '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'`,

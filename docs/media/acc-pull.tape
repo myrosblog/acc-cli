@@ -1,11 +1,11 @@
-# vhs tape for the README demo — regenerate with: vhs docs/media/acc-pull.tape
+# vhs tape for the README demo, regenerate with: vhs docs/media/acc-pull.tape
 # Docs: https://github.com/charmbracelet/vhs
 #
-# Records `acc instance pull` against a real, *sanitised* instance:
+# Records `acc instance pull` against a real instance:
 #   - a PowerShell-style prompt is used (ACC instances run on Windows)
 #   - `acc auth list` redacts the password (see fix/auth-list-redacted)
 #   - host entry via `acc auth init` is NOT filmed (configure it off-camera,
-#     see docs/media/README.md), so no real hostname leaks into the GIF.
+#     see docs/media/README.md), so no hostname leaks into the GIF.
 
 Output acc-pull.gif
 
@@ -20,7 +20,7 @@ Set TypingSpeed 60ms
 # --- off-camera setup: neutralise the personal prompt/theme, then clear ---
 # vhs sources your ~/.zshrc, so a custom/oh-my-zsh/p10k prompt would otherwise
 # leak user@host. Drop any precmd/preexec hooks (p10k re-renders via those),
-# then set a PowerShell-style prompt — ACC instances usually run on Windows, so
+# then set a PowerShell-style prompt, ACC instances usually run on Windows, so
 # this reads as native to the audience. For full isolation, see docs/media/README.md.
 Hide
 Type "precmd_functions=(); preexec_functions=()"

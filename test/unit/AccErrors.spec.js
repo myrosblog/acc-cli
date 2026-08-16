@@ -31,7 +31,7 @@ describe("AccErrors", () => {
       expect(wrapped.sdkDetails.urn).to.equal("xtk:queryDef");
     });
 
-    it("should handle plain Error (no methodCall) — covers lines 36-37 branch", () => {
+    it("should handle plain Error (no methodCall), covers lines 36-37 branch", () => {
       // A plain Error has no .methodCall → error?.methodCall is undefined
       // → the second ?. never fires → uncovered branch in c8
       const plainError = new Error("Network timeout");
