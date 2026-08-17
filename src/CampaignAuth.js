@@ -355,7 +355,7 @@ class CampaignAuth {
    * Resolves an IMS access token for an `ImsServerToServer` instance. Reuses a
    * previously generated token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
    * is within a 10-minute safety margin of expiry (mirrors aio-lib-ims);
-   * otherwise generates a fresh one via @adobe/aio-lib-core-auth and persists it.
+   * otherwise generates a fresh one via `@adobe/aio-lib-core-auth` and persists it.
    * This gives cross-process reuse, which the library's in-memory 5-minute cache
    * cannot provide (each CLI invocation is a new process).
    *
