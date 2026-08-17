@@ -69,7 +69,8 @@ class CampaignConfig {
 
   /**
    *
-   * @param {*} defaultConfigPath
+   * @param {AioLogger} logger
+   * @param {string} defaultConfigPath
    * @throws {CONFIG_CONSTR_DEFAULT_PATH_MISSING}
    */
   constructor(logger, defaultConfigPath) {
@@ -86,8 +87,8 @@ class CampaignConfig {
   }
 
   /**
-   *
-   * @param {*} configPath
+   * Initializes the configuration.
+   * @param {string} configPath
    * @throws {CONFIG_INIT_CONFIG_PATH_MISSING, CONFIG_PARSE_ERROR, CONFIG_VALIDATE_ERRORS}
    */
   init(configPath) {

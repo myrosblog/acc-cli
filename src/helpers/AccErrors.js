@@ -23,6 +23,12 @@ const E = ErrorWrapper(
   /* , AioCoreSDKError */
 );
 
+/**
+ * Wraps an SDK error with additional context.
+ * @param {Error} error
+ * @param {Function} ErrorClass
+ * @param {object} context
+ */
 function wrapSdkError(error, ErrorClass, context = {}) {
   // The acc-js-sdk throws a CampaignException whose actual reason is in
   // `faultString` (the SOAP <faultstring>) or `errorCode`. aio's ErrorWrapper

@@ -219,6 +219,9 @@ class CampaignAuth {
    * @param {string} options.password - Operator password
    * @param {string} [options.jsonFile] - Path to the OAuth Server-to-Server JSON
    *   downloaded from the Developer Console; implies method ImsServerToServer
+   * @param {object} authOptions
+   * @param {object} sdkOptions
+   * @param {object} cliOptions
    * @returns {Promise<void>} Resolves when instance is initialized and logged in
    * @throws {AUTH_INIT_EXISTING_ALIAS} Throws if instance with alias already exists
    * @example
@@ -252,6 +255,8 @@ class CampaignAuth {
    * @param {object} options - Login options
    * @param {string} options.alias - Alias of the instance to log in to
    * @param {object} sdkOptions @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
+   * @param {object} cliOptions
+   * @param {object} _sdkOptions
    * @returns {Promise<object>} Resolves with the authenticated client
    * @throws {AUTH_LOGIN_ALIAS_MISSING, AUTH_LOGIN_ALIAS_EMPTY, AUTH_LOGIN_ALIAS_INVALID, AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
    * @example

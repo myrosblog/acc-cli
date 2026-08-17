@@ -108,6 +108,7 @@ class CampaignInstance {
    * Gets query definition for a specific schema, merging with default config.
    *
    * @param {string} schema - Schema name (e.g., 'nms:recipient')
+   * @param {object} schemaConfig
    * @param {object} baseQueryDef - Base query definition
    * @returns {object} Merged query definition
    * @example
@@ -129,6 +130,7 @@ class CampaignInstance {
    * Pulls data from all schemas in the ACC instance.
    * Implements pagination to handle large datasets.
    *
+   * @param {boolean} isPreview
    * @returns {Promise<void>} Resolves when pull operation is complete
    * @example
    * await instance.pull('/path/to/download');
@@ -216,6 +218,8 @@ class CampaignInstance {
    * @param {object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
+   * @param {boolean} isPreview
+   * @param {object} pullLog
    * @returns {Promise<Array<Element>>} the parsed records of this batch
    */
   async downloadAndParse(
@@ -434,6 +438,8 @@ class CampaignInstance {
    * caller-supplied queryDef already carries its own `select`. `.xml` returns
    * the result collection as a DOM Element (one child per row).
    * @param {Document} queryDefXml created from DomUtil.fromJSON
+   * @param {object} queryDef
+   * @param {boolean} jsonEnabled
    * @returns {Promise<Element>} the result collection element
    * @throws {CampaignException}
    */
