@@ -313,7 +313,7 @@ class CampaignInstance {
    * @param {string} [cliOptions.script] - Inline JavaScript to execute
    * @param {string} [cliOptions.name] - Logical script name (param `name`)
    * @returns {Promise<string>} The execution context, serialized as XML
-   * @throws {INSTANCE_EXEC_NO_SCRIPT, INSTANCE_EXEC_BOTH_SCRIPT, INSTANCE_EXEC_FILE_NOT_FOUND, INSTANCE_EXEC_SDK_EVALUATE_FAILED}
+   * @throws {INSTANCE_EXEC_NO_SCRIPT|INSTANCE_EXEC_BOTH_SCRIPT|INSTANCE_EXEC_FILE_NOT_FOUND|INSTANCE_EXEC_SDK_EVALUATE_FAILED}
    */
   async exec(cliOptions) {
     const { file, script: inlineScript } = cliOptions;
@@ -393,7 +393,7 @@ class CampaignInstance {
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
    * @returns {Promise<string | object>} the result collection, as an XML string
    *   or, when `json` is set, a SimpleJson object
-   * @throws {INSTANCE_QUERYDEF_NO_QUERY, INSTANCE_QUERYDEF_BOTH_QUERY, INSTANCE_QUERYDEF_FILE_NOT_FOUND, INSTANCE_QUERYDEF_SDK_CREATE_FAILED, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
+   * @throws {INSTANCE_QUERYDEF_NO_QUERY|INSTANCE_QUERYDEF_BOTH_QUERY|INSTANCE_QUERYDEF_FILE_NOT_FOUND|INSTANCE_QUERYDEF_SDK_CREATE_FAILED|INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
    */
   async queryDef(cliOptions) {
     const { query: inlineQuery, file } = cliOptions;
@@ -485,7 +485,7 @@ class CampaignInstance {
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
    * @returns {Promise<string | object>} the method result: an XML string (or the
    *   array's parts joined) in human mode, or the SimpleJson value when `json`
-   * @throws {INSTANCE_SOAP_NO_TARGET, INSTANCE_SOAP_BAD_ARGS, INSTANCE_SOAP_ARGS_NOT_ARRAY, INSTANCE_SOAP_SDK_CALL_FAILED}
+   * @throws {INSTANCE_SOAP_NO_TARGET|INSTANCE_SOAP_BAD_ARGS|INSTANCE_SOAP_ARGS_NOT_ARRAY|INSTANCE_SOAP_SDK_CALL_FAILED}
    */
   async soap(cliOptions) {
     const { schema, method } = cliOptions;

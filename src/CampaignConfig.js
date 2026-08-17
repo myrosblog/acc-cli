@@ -89,7 +89,7 @@ class CampaignConfig {
   /**
    * Initializes the configuration.
    * @param {string} configPath
-   * @throws {CONFIG_INIT_CONFIG_PATH_MISSING, CONFIG_PARSE_ERROR, CONFIG_VALIDATE_ERRORS}
+   * @throws {CONFIG_INIT_CONFIG_PATH_MISSING|CONFIG_PARSE_ERROR|CONFIG_VALIDATE_ERRORS}
    */
   init(configPath) {
     if (!configPath) {

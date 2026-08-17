@@ -35,7 +35,7 @@ class CampaignMonitor {
    * @param {string} [options.alias] - stored instance alias to read the host from
    * @returns {Promise<{xml: string, status: string}>} the raw /r/test XML
    *   (re-serialized from the parsed DOM) and its status attribute
-   * @throws {MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED}
+   * @throws {MONITOR_HOST_UNRESOLVED|MONITOR_ALIAS_UNKNOWN|MONITOR_TEST_FAILED}
    */
   async test({ host, alias } = {}) {
     const endpoint = host || this._hostForAlias(alias);
@@ -62,7 +62,7 @@ class CampaignMonitor {
    * Resolves the host of a stored instance alias.
    * @param {string} alias
    * @returns {string}
-   * @throws {MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN}
+   * @throws {MONITOR_HOST_UNRESOLVED|MONITOR_ALIAS_UNKNOWN}
    */
   _hostForAlias(alias) {
     if (!alias) {

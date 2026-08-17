@@ -258,7 +258,7 @@ class CampaignAuth {
    * @param {object} cliOptions
    * @param {object} _sdkOptions
    * @returns {Promise<object>} Resolves with the authenticated client
-   * @throws {AUTH_LOGIN_ALIAS_MISSING, AUTH_LOGIN_ALIAS_EMPTY, AUTH_LOGIN_ALIAS_INVALID, AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
+   * @throws {AUTH_LOGIN_ALIAS_MISSING|AUTH_LOGIN_ALIAS_EMPTY|AUTH_LOGIN_ALIAS_INVALID|AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
    * @example
    * const client = await auth.login({ alias: 'prod' });
    */
