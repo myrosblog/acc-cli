@@ -21,7 +21,7 @@ class DomUtilAcc extends DomUtil {
         `The provided xpathElement ${xpathElement} is not an attribute`,
       );
     }
-    return xpathElement.asString()[0] == DomUtilAcc.XPATH_ATTR;
+    return xpathElement.asString()[0] === DomUtilAcc.XPATH_ATTR;
   }
 
   /**

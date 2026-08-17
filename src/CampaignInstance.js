@@ -718,7 +718,7 @@ class CampaignInstance {
 
     // prepare XML by removing excluded attributes
     if (excludeXPaths) {
-      for (let xpathString of excludeXPaths) {
+      for (const xpathString of excludeXPaths) {
         const xpath = new XPath(xpathString);
         const xpathElements = xpath.getElements();
         const lastXpathElement = xpathElements[xpathElements.length - 1];
@@ -799,7 +799,7 @@ class CampaignInstance {
 
   _computeFilename(configFilename, configAttributes, record) {
     let filename = configFilename;
-    for (let configAttribute of configAttributes) {
+    for (const configAttribute of configAttributes) {
       const value = DomUtil.getAttributeAsString(
         record,
         configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
@@ -824,10 +824,13 @@ class CampaignInstance {
    * @returns {string} a value safe to use as a filename component
    */
   _sanitizeFilenameValue(value) {
-    return String(value)
-      .replace(/[/\\]/g, "_") // POSIX + Windows path separators
-      .replace(/[\x00-\x1f]/g, "") // NUL + control characters
-      .replace(/^\.+$/, (dots) => "_".repeat(dots.length)); // "." / ".." -> "_" / "__"
+    return (
+      String(value)
+        .replace(/[/\\]/g, "_") // POSIX + Windows path separators
+        // eslint-disable-next-line no-control-regex -- stripping control chars is the purpose here
+        .replace(/[\x00-\x1f]/g, "") // NUL + control characters
+        .replace(/^\.+$/, (dots) => "_".repeat(dots.length))
+    ); // "." / ".." -> "_" / "__"
   }
 }
 

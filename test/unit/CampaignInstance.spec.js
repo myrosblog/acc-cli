@@ -749,7 +749,7 @@ describe("CampaignInstance", () => {
           mockSpinner,
         );
         const schemaConfig = configDefaultFull.schemas.find(
-          (x) => x.schemaId == "xtk:srcSchema",
+          (x) => x.schemaId === "xtk:srcSchema",
         );
         instance.parse(xtkSchemaDelivery, schemaConfig);
 
@@ -776,7 +776,7 @@ describe("CampaignInstance", () => {
           optionsFull,
         );
         const schemaConfig = configDefaultFull.schemas.find(
-          (x) => x.schemaId == "xtk:sql",
+          (x) => x.schemaId === "xtk:sql",
         );
         instance.parse(xtkSqlCreatedb, schemaConfig);
 
@@ -815,7 +815,7 @@ describe("CampaignInstance", () => {
           optionsFull,
         );
         const schemaConfig = configDefaultFull.schemas.find(
-          (x) => x.schemaId == "nms:delivery",
+          (x) => x.schemaId === "nms:delivery",
         );
         instance.parse(nmsDelivery554, schemaConfig);
 
@@ -866,7 +866,7 @@ describe("CampaignInstance", () => {
           optionsFull,
         );
         const schemaConfig = configDefaultFull.schemas.find(
-          (x) => x.schemaId == "nms:includeView",
+          (x) => x.schemaId === "nms:includeView",
         );
         instance.parse(nmsViewSubscription, schemaConfig);
 

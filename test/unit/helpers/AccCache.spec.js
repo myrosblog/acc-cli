@@ -19,16 +19,18 @@ describe("AccCache", function () {
       const nested = path.join(dir, "does", "not", "exist", ".acc-cache");
       expect(fs.existsSync(nested)).to.be.false;
 
-      new AccCache(nested);
+      const cache = new AccCache(nested);
 
+      expect(cache.dir).to.equal(nested);
       expect(fs.existsSync(nested)).to.be.true;
     });
 
     it("should keep an existing cache directory intact", () => {
       fs.outputFileSync(path.join(dir, "keep.json"), "kept");
 
-      new AccCache(dir);
+      const cache = new AccCache(dir);
 
+      expect(cache.dir).to.equal(dir);
       expect(fs.readFileSync(path.join(dir, "keep.json"), "utf8")).to.equal(
         "kept",
       );
