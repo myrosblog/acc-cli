@@ -119,7 +119,7 @@ describe("CampaignAuth", function () {
 
   describe("init", function () {
     it("should add new instance when config.instances is null", async function () {
-      let fakeInstances = null;
+      const fakeInstances = null;
 
       mockConfig.get.callsFake(() => fakeInstances);
 

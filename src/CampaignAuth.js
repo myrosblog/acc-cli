@@ -261,11 +261,10 @@ class CampaignAuth {
    * const client = await auth.login({ alias: 'prod' });
    */
   async login(cliOptions, _sdkOptions) {
-    let auth;
     if (!(cliOptions.alias in this.instances)) {
       throw new AUTH_LOGIN_ALIAS_MISSING();
     }
-    auth = this.instances[cliOptions.alias];
+    const auth = this.instances[cliOptions.alias];
     if (!auth) {
       throw new AUTH_LOGIN_ALIAS_EMPTY();
     }
