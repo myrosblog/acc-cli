@@ -96,7 +96,7 @@ class CampaignConfig {
     }
     // use default config path if configPath is not provided, otherwise use the provided one
     if (
-      configPath == this.defaultConfigPath &&
+      configPath === this.defaultConfigPath &&
       !this.fileExists(this.defaultConfigPath)
     ) {
       this.logger.info(`🛠️ Config not found, initializing ${configPath}`);
