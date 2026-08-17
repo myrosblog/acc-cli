@@ -824,10 +824,13 @@ class CampaignInstance {
    * @returns {string} a value safe to use as a filename component
    */
   _sanitizeFilenameValue(value) {
-    return String(value)
-      .replace(/[/\\]/g, "_") // POSIX + Windows path separators
-      .replace(/[\x00-\x1f]/g, "") // NUL + control characters
-      .replace(/^\.+$/, (dots) => "_".repeat(dots.length)); // "." / ".." -> "_" / "__"
+    return (
+      String(value)
+        .replace(/[/\\]/g, "_") // POSIX + Windows path separators
+        // eslint-disable-next-line no-control-regex -- stripping control chars is the purpose here
+        .replace(/[\x00-\x1f]/g, "") // NUL + control characters
+        .replace(/^\.+$/, (dots) => "_".repeat(dots.length))
+    ); // "." / ".." -> "_" / "__"
   }
 }
 
