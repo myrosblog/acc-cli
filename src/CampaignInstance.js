@@ -232,8 +232,8 @@ class CampaignInstance {
       select: {
         node: [],
       },
-      startLine: startLine,
-      lineCount: lineCount,
+      startLine,
+      lineCount,
     };
 
     let elementDownloaded;
