@@ -20,13 +20,13 @@ class CampaignConfig {
   schemas;
 
   /**
-   * @type {Object}
+   * @type {object}
    */
   accJsSdkOptions;
 
   /**
    * Default instance alias for this project, if set in acc.config.json.
-   * @type {String|undefined}
+   * @type {string | undefined}
    */
   alias;
 
@@ -37,7 +37,7 @@ class CampaignConfig {
   createdFromTemplate = false;
 
   /**
-   * @type {String}
+   * @type {string}
    */
   templateDir = path.join(__dirname, "templates");
 
@@ -48,7 +48,7 @@ class CampaignConfig {
 
   /**
    * the file path to the config JSON file, set in init
-   * @type {String}
+   * @type {string}
    */
   configPath;
 
@@ -58,7 +58,7 @@ class CampaignConfig {
   ajv;
 
   /**
-   * @type {String}
+   * @type {string}
    */
   ajvSchema;
 
@@ -134,7 +134,7 @@ class CampaignConfig {
    * Seeds the project alias into a freshly created config file, to avoid
    * re-typing --alias on subsequent runs. No-op if the file pre-existed or
    * already has an alias, so an existing manifest is never overwritten.
-   * @param {String} alias
+   * @param {string} alias
    */
   seedAlias(alias) {
     if (!this.createdFromTemplate || this.alias || !alias) {
@@ -149,8 +149,8 @@ class CampaignConfig {
 
   /**
    * Copy template file from /tenplates/ to destination path
-   * @param {String} filename
-   * @param {String} destinationPath
+   * @param {string} filename
+   * @param {string} destinationPath
    */
   copyTemplateTo(filename, destinationPath) {
     fs.copySync(path.join(this.templateDir, filename), destinationPath);

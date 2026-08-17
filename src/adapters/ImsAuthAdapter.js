@@ -20,7 +20,7 @@ class ImsAuthAdapter {
    * Generates an IMS access token via the OAuth Server-to-Server (client
    * credentials) grant. Returns the full IMS token response.
    *
-   * @param {Object} params
+   * @param {object} params
    * @param {string} params.clientId - IMS OAuth2 client id (API Key)
    * @param {string} params.clientSecret - IMS OAuth2 client secret
    * @param {string} params.orgId - IMS org id, e.g. "<id>@AdobeOrg"

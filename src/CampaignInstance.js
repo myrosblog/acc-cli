@@ -90,9 +90,8 @@ class CampaignInstance {
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
-   * @param {Object} cliOptions - Command-line options including path, and metadata filters
+   * @param {object} cliOptions - Command-line options including path, and metadata filters
    * @param {function} createSpinner - Ora spinner instance for displaying progress
-   *
    * @example
    * const instance = new CampaignInstance(logger, client, accConfig, cliOptions, createSpinner);
    */
@@ -109,9 +108,8 @@ class CampaignInstance {
    * Gets query definition for a specific schema, merging with default config.
    *
    * @param {string} schema - Schema name (e.g., 'nms:recipient')
-   * @param {Object} baseQueryDef - Base query definition
-   * @returns {Object} Merged query definition
-   *
+   * @param {object} baseQueryDef - Base query definition
+   * @returns {object} Merged query definition
    * @example
    * const queryDef = instance._getQueryDefForSchema('nms:recipient', {
    *   schema: 'nms:recipient',
@@ -132,7 +130,6 @@ class CampaignInstance {
    * Implements pagination to handle large datasets.
    *
    * @returns {Promise<void>} Resolves when pull operation is complete
-   *
    * @example
    * await instance.pull('/path/to/download');
    */
@@ -216,7 +213,7 @@ class CampaignInstance {
   /**
    * Downloads records from a specific schema and saves them as XML files.
    *
-   * @param {Object} schemaConfig - Schema download config
+   * @param {object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
    * @returns {Promise<Array<Element>>} the parsed records of this batch
@@ -307,7 +304,7 @@ class CampaignInstance {
    * The script does not "return" a value: it surfaces output through logInfo() /
    * the execution context, which is echoed back raw.
    *
-   * @param {Object} cliOptions - Command-line options
+   * @param {object} cliOptions - Command-line options
    * @param {string} [cliOptions.file] - Path to a JavaScript file to execute
    * @param {string} [cliOptions.script] - Inline JavaScript to execute
    * @param {string} [cliOptions.name] - Logical script name (param `name`)
@@ -386,11 +383,11 @@ class CampaignInstance {
    * operation:"select"/"count" can only read, and it is ACL-enforced (no
    * server-side scripting right needed, unlike exec()).
    *
-   * @param {Object} cliOptions - Command-line options
+   * @param {object} cliOptions - Command-line options
    * @param {string} [cliOptions.query] - Inline queryDef as a JSON string
    * @param {string} [cliOptions.file] - Path to a .json file (alternative to query)
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string|Object>} the result collection, as an XML string
+   * @returns {Promise<string | object>} the result collection, as an XML string
    *   or, when `json` is set, a SimpleJson object
    * @throws {INSTANCE_QUERYDEF_NO_QUERY, INSTANCE_QUERYDEF_BOTH_QUERY, INSTANCE_QUERYDEF_FILE_NOT_FOUND, INSTANCE_QUERYDEF_SDK_CREATE_FAILED, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
    */
@@ -473,14 +470,14 @@ class CampaignInstance {
    * this command does not build: the SDK then throws (wrapped as
    * INSTANCE_SOAP_SDK_CALL_FAILED). Prefer the static *FromId/*ById variants.
    *
-   * @param {Object} cliOptions - Command-line options
+   * @param {object} cliOptions - Command-line options
    * @param {string} cliOptions.schema - schema id, e.g. "nms:delivery"
    * @param {string} cliOptions.method - method name (PascalCase or camelCase),
    *   e.g. "BuildPreviewFromId"; the SDK resolves either casing
    * @param {string} [cliOptions.args] - method arguments as a JSON array string,
    *   e.g. '[1234, "<params/>"]'. Omitted/empty means no argument.
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string|Object>} the method result: an XML string (or the
+   * @returns {Promise<string | object>} the method result: an XML string (or the
    *   array's parts joined) in human mode, or the SimpleJson value when `json`
    * @throws {INSTANCE_SOAP_NO_TARGET, INSTANCE_SOAP_BAD_ARGS, INSTANCE_SOAP_ARGS_NOT_ARRAY, INSTANCE_SOAP_SDK_CALL_FAILED}
    */
@@ -700,7 +697,7 @@ class CampaignInstance {
    * Writes a single record to disk (raw XML, or decomposed per `decompose`),
    * after blanking any `excludeXPaths`.
    * @param {Element} childElement - the record element
-   * @param {Object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
+   * @param {object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
    * @param {boolean} isPreview - when true, compute filenames but write nothing
    * @returns {string} the base filename of the saved record
    */
@@ -841,7 +838,7 @@ class CampaignInstance {
  */
 class CampaignPullLog {
   /**
-   * @type {Object}
+   * @type {object}
    */
   schemaConfig;
 
@@ -868,7 +865,7 @@ class CampaignPullLog {
 
   /**
    * Save request as JSON
-   * @type {Object}
+   * @type {object}
    */
   queryDef;
 

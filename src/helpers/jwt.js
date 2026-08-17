@@ -12,7 +12,7 @@ const { AUTH_DECODE_INVALID } = codes;
  * unpadded segments a JWT uses.
  *
  * @param {string} token - a JWT, e.g. an Adobe IMS access token ("eyJ…")
- * @returns {{ header: Object, payload: Object }}
+ * @returns {{header: object, payload: object}}
  * @throws {AUTH_DECODE_INVALID} if the input is not a well-formed JWT (not a
  *   non-empty string, not 3 dot-separated segments, or a segment is not
  *   base64url-encoded JSON).
@@ -41,7 +41,7 @@ export function decodeJwt(token) {
  * garbage input is caught at the JSON.parse step.
  * @param {string} segment - a single base64url JWT segment
  * @param {string} label - "header" | "payload", used in the error message
- * @returns {Object}
+ * @returns {object}
  * @throws {AUTH_DECODE_INVALID}
  */
 function decodeSegment(segment, label) {
@@ -63,8 +63,8 @@ function decodeSegment(segment, label) {
  *     `expires_in` (lifetime in **milliseconds**), both usually strings.
  * Missing claims yield `null` rather than throwing, a token may carry neither.
  *
- * @param {Object} payload - a decoded JWT payload
- * @param {number} [now=Date.now()] - reference time in ms (injectable for tests)
+ * @param {object} payload - a decoded JWT payload
+ * @param {number} [now] - reference time in ms (injectable for tests)
  * @returns {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }}
  */
 export function summarizeExpiry(payload, now = Date.now()) {
@@ -81,7 +81,7 @@ export function summarizeExpiry(payload, now = Date.now()) {
 
 /**
  * Issued-at time in ms: `iat` (RFC, seconds) then `created_at` (IMS, ms).
- * @param {Object} p - decoded payload
+ * @param {object} p - decoded payload
  * @returns {number|null}
  */
 function toIssuedAtMs(p) {
@@ -98,7 +98,7 @@ function toIssuedAtMs(p) {
  * Expiry time in ms: `exp` (RFC, seconds) then `created_at + expires_in` (IMS,
  * both ms, note this is the in-JWT convention, unlike the OAuth token response
  * where `expires_in` is seconds).
- * @param {Object} p - decoded payload
+ * @param {object} p - decoded payload
  * @returns {number|null}
  */
 function toExpiresAtMs(p) {

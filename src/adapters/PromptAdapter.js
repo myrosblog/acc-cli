@@ -6,7 +6,8 @@ import { input, password, select } from "@inquirer/prompts";
  * so business services (e.g. CampaignAuth) can ask the user for missing input
  * without coupling to a specific prompt library, and so tests can stub it.
  *
- * IMPORTANT: callers must guard interactive prompts with {@link isInteractive}
+ * IMPORTANT: callers must guard interactive prompts with
+ * {@link PromptAdapter#isInteractive}
  * so that scripted / CI usage (no TTY) never blocks waiting for stdin.
  *
  * @class PromptAdapter

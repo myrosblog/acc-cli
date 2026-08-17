@@ -18,7 +18,7 @@ class SdkAdapter {
 
   /**
    * @param {ConnectionParameters} connectionParameters. Use ConnectionParameters.ofUserAndPassword for example
-   * @return {Promise<Client>} an ACC client object
+   * @returns {Promise<Client>} an ACC client object
    */
   async init(connectionParameters) {
     return this.sdk.init(connectionParameters);
