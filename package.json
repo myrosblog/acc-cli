@@ -52,7 +52,9 @@
     "test:e2e": "mocha test/e2e/index.js",
     "coverage": "c8 --reporter=lcov --reporter=text npm test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "type": "module",
   "dependencies": {
@@ -76,7 +78,11 @@
     "c8": "^11.0.0",
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsdoc": "^63.3.3",
+    "globals": "^17.11.0",
     "mocha": "^11.3.0",
+    "neostandard": "^0.13.0",
     "prettier": "^3.8.3",
     "sinon": "^21.0.1",
     "sinon-chai": "^4.0.1",
