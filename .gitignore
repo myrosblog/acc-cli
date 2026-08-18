@@ -1,6 +1,7 @@
 # Campaign CLI
 .vscode
-AGENTS.md
+AGENTS.local.md
+CLAUDE.local.md
 scripts/
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,windows
