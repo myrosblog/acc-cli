@@ -98,7 +98,7 @@ class CampaignAuth {
    * Creates a new CampaignAuth instance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
-   * @param {Object} sdk - Raw ACC JS SDK instance
+   * @param {object} sdk - Raw ACC JS SDK instance
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
    * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
@@ -106,7 +106,6 @@ class CampaignAuth {
    * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
    *   each login stage. Defaults to a no-op for callers rendering no progress.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
-   *
    * @example
    * const auth = new CampaignAuth(sdk, auth);
    */
@@ -159,6 +158,11 @@ class CampaignAuth {
     }
   }
 
+  /**
+   * Fetches the public IP address of the current machine via the Adobe SDK.
+   *
+   * @returns {Promise<string>} The public IP address (e.g., "192.0.2.1")
+   */
   async ip() {
     this.logger.info(
       `Fetching IP address with the Adobe SDK (from https://api.db-ip.com/v2/free/self)...`,
@@ -197,8 +201,8 @@ class CampaignAuth {
    * `authMethod` explicitly (UserPassword or ImsBearerToken). Legacy instances
    * stored before IMS support have no authMethod but carry a password, so they
    * are UserPassword by definition (mirrors the fallback in login()).
-   * @param {Object} record - a stored instance record
-   * @returns {string}
+   * @param {object} record - a stored instance record
+   * @returns {string} One of {@link AUTH_METHODS} values, or "Unknown"
    */
   _methodOf(record) {
     if (!record) {
@@ -213,16 +217,11 @@ class CampaignAuth {
   /**
    * Initializes a new ACC instance with the provided credentials.
    *
-   * @param {Object} options - Initialization options
-   * @param {string} options.alias - Local alias for this instance (e.g., 'prod', 'staging')
-   * @param {string} options.host - URL of ACC root (e.g., 'http://localhost:8080')
-   * @param {string} options.user - Operator username
-   * @param {string} options.password - Operator password
-   * @param {string} [options.jsonFile] - Path to the OAuth Server-to-Server JSON
-   *   downloaded from the Developer Console; implies method ImsServerToServer
+   * @param {object} authOptions Initialization options (alias, host, user, pass, method, jsonFile)
+   * @param {object} sdkOptions SDK options (representation, noStorage, storage)
+   * @param {object} cliOptions CLI options (e.g., --json-file, --method)
    * @returns {Promise<void>} Resolves when instance is initialized and logged in
    * @throws {AUTH_INIT_EXISTING_ALIAS} Throws if instance with alias already exists
-   *
    * @example
    * await auth.init({
    *   alias: 'prod',
@@ -251,14 +250,13 @@ class CampaignAuth {
   /**
    * Logs in to an existing ACC instance.
    *
-   * @param {Object} options - Login options
-   * @param {string} options.alias - Alias of the instance to log in to
-   * @param {Object} sdkOptions @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
-   * @returns {Promise<Object>} Resolves with the authenticated client
-   * @throws {AUTH_LOGIN_ALIAS_MISSING, AUTH_LOGIN_ALIAS_EMPTY, AUTH_LOGIN_ALIAS_INVALID, AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
-   *
+   * @param {object} cliOptions the CLI flags
+   * @param {object} _sdkOptions the acc-js-sdk options (representation, noStorage, storage)
+   * @returns {Promise<object>} Resolves with the authenticated client
+   * @throws {AUTH_LOGIN_ALIAS_MISSING|AUTH_LOGIN_ALIAS_EMPTY|AUTH_LOGIN_ALIAS_INVALID|AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
    * @example
    * const client = await auth.login({ alias: 'prod' });
+   * @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
    */
   async login(cliOptions, _sdkOptions) {
     if (!(cliOptions.alias in this.instances)) {
@@ -353,12 +351,12 @@ class CampaignAuth {
    * Resolves an IMS access token for an `ImsServerToServer` instance. Reuses a
    * previously generated token persisted under {@link AUTH_IMS_TOKENS_KEY} until it
    * is within a 10-minute safety margin of expiry (mirrors aio-lib-ims);
-   * otherwise generates a fresh one via @adobe/aio-lib-core-auth and persists it.
+   * otherwise generates a fresh one via `@adobe/aio-lib-core-auth` and persists it.
    * This gives cross-process reuse, which the library's in-memory 5-minute cache
    * cannot provide (each CLI invocation is a new process).
    *
    * @param {string} alias - instance alias, used as the token cache key
-   * @param {Object} auth - stored instance ({ json: the Developer Console
+   * @param {object} auth - stored instance ({ json: the Developer Console
    *   credential (ORG_ID, CLIENT_ID, CLIENT_SECRETS, SCOPES), imsEnv? })
    * @returns {Promise<string>} a valid IMS access token
    * @throws {AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED}
@@ -425,8 +423,8 @@ class CampaignAuth {
    * Runs before {@link _collectInitOptions} so the flag works unattended (that
    * method returns untouched on a non-interactive terminal).
    *
-   * @param {Object} opts - partial init options, possibly carrying `jsonFile`
-   * @returns {Object} the same options, with `json` (and maybe `method`) set
+   * @param {object} opts - partial init options, possibly carrying `jsonFile`
+   * @returns {object} the same options, with `json` (and maybe `method`) set
    * @throws {AUTH_INIT_JSON_FILE_METHOD_CONFLICT}
    * @since 1.7.0
    */
@@ -455,7 +453,7 @@ class CampaignAuth {
    * of failing as an IMS 400 on the next login.
    *
    * @param {string} filePath - path to the downloaded JSON file
-   * @returns {Object} the parsed credential
+   * @returns {object} the parsed credential
    * @throws {AUTH_INIT_JSON_FILE_NOT_FOUND|AUTH_INIT_JSON_FILE_INVALID|AUTH_INIT_JSON_FILE_SHAPE}
    * @since 1.7.0
    */
@@ -496,8 +494,8 @@ class CampaignAuth {
    * attached to an interactive terminal. The password is always collected via
    * a masked prompt so it never lands in shell history or the process list.
    * In non-interactive mode the options are returned untouched (flags only).
-   * @param {Object} opts - partial init options ({ alias, host, user, pass })
-   * @returns {Promise<Object>}
+   * @param {object} opts - partial init options ({ alias, host, user, pass })
+   * @returns {Promise<object>} The complete init options with any missing values filled in
    */
   async _collectInitOptions(opts) {
     if (!this.prompt.isInteractive()) {
@@ -588,10 +586,10 @@ class CampaignAuth {
    * ImsBearerToken, generated for ImsServerToServer), so they share the same
    * ofImsBearerToken path.
    * @param {string} authMethod - one of AUTH_METHODS
-   * @param {Object} auth - stored instance ({ host, user, password } | { host, ... })
-   * @param {Object} sdkOptions - acc-js-sdk connection options
+   * @param {object} auth - stored instance ({ host, user, password } | { host, ... })
+   * @param {object} sdkOptions - acc-js-sdk connection options
    * @param {string} [bearerToken] - resolved IMS bearer token (both IMS methods)
-   * @returns {ConnectionParameters}
+   * @returns {ConnectionParameters} the hydrated SDK connection parameters
    */
   _prepareConnectionParameters(authMethod, auth, sdkOptions, bearerToken) {
     if (
@@ -617,8 +615,8 @@ class CampaignAuth {
 
   /**
    * Builds the per-method object persisted under acc.auth.instances.<alias>.
-   * @param {Object} opts - collected init options
-   * @returns {Object}
+   * @param {object} opts - collected init options
+   * @returns {object} The instance configuration object to persist
    * @throws {AUTH_INIT_INVALID_METHOD}
    */
   _buildStoredInstance(opts) {

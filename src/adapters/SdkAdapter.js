@@ -11,14 +11,16 @@ class SdkAdapter {
   /**
    * Get the outbound IP address (https://api.db-ip.com/v2/free/self)
    * Can be useful to troubleshoot IP whitelisting issues
+   * @returns {Promise<string>} the outbound IP address
+   * @throws {Error} if the SDK call fails
    */
   async ip() {
     return this.sdk.ip();
   }
 
   /**
-   * @param {ConnectionParameters} connectionParameters. Use ConnectionParameters.ofUserAndPassword for example
-   * @return {Promise<Client>} an ACC client object
+   * @param {ConnectionParameters} connectionParameters Use ConnectionParameters.ofUserAndPassword for example
+   * @returns {Promise<Client>} an ACC client object
    */
   async init(connectionParameters) {
     return this.sdk.init(connectionParameters);

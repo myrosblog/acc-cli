@@ -12,9 +12,9 @@ export const SOAP_LOG_MAX = 1000;
 /**
  * Caps a string to SOAP_LOG_MAX, appending a marker with the dropped length so
  * the trace flags both that it was cut and the actual payload size.
- * @param {string} str
- * @param {number} [max]
- * @returns {string}
+ * @param {string} str the string to truncate
+ * @param {number} [max] the maximum length (default SOAP_LOG_MAX)
+ * @returns {string} the truncated string, or the original if it was already within the limit
  */
 export function truncate(str, max = SOAP_LOG_MAX) {
   if (str === null || str === undefined) {
@@ -33,8 +33,8 @@ export function truncate(str, max = SOAP_LOG_MAX) {
  * SDK's Util.trim; here we only cap their length. Requests are trimmed too
  * (writing a delivery is a large request + a large response).
  *
- * @param {AioLogger} logger
- * @returns {{onSOAPCall: Function, onSOAPCallSuccess: Function, onSOAPCallFailure: Function}}
+ * @param {AioLogger} logger the logger to forward SOAP traces to
+ * @returns {{onSOAPCall: Function, onSOAPCallSuccess: Function, onSOAPCallFailure: Function}} serialized observer for the acc-js-sdk
  */
 export default function soapLogObserver(logger) {
   return {

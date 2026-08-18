@@ -1,7 +1,7 @@
 import { generateAccessToken, invalidateCache } from "@adobe/aio-lib-core-auth";
 
 /**
- * Adapter around @adobe/aio-lib-core-auth. Encapsulates IMS OAuth
+ * Adapter around `@adobe/aio-lib-core-auth`. Encapsulates IMS OAuth
  * Server-to-Server (client_credentials) token generation behind a clean,
  * mockable interface so business services (e.g. CampaignAuth) can generate
  * access tokens without coupling to a specific library, and so tests can stub
@@ -20,7 +20,7 @@ class ImsAuthAdapter {
    * Generates an IMS access token via the OAuth Server-to-Server (client
    * credentials) grant. Returns the full IMS token response.
    *
-   * @param {Object} params
+   * @param {object} params the IMS OAuth2 client credentials
    * @param {string} params.clientId - IMS OAuth2 client id (API Key)
    * @param {string} params.clientSecret - IMS OAuth2 client secret
    * @param {string} params.orgId - IMS org id, e.g. "<id>@AdobeOrg"

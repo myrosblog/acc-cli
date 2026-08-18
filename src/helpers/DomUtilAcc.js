@@ -11,9 +11,9 @@ class DomUtilAcc extends DomUtil {
 
   /**
    * @see https://github.com/adobe/acc-js-sdk/blob/v1.1.61/src/domUtil.js#L313
-   * @param {XPathElement} xpathElement
-   * @returns boolean
-   * @throws {DomException} if the provided xpathElement is not an attribute
+   * @param {XPathElement} xpathElement the XPath element to check
+   * @returns {boolean} true if the provided xpathElement is an attribute
+   * @throws {DomException} if the provided xpathElement is not an instanceof XPathElement
    */
   static xpathElementIsAttribute(xpathElement) {
     if (!(xpathElement instanceof XPathElement)) {
@@ -26,8 +26,8 @@ class DomUtilAcc extends DomUtil {
 
   /**
    * @see https://github.com/adobe/acc-js-sdk/blob/v1.1.61/src/domUtil.js#L324
-   * @param {XPathElement} xpathElement
-   * @returns {string}
+   * @param {XPathElement} xpathElement the XPath element to get the attribute name from
+   * @returns {string} the attribute name (without the leading "@")
    * @throws {DomException} if the provided xpathElement is not an attribute
    */
   static getXpathAttributeName(xpathElement) {
@@ -49,9 +49,9 @@ class DomUtilAcc extends DomUtil {
    * - Does not work with empty xpath => will return start element
    * Based on the acc-js-sdk XtkSchemaNode.findNode implementation
    * @see https://github.com/adobe/acc-js-sdk/blob/v1.1.61/src/application.js#L834
-   * @param {Element} startElement
-   * @param {string} xpathStr
-   * @returns Element
+   * @param {Element} startElement the starting element to traverse from
+   * @param {string} xpathStr the xpath string to traverse
+   * @returns {Element} the last element of the xpath, or the startElement if the xpath is empty or absolute
    */
   static findLastElement(startElement, xpathStr) {
     const xpath = new XPath(xpathStr);

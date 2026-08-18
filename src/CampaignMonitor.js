@@ -18,8 +18,8 @@ const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
  */
 class CampaignMonitor {
   /**
-   * @param {AioLogger} logger
-   * @param {Object} sdk - raw acc-js-sdk instance
+   * @param {AioLogger} logger - for logging progress and errors
+   * @param {object} sdk - raw acc-js-sdk instance
    * @param {CampaignAuth} auth - used to resolve a host from a stored alias
    */
   constructor(logger, sdk, auth) {
@@ -30,12 +30,12 @@ class CampaignMonitor {
 
   /**
    * Anonymous health check against /r/test (Apache front server).
-   * @param {Object} options
+   * @param {object} options - the options for the health check
    * @param {string} [options.host] - instance root URL (anonymous, no login)
    * @param {string} [options.alias] - stored instance alias to read the host from
    * @returns {Promise<{xml: string, status: string}>} the raw /r/test XML
    *   (re-serialized from the parsed DOM) and its status attribute
-   * @throws {MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED}
+   * @throws {MONITOR_HOST_UNRESOLVED|MONITOR_ALIAS_UNKNOWN|MONITOR_TEST_FAILED}
    */
   async test({ host, alias } = {}) {
     const endpoint = host || this._hostForAlias(alias);
@@ -60,9 +60,9 @@ class CampaignMonitor {
 
   /**
    * Resolves the host of a stored instance alias.
-   * @param {string} alias
-   * @returns {string}
-   * @throws {MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN}
+   * @param {string} alias - the instance alias to resolve
+   * @returns {string} the host URL of the instance
+   * @throws {MONITOR_HOST_UNRESOLVED|MONITOR_ALIAS_UNKNOWN}
    */
   _hostForAlias(alias) {
     if (!alias) {

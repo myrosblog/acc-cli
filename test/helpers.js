@@ -7,7 +7,7 @@ import sinon from "sinon";
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 
 const makeClient = () => ({
-  DomUtil: DomUtil,
+  DomUtil,
 });
 
 const makeLogger = () => ({

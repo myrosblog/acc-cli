@@ -29,7 +29,7 @@ const ALL_LEVELS = [
  *
  * @param {string} [cacheDir] oclif cache dir (`this.config.cacheDir`). When set,
  *   the rotating file transport is added. Skip the file with `ACC_NO_FILE_LOG=1`.
- * @returns {AioLogger}
+ * @returns {AioLogger} a new logger instance
  */
 export default function makeLogger(cacheDir) {
   const consoleLevel = process.env.AIO_LOG_LEVEL || "info";

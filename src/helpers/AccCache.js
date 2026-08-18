@@ -15,8 +15,8 @@ class AccCache {
    * The `:` and `/` would fail with ENOENT, and the SDK swallows that error.
    * encodeURIComponent makes every key a single valid filename and is symmetric across set/get/remove.
    * @since 1.1.2
-   * @param {string} key
-   * @returns {string}
+   * @param {string} key - the cache key to map
+   * @returns {string} the filesystem path for the cache key
    */
   _path(key) {
     return path.join(this.dir, `${encodeURIComponent(key)}.json`);

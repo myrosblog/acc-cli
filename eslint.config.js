@@ -45,14 +45,44 @@ export default [
   // The code is densely documented, so JSDoc drift is a real source of
   // misleading comments. flat/recommended ships every rule at `warn`, which is
   // the level to keep while the existing stock is brought up to date.
-  jsdoc.configs["flat/recommended"],
+  // Scoped to src: a spec documents itself through its describe/it names.
+  { files: ["src/**/*.js"], ...jsdoc.configs["flat/recommended"] },
   {
+    files: ["src/**/*.js"],
     settings: {
       // Same choice as the Adobe config: @private blocks are internal notes.
       jsdoc: { ignorePrivate: true },
     },
     rules: {
       "jsdoc/tag-lines": ["warn", "never", { startLines: null }],
+      // Types that exist but that a JS-only project cannot import:
+      // - aio-lib-core-logging: AioLogger
+      // - acc-js-sdk: Client, ConnectionParameters, CampaignException
+      // - @xmldom: Element, Document
+      // - Node: DOM, NodeJS.ReadStream
+      "jsdoc/no-undefined-types": [
+        "warn",
+        {
+          definedTypes: [
+            "AioLogger",
+            "CampaignAuth",
+            "CampaignConfig",
+            "CampaignException",
+            "Client",
+            "ConnectionParameters",
+            "Document",
+            "Element",
+            "NodeJS.ReadStream",
+            "PromptAdapter",
+          ],
+        },
+      ],
+      // {Function} describes the injected factories (makeCache, createSpinner),
+      // which are the dependency injection convention of AGENTS.md. The {*} of
+      // CampaignAuth._stage returns whatever the wrapped stage returns, so a
+      // narrower type would be wrong.
+      "jsdoc/reject-any-type": "off",
+      "jsdoc/reject-function-type": "off",
     },
   },
 
