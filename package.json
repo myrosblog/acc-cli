@@ -88,6 +88,9 @@
     "sinon-chai": "^4.0.1",
     "tmp": "^0.2.5"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/myrosblog/acc-cli.git"
