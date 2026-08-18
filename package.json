@@ -47,6 +47,14 @@
       "@adobe/aio-cli-plugin-config"
     ]
   },
+  "c8": {
+    "check-coverage": true,
+    "statements": 97,
+    "lines": 97,
+    "branches": 94,
+    "functions": 92,
+    "per-file": false
+  },
   "scripts": {
     "test": "mocha test/index.js",
     "test:e2e": "mocha test/e2e/index.js",
