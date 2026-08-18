@@ -5,6 +5,8 @@ import { expect } from "chai";
 import tmp from "tmp";
 // acc
 import AccCache from "../../../src/helpers/AccCache.js";
+import { codes } from "../../../src/helpers/AccErrors.js";
+const { CACHE_CONSTR_DIR_MISSING } = codes;
 
 describe("AccCache", function () {
   let dir;
@@ -15,6 +17,11 @@ describe("AccCache", function () {
   });
 
   describe("constructor", () => {
+    it("should throw CACHE_CONSTR_DIR_MISSING without a directory", () => {
+      expect(() => new AccCache()).to.throw(CACHE_CONSTR_DIR_MISSING);
+      expect(() => new AccCache("")).to.throw(CACHE_CONSTR_DIR_MISSING);
+    });
+
     it("should create the cache directory if it does not exist", () => {
       const nested = path.join(dir, "does", "not", "exist", ".acc-cache");
       expect(fs.existsSync(nested)).to.be.false;
