@@ -30,7 +30,6 @@ import SdkAdapter from "./adapters/SdkAdapter.js";
 import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import PromptAdapter from "./adapters/PromptAdapter.js";
 import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
-import AccCache from "./helpers/AccCache.js";
 import soapLogObserver from "./helpers/soapLogObserver.js";
 
 /**
@@ -101,7 +100,7 @@ class CampaignAuth {
    * @param {object} sdk - Raw ACC JS SDK instance
    * @param {AioConfigAdapter} config - Adobe I/O Core Config API instance
    * @param {PromptAdapter} [prompt] - Interactive prompt adapter (injectable for tests)
-   * @param {Function} [makeCache] - factory (alias) => AccCache for SDK storage
+   * @param {Function} [makeCache] - AccCache for SDK storage
    * @param {ImsAuthAdapter} [imsAuth] - IMS S2S token generator (injectable for tests)
    * @param {Function} [createSpinner] - factory (text) => ora spinner, marking
    *   each login stage. Defaults to a no-op for callers rendering no progress.
@@ -118,7 +117,7 @@ class CampaignAuth {
     this.logger = logger;
     this.sdk = new SdkAdapter(sdk);
     this.prompt = prompt || new PromptAdapter();
-    this.makeCache = makeCache || (() => new AccCache());
+    this.makeCache = makeCache;
     this.imsAuth = imsAuth || new ImsAuthAdapter();
     // No-op default with the ora shape, so _stage() needs no null checks.
     this.createSpinner =
@@ -301,9 +300,10 @@ class CampaignAuth {
     const sdkOptions = _sdkOptions || {};
     this.logger.verbose(`Using sdkOptions ${JSON.stringify(sdkOptions)}`);
     try {
+      // check if cache activated
       if (
-        sdkOptions.noStorage === undefined ||
-        sdkOptions.noStorage === false
+        this.makeCache &&
+        (sdkOptions.noStorage === undefined || sdkOptions.noStorage === false)
       ) {
         this.logger.verbose(`Using AccCache for SDK storage`);
         // Per-instance cache: each alias gets its own sub-directory (the

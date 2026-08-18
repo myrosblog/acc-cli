@@ -148,6 +148,9 @@ E(
   "Decode failed: not a valid JWT (expected 3 dot-separated base64url segments). Cause: %s",
 );
 
+// CACHE
+E("CACHE_CONSTR_DIR_MISSING", "dir is required for new AccCache().");
+
 // CONFIG
 E(
   "CONFIG_CONSTR_DEFAULT_PATH_MISSING",

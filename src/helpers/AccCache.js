@@ -1,8 +1,18 @@
 import fs from "fs-extra";
 import path from "path";
+// acc
+import { codes } from "./AccErrors.js";
+const { CACHE_CONSTR_DIR_MISSING } = codes;
 
 class AccCache {
-  constructor(dir = "./.acc-cache") {
+  /**
+   * @param {string} dir - directory holding the cache files
+   * @throws {CACHE_CONSTR_DIR_MISSING} if dir is missing or not a string
+   */
+  constructor(dir) {
+    if (!dir || typeof dir !== "string") {
+      throw new CACHE_CONSTR_DIR_MISSING();
+    }
     this.dir = dir;
     fs.ensureDirSync(dir);
   }

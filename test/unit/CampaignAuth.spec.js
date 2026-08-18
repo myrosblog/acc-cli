@@ -543,6 +543,20 @@ describe("CampaignAuth", function () {
       expect(prepStub.firstCall.args[2].storage).to.be.undefined;
     });
 
+    it("runs without SDK storage when no cache factory is injected", async function () {
+      mockConfig.get.returns({
+        local: { host: "http://localhost", user: "u", password: "p" },
+      });
+      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      const prepStub = sinon
+        .stub(auth, "_prepareConnectionParameters")
+        .returns({});
+
+      await auth.login({ alias: "local" });
+
+      expect(prepStub.firstCall.args[2].storage).to.be.undefined;
+    });
+
     it("should login a legacy instance (no authMethod) as UserPassword", async function () {
       // Back-compat: entries stored before IMS support have no authMethod.
       mockConfig.get.returns({
@@ -552,7 +566,13 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       const spy = sinon.spy(auth, "_prepareConnectionParameters");
 
       await auth.login({ alias: "legacy" });
@@ -568,7 +588,13 @@ describe("CampaignAuth", function () {
           token: "ims-token",
         },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
       const client = await auth.login({ alias: "ims" });
 
       expect(client).to.exist;
