@@ -12,7 +12,7 @@ const { AUTH_DECODE_INVALID } = codes;
  * unpadded segments a JWT uses.
  *
  * @param {string} token - a JWT, e.g. an Adobe IMS access token ("eyJ…")
- * @returns {{header: object, payload: object}}
+ * @returns {{header: object, payload: object}} the decoded JWT header and payload
  * @throws {AUTH_DECODE_INVALID} if the input is not a well-formed JWT (not a
  *   non-empty string, not 3 dot-separated segments, or a segment is not
  *   base64url-encoded JSON).
@@ -41,7 +41,7 @@ export function decodeJwt(token) {
  * garbage input is caught at the JSON.parse step.
  * @param {string} segment - a single base64url JWT segment
  * @param {string} label - "header" | "payload", used in the error message
- * @returns {object}
+ * @returns {object} the decoded segment
  * @throws {AUTH_DECODE_INVALID}
  */
 function decodeSegment(segment, label) {
@@ -65,7 +65,7 @@ function decodeSegment(segment, label) {
  *
  * @param {object} payload - a decoded JWT payload
  * @param {number} [now] - reference time in ms (injectable for tests)
- * @returns {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }}
+ * @returns {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }} serialized info
  */
 export function summarizeExpiry(payload, now = Date.now()) {
   const p = payload || {};
@@ -82,7 +82,7 @@ export function summarizeExpiry(payload, now = Date.now()) {
 /**
  * Issued-at time in ms: `iat` (RFC, seconds) then `created_at` (IMS, ms).
  * @param {object} p - decoded payload
- * @returns {number|null}
+ * @returns {number|null} the issued-at time in ms, or null if neither claim is present
  */
 function toIssuedAtMs(p) {
   if (isNumeric(p.iat)) {
@@ -99,7 +99,7 @@ function toIssuedAtMs(p) {
  * both ms, note this is the in-JWT convention, unlike the OAuth token response
  * where `expires_in` is seconds).
  * @param {object} p - decoded payload
- * @returns {number|null}
+ * @returns {number|null} the expiry time in ms, or null if neither claim is present
  */
 function toExpiresAtMs(p) {
   if (isNumeric(p.exp)) {
@@ -114,8 +114,8 @@ function toExpiresAtMs(p) {
 /**
  * True when the value is a number, or a string that converts to a finite
  * number. Rejects the `Number("")===0` / `Number(null)===0` false positives.
- * @param {*} v
- * @returns {boolean}
+ * @param {*} v - the value to test
+ * @returns {boolean} true if the value is numeric, false otherwise
  */
 function isNumeric(v) {
   if (v === null || v === undefined || v === "") {
@@ -129,8 +129,8 @@ function isNumeric(v) {
  * for human output. The Status line uses the same emoji-marker style as the
  * other diagnostic reports in the CLI. Pure string builder, no I/O, so it is
  * unit-testable in isolation.
- * @param {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }} summary
- * @returns {string}
+ * @param {{ issuedAt: Date|null, expiresAt: Date|null, isExpired: boolean|null, expiresInMs: number|null }} summary the serialized expiry info from {@link summarizeExpiry}
+ * @returns {string} the humanized expiry summary
  */
 export function formatExpiry(summary) {
   const issued = summary.issuedAt ? summary.issuedAt.toISOString() : "-";
@@ -154,8 +154,10 @@ export function formatExpiry(summary) {
  * Renders a millisecond duration as a compact string using the two largest
  * non-zero units (e.g. "1d 3h", "3h 20m", "45m 10s", "30s"). Negatives clamp
  * to 0.
- * @param {number} ms
- * @returns {string}
+ * @param {number} ms the duration in milliseconds
+ * @throws {TypeError} if ms is not a number
+ * @throws {RangeError} if ms is NaN or infinite
+ * @returns {string} the humanized duration
  */
 function humanizeDuration(ms) {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));

@@ -158,6 +158,11 @@ class CampaignAuth {
     }
   }
 
+  /**
+   * Fetches the public IP address of the current machine via the Adobe SDK.
+   *
+   * @returns {Promise<string>} The public IP address (e.g., "192.0.2.1")
+   */
   async ip() {
     this.logger.info(
       `Fetching IP address with the Adobe SDK (from https://api.db-ip.com/v2/free/self)...`,
@@ -197,7 +202,7 @@ class CampaignAuth {
    * stored before IMS support have no authMethod but carry a password, so they
    * are UserPassword by definition (mirrors the fallback in login()).
    * @param {object} record - a stored instance record
-   * @returns {string}
+   * @returns {string} One of {@link AUTH_METHODS} values, or "Unknown"
    */
   _methodOf(record) {
     if (!record) {
@@ -212,16 +217,9 @@ class CampaignAuth {
   /**
    * Initializes a new ACC instance with the provided credentials.
    *
-   * @param {object} options - Initialization options
-   * @param {string} options.alias - Local alias for this instance (e.g., 'prod', 'staging')
-   * @param {string} options.host - URL of ACC root (e.g., 'http://localhost:8080')
-   * @param {string} options.user - Operator username
-   * @param {string} options.password - Operator password
-   * @param {string} [options.jsonFile] - Path to the OAuth Server-to-Server JSON
-   *   downloaded from the Developer Console; implies method ImsServerToServer
-   * @param {object} authOptions
-   * @param {object} sdkOptions
-   * @param {object} cliOptions
+   * @param {object} authOptions Initialization options (alias, host, user, pass, method, jsonFile)
+   * @param {object} sdkOptions SDK options (representation, noStorage, storage)
+   * @param {object} cliOptions CLI options (e.g., --json-file, --method)
    * @returns {Promise<void>} Resolves when instance is initialized and logged in
    * @throws {AUTH_INIT_EXISTING_ALIAS} Throws if instance with alias already exists
    * @example
@@ -252,15 +250,13 @@ class CampaignAuth {
   /**
    * Logs in to an existing ACC instance.
    *
-   * @param {object} options - Login options
-   * @param {string} options.alias - Alias of the instance to log in to
-   * @param {object} sdkOptions @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
-   * @param {object} cliOptions
-   * @param {object} _sdkOptions
+   * @param {object} cliOptions the CLI flags
+   * @param {object} _sdkOptions the acc-js-sdk options (representation, noStorage, storage)
    * @returns {Promise<object>} Resolves with the authenticated client
    * @throws {AUTH_LOGIN_ALIAS_MISSING|AUTH_LOGIN_ALIAS_EMPTY|AUTH_LOGIN_ALIAS_INVALID|AUTH_LOGIN_SDK_INIT_FAILED} Throws if instance doesn't exist or login fails
    * @example
    * const client = await auth.login({ alias: 'prod' });
+   * @see https://opensource.adobe.com/acc-js-sdk/connectionParameters
    */
   async login(cliOptions, _sdkOptions) {
     if (!(cliOptions.alias in this.instances)) {
@@ -499,7 +495,7 @@ class CampaignAuth {
    * a masked prompt so it never lands in shell history or the process list.
    * In non-interactive mode the options are returned untouched (flags only).
    * @param {object} opts - partial init options ({ alias, host, user, pass })
-   * @returns {Promise<object>}
+   * @returns {Promise<object>} The complete init options with any missing values filled in
    */
   async _collectInitOptions(opts) {
     if (!this.prompt.isInteractive()) {
@@ -593,7 +589,7 @@ class CampaignAuth {
    * @param {object} auth - stored instance ({ host, user, password } | { host, ... })
    * @param {object} sdkOptions - acc-js-sdk connection options
    * @param {string} [bearerToken] - resolved IMS bearer token (both IMS methods)
-   * @returns {ConnectionParameters}
+   * @returns {ConnectionParameters} the hydrated SDK connection parameters
    */
   _prepareConnectionParameters(authMethod, auth, sdkOptions, bearerToken) {
     if (
@@ -620,7 +616,7 @@ class CampaignAuth {
   /**
    * Builds the per-method object persisted under acc.auth.instances.<alias>.
    * @param {object} opts - collected init options
-   * @returns {object}
+   * @returns {object} The instance configuration object to persist
    * @throws {AUTH_INIT_INVALID_METHOD}
    */
   _buildStoredInstance(opts) {

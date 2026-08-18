@@ -72,7 +72,7 @@ export default class BaseCommand extends Command {
 
   /**
    * Builds a fresh config rooted at ./acc.config.json.
-   * @returns {CampaignConfig}
+   * @returns {CampaignConfig} new instance of CampaignConfig
    */
   makeConfig() {
     return new CampaignConfig(
@@ -83,7 +83,8 @@ export default class BaseCommand extends Command {
 
   /**
    * Ora spinner factory (kept as a method for easy injection in tests).
-   * @param {string} text
+   * @param {string} text the spinner text
+   * @returns {ora.Ora} a new spinner instance
    */
   spinner(text) {
     return ora(text);

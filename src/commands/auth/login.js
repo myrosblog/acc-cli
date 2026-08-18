@@ -34,7 +34,7 @@ export default class AuthLogin extends BaseCommand {
    * Reads `acc-js-sdk` options from ./acc.config.json when present, so options
    * like `traceAPICalls` apply to the login itself. Returns {} when no config
    * file exists: a bare login must not scaffold a project config.
-   * @returns {object}
+   * @returns {object} the `acc-js-sdk` options from the config file, or {} if no config file exists
    */
   readSdkOptions() {
     const config = this.makeConfig();

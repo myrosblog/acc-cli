@@ -22,7 +22,7 @@ class PromptAdapter {
 
   /**
    * Whether the process is attached to an interactive terminal.
-   * @returns {boolean}
+   * @returns {boolean} true if stdin is a TTY, false otherwise
    */
   isInteractive() {
     return Boolean(this.stdin && this.stdin.isTTY);
@@ -30,9 +30,9 @@ class PromptAdapter {
 
   /**
    * Free-text prompt.
-   * @param {string} message
+   * @param {string} message text to display to the user
    * @param {object} [opts] extra `@inquirer/input` options
-   * @returns {Promise<string>}
+   * @returns {Promise<string>} the user input
    */
   async input(message, opts = {}) {
     return input({ message, ...opts });
@@ -40,9 +40,9 @@ class PromptAdapter {
 
   /**
    * Masked password prompt (input is hidden from the terminal and history).
-   * @param {string} message
+   * @param {string} message text to display to the user
    * @param {object} [opts] extra `@inquirer/password` options
-   * @returns {Promise<string>}
+   * @returns {Promise<string>} the user input
    */
   async password(message, opts = {}) {
     return password({ message, mask: "*", ...opts });
@@ -50,8 +50,8 @@ class PromptAdapter {
 
   /**
    * Single-choice list prompt.
-   * @param {string} message
-   * @param {Array<{name: string, value: *}>} choices
+   * @param {string} message text to display to the user
+   * @param {Array<{name: string, value: *}>} choices the list of choices to present
    * @param {object} [opts] extra `@inquirer/select` options
    * @returns {Promise<*>} the selected choice's value
    */

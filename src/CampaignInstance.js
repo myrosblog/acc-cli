@@ -80,7 +80,7 @@ class CampaignInstance {
   logger;
 
   /**
-   * @type {function} to create spinner, injected for easier unit testing
+   * @type {Function} to create spinner, injected for easier unit testing
    */
   createSpinner;
 
@@ -91,7 +91,7 @@ class CampaignInstance {
    * @param {Client} client - Authenticated ACC client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
    * @param {object} cliOptions - Command-line options including path, and metadata filters
-   * @param {function} createSpinner - Ora spinner instance for displaying progress
+   * @param {Function} createSpinner - Ora spinner instance for displaying progress
    * @example
    * const instance = new CampaignInstance(logger, client, accConfig, cliOptions, createSpinner);
    */
@@ -107,8 +107,7 @@ class CampaignInstance {
   /**
    * Gets query definition for a specific schema, merging with default config.
    *
-   * @param {string} schema - Schema name (e.g., 'nms:recipient')
-   * @param {object} schemaConfig
+   * @param {object} schemaConfig - Schema configuration object from acc.config.json
    * @param {object} baseQueryDef - Base query definition
    * @returns {object} Merged query definition
    * @example
@@ -130,7 +129,7 @@ class CampaignInstance {
    * Pulls data from all schemas in the ACC instance.
    * Implements pagination to handle large datasets.
    *
-   * @param {boolean} isPreview
+   * @param {boolean} isPreview - If true, only previews the data without saving to disk
    * @returns {Promise<void>} Resolves when pull operation is complete
    * @example
    * await instance.pull('/path/to/download');
@@ -218,8 +217,8 @@ class CampaignInstance {
    * @param {object} schemaConfig - Schema download config
    * @param {number} startLine - Starting line number for pagination
    * @param {number} lineCount - Size of pagination
-   * @param {boolean} isPreview
-   * @param {object} pullLog
+   * @param {boolean} isPreview - If true, only previews the data without saving to disk
+   * @param {object} pullLog - Log object to record the download and parse process
    * @returns {Promise<Array<Element>>} the parsed records of this batch
    */
   async downloadAndParse(
@@ -281,7 +280,7 @@ class CampaignInstance {
    * - easier mocking in unit test
    * - format isolation (XML vs JSON)
    * @param {Document} queryDefXml created from DomUtil.fromJSON
-   * @returns {Promise<Element>}
+   * @returns {Promise<Element>} the result collection element
    * @throws {CampaignException}
    */
   async adapterCreateAndExecuteQuery(queryDefXml) {
@@ -437,9 +436,8 @@ class CampaignInstance {
    * Unlike pull's adapterCreateAndExecuteQuery, it does NOT call selectAll: the
    * caller-supplied queryDef already carries its own `select`. `.xml` returns
    * the result collection as a DOM Element (one child per row).
-   * @param {Document} queryDefXml created from DomUtil.fromJSON
-   * @param {object} queryDef
-   * @param {boolean} jsonEnabled
+   * @param {object} queryDef - the original queryDef JSON, used to detect lineCount for logging
+   * @param {boolean} jsonEnabled - when true, use the SimpleJson representation
    * @returns {Promise<Element>} the result collection element
    * @throws {CampaignException}
    */
@@ -541,7 +539,7 @@ class CampaignInstance {
    * @param {string} method method name (the SDK resolves either casing)
    * @param {Array} args positional arguments
    * @param {boolean} jsonEnabled when true use the SimpleJson representation
-   * @returns {Promise<*>} DOM node / scalar / array (xml) or SimpleJson (json)
+   * @returns {Promise<any>} DOM node / scalar / array (xml) or SimpleJson (json)
    * @throws {CampaignException}
    */
   async adapterCallSoap(schemaKey, method, args, jsonEnabled) {
@@ -572,7 +570,7 @@ class CampaignInstance {
    * BuildPreviewFromId, an array of those. DOM nodes are stringified; arrays
    * are stringified part-by-part and joined.
    * @param {*} result the raw NLWS return value
-   * @returns {string}
+   * @returns {string} the serialized XML string
    */
   _serializeSoapResult(result) {
     if (result === null || result === undefined) return "";
@@ -596,7 +594,7 @@ class CampaignInstance {
    * failure doesn't hide the others. The caller gets the rendered report plus
    * the list of failed probes (to set a non-zero exit code).
    *
-   * @returns {Promise<{text: string, errors: Array<Error>}>}
+   * @returns {object} { text: string, errors: Array<Error> } the report and any errors
    */
   async info() {
     // GetServerTime returns a JS Date; the two XML probes return an Element
@@ -646,7 +644,7 @@ class CampaignInstance {
 
   /**
    * Adapter of xtk:session#TestCnx (reachability ping; resolves with no value).
-   * @returns {Promise<*>}
+   * @returns {Promise<void>}
    * @throws {CampaignException}
    */
   async adapterTestCnx() {
@@ -792,6 +790,11 @@ class CampaignInstance {
     return filenameOnly;
   }
 
+  /**
+   * Extracts attribute names from the schema config filename template.
+   * @param {object} schemaConfig - schema download config
+   * @returns {Array<string>} Array of attribute names (e.g., ['@name', '@namespace'])
+   */
   _getAttributesFromSchemaConfig(schemaConfig) {
     const configAttributesRe = schemaConfig.filename.matchAll(
       this.REGEX_CONFIG_ATTRIBUTE,
@@ -800,6 +803,13 @@ class CampaignInstance {
     return configAttributesArr.map((attr) => attr[1]); // [ '@name', '@namespace' ]
   }
 
+  /**
+   * Computes the final filename by substituting schema config attributes with values from the record.
+   * @param {string} configFilename - filename template with placeholders like {name}
+   * @param {Array<string>} configAttributes - attribute names to extract from the record
+   * @param {Element} record - the record element
+   * @returns {string} The computed filename with placeholders replaced
+   */
   _computeFilename(configFilename, configAttributes, record) {
     let filename = configFilename;
     for (const configAttribute of configAttributes) {

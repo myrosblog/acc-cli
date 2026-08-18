@@ -38,7 +38,7 @@ export default class InstanceCommand extends BaseCommand {
    * @param {object} flags - parsed CLI flags (alias, config, path, ...)
    * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
    *   over the config ones (e.g. a raised `timeout` for heavy calls)
-   * @returns {Promise<CampaignInstance>}
+   * @returns {CampaignInstance} a new CampaignInstance, ready to call its methods (pull/check/exec)
    */
   async getInstance(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();

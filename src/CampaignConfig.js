@@ -15,7 +15,7 @@ const {
 
 class CampaignConfig {
   /**
-   * @type {Array<Object}
+   * @type {Array<object>}
    */
   schemas;
 
@@ -63,15 +63,17 @@ class CampaignConfig {
   ajvSchema;
 
   /**
-   *
+   * Compiled AJV validator instance for acc.config.json schema.
+   * @type {Function}
    */
   ajvValidate;
 
   /**
+   * Creates a new CampaignConfig instance.
    *
-   * @param {AioLogger} logger
-   * @param {string} defaultConfigPath
-   * @throws {CONFIG_CONSTR_DEFAULT_PATH_MISSING}
+   * @param {AioLogger} logger - Logger instance for logging messages
+   * @param {string} defaultConfigPath - Default path to the acc.config.json file
+   * @throws {CONFIG_CONSTR_DEFAULT_PATH_MISSING} Thrown if defaultConfigPath is missing or invalid
    */
   constructor(logger, defaultConfigPath) {
     if (!defaultConfigPath || typeof defaultConfigPath !== "string") {
@@ -88,7 +90,8 @@ class CampaignConfig {
 
   /**
    * Initializes the configuration.
-   * @param {string} configPath
+   * @param {string} configPath the path to the acc.config.json file
+   * @returns {void}
    * @throws {CONFIG_INIT_CONFIG_PATH_MISSING|CONFIG_PARSE_ERROR|CONFIG_VALIDATE_ERRORS}
    */
   init(configPath) {
@@ -127,6 +130,11 @@ class CampaignConfig {
     this.configPath = configPath;
   }
 
+  /**
+   * Checks if a file exists at the given path.
+   * @param {string} path - the file path to check
+   * @returns {boolean} true if the file exists
+   */
   fileExists(path) {
     return fs.existsSync(path);
   }
@@ -135,7 +143,8 @@ class CampaignConfig {
    * Seeds the project alias into a freshly created config file, to avoid
    * re-typing --alias on subsequent runs. No-op if the file pre-existed or
    * already has an alias, so an existing manifest is never overwritten.
-   * @param {string} alias
+   * @param {string} alias - the alias to seed into the config
+   * @returns {void}
    */
   seedAlias(alias) {
     if (!this.createdFromTemplate || this.alias || !alias) {
@@ -149,9 +158,10 @@ class CampaignConfig {
   }
 
   /**
-   * Copy template file from /tenplates/ to destination path
-   * @param {string} filename
-   * @param {string} destinationPath
+   * Copy template file from /templates/ to destination path
+   * @param {string} filename - the template filename to copy
+   * @param {string} destinationPath - the destination path to copy the template to
+   * @returns {void}
    */
   copyTemplateTo(filename, destinationPath) {
     fs.copySync(path.join(this.templateDir, filename), destinationPath);
@@ -160,7 +170,7 @@ class CampaignConfig {
   /**
    * Controller for "acc instance template"
    * Currently only supports returning the content of the input file
-   * @returns
+   * @returns {string} The template file content as a string
    */
   template() {
     this.logger.info(
