@@ -180,6 +180,27 @@ E(
   "INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED",
   `Pull failed: unable to execute SDK query. ${TRACED}`,
 );
+// INSTANCE watch
+E(
+  "INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS",
+  "No schemas with 'decompose' configuration found in acc.config.json. Only decomposed files can be watched.",
+);
+E(
+  "INSTANCE_WATCH_FILE_NOT_IN_SCOPE",
+  "File not part of any decomposed schema. Only files defined in 'decompose' are watched.",
+);
+E(
+  "INSTANCE_WATCH_META_FILE_MISSING",
+  "Meta XML file not found for entity. Cannot rebuild without the meta file: %s",
+);
+E(
+  "INSTANCE_WATCH_PUSH_FAILED",
+  "Failed to push entity to server after 3 attempts. Cause: %s",
+);
+E(
+  "INSTANCE_WATCH_ALREADY_RUNNING",
+  "Watch is already running. Stop the current watch before starting a new one.",
+);
 E(
   "INSTANCE_EXEC_NO_SCRIPT",
   "Exec failed: no script provided. Use --file <path> or --script <code>.",
