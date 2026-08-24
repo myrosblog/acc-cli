@@ -419,20 +419,25 @@ class CampaignWatcher {
       this.fileContentHashes.set(absolutePath, currentHash);
 
       // Rebuild entity from file
-      const entityXml = await this._rebuildEntityFromFile(
+      const metadataDocument = await this._getMetadataDocument(
         schemaConfig,
         absolutePath,
         xpath,
         currentContent,
       );
 
-      if (!entityXml) {
-        this.logger.warn(`  Could not rebuild entity for ${absolutePath}`);
+      if (!metadataDocument) {
+        this.logger.warn(`  Could not get metadata for ${absolutePath}`);
         return;
       }
 
       // Push to server
-      await this._pushEntityToServer(entityXml, schemaConfig);
+      await this._pushEntityToServer(
+        xpath,
+        currentContent,
+        metadataDocument,
+        schemaConfig,
+      );
 
       this.logger.info(
         `✅ ${chalk.green(path.basename(absolutePath))} pushed to ${chalk.cyan(schemaConfig.schemaId)}`,
@@ -470,10 +475,12 @@ class CampaignWatcher {
    * @param {string} filePath - Path to the changed decomposed file
    * @param {string} xpath - The xpath key from decompose config
    * @param {string} fileContent - Content of the changed file
-   * @returns {Promise<string|null>} The complete entity XML as string, or null if failed
+   * @returns {Promise<Document|null>} The complete entity XML as string, or null if failed
    */
-  async _rebuildEntityFromFile(schemaConfig, filePath, xpath, fileContent) {
-    const { filename: metaFilename, schemaId } = schemaConfig;
+  async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
+    const { filename: metaFilename } = schemaConfig;
+
+    this.spinner.text = `Watch>Metadata: Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
 
     // Generate the meta file path by replacing the decomposed file extension
     // with .meta.xml (or .xml if metaFilename ends with that)
@@ -513,92 +520,30 @@ class CampaignWatcher {
       return null;
     }
 
-    // Find the target node by xpath
-    // The xpath from decompose config is a simple element name (e.g., "code", "data")
-    // We need to find this child node in the root
-    const targetNode = this._findNodeBySimpleXPath(rootElement, xpath);
-
-    if (!targetNode) {
-      this.logger.warn(
-        `  Target node for xpath '${xpath}' not found in ${schemaId} entity`,
-      );
-      // If the node doesn't exist, we might need to create it
-      // For now, just return the original XML
-      return DomUtil.toXMLString(document);
-    }
-
-    // Clear existing content and add CDATA with file content
-    // First, remove all child nodes
-    while (targetNode.firstChild) {
-      targetNode.removeChild(targetNode.firstChild);
-    }
-
-    // Escape content for CDATA (handle ]]> sequences)
-    const escapedContent = fileContent.replace(/\]\]>/g, "]]&gt;");
-
-    // Create CDATA section
-    const cdataSection = document.createCDATASection(escapedContent);
-    targetNode.appendChild(cdataSection);
-
-    // Return the complete XML
-    return DomUtil.toXMLString(document);
+    return document;
   }
 
   /**
-   * Finds a node in the XML tree using a simple xpath (element name only).
-   * This handles simple xpaths like "code", "data", or "content/html/source".
+   * Builds an XML document the content as CDATA
    *
-   * @param {Element} rootElement - Root element to search in
-   * @param {string} xpath - Simple xpath string
-   * @returns {Element|null} The found element, or null
+   * @param {string} xpath the xpath from acc.config.json
+   * @param {string} currentContent the content of the watched file
+   * @param {string} schemaName the schema name to use as the XML root tag
+   * @returns {Document} the XML built
+   * @see XPath.getElements()
    */
-  _findNodeBySimpleXPath(rootElement, xpath) {
-    // Handle simple element name (e.g., "code", "data")
-    if (!xpath.includes("/")) {
-      const child = rootElement.getElementsByTagName(xpath)[0];
-      if (child) {
-        return child;
-      }
-      // Try to find by direct child access
-      for (const childNode of rootElement.childNodes) {
-        if (childNode.nodeType === 1 && childNode.nodeName === xpath) {
-          return childNode;
-        }
-      }
-      return null;
-    }
-
-    // Handle nested xpaths (e.g., "content/html/source")
+  buildXmlFromPath(xpath, currentContent, schemaName) {
     const parts = xpath.split("/");
-    let current = rootElement;
-
-    for (const part of parts) {
-      if (!part) {
-        continue; // Skip empty parts from leading/trailing slashes
-      }
-
-      let found = null;
-      // Try getElementsByTagName first
-      const elements = current.getElementsByTagName(part);
-      if (elements.length > 0) {
-        found = elements[0];
-      } else {
-        // Try direct child access
-        for (const childNode of current.childNodes) {
-          if (childNode.nodeType === 1 && childNode.nodeName === part) {
-            found = childNode;
-            break;
-          }
-        }
-      }
-
-      if (!found) {
-        return null;
-      }
-      current = found;
+    const doc = DomUtil.newDocument(schemaName); // docRoot must be the schemaName
+    let current = doc.documentElement;
+    const firstIndex = 0;
+    for (let i = firstIndex; i < parts.length; i++) {
+      const el = doc.createElement(parts[i]);
+      current.appendChild(el);
+      current = el;
     }
-
-    return current;
+    current.appendChild(doc.createCDATASection(currentContent));
+    return doc;
   }
 
   /**
@@ -629,109 +574,71 @@ class CampaignWatcher {
    * Pushes the rebuilt entity XML to the Adobe Campaign server.
    * Uses xtk:session#Write with _operation: "update".
    *
-   * @param {string} entityXml - The complete entity XML
+   * @param {string} xpath - The xpath key from decompose config
+   * @param {string} currentContent - The current content of the changed file
+   * @param {Document} metadataDocument - The complete metadata document
    * @param {object} schemaConfig - Schema configuration
    * @returns {Promise<void>} Resolves when push is complete
    * @throws {INSTANCE_WATCH_PUSH_FAILED} If push fails after retries
    */
-  async _pushEntityToServer(entityXml, schemaConfig) {
+  async _pushEntityToServer(
+    xpath,
+    currentContent,
+    metadataDocument,
+    schemaConfig,
+  ) {
     const { schemaId } = schemaConfig;
 
     this.spinner.text = `Watch>Metadata>Push: Writing ${chalk.bgCyan(schemaId)} to the instance`;
 
-    let attempt = 0;
-    let lastError = null;
+    try {
+      const rootElement = metadataDocument.documentElement;
 
-    while (attempt < this.MAX_RETRY_ATTEMPTS) {
-      attempt++;
-
-      try {
-        // Parse the XML to get a DOM Document
-        const document = DomUtil.parse(entityXml);
-        const rootElement = document.documentElement;
-
-        if (!rootElement) {
-          throw new Error("No root element in entity XML");
-        }
-
-        // The SDK expects an Element, not a Document
-        // We need to create an entity object that the SDK can work with
-        // For xtk:session#Write, we need to pass an object with xtkschema
-
-        // Get the entity's primary key (id or name)
-        const id = rootElement.getAttribute("id");
-        const name = rootElement.getAttribute("name");
-
-        // Build the update payload
-        // The payload should have:
-        // - xtkschema: the schema ID
-        // - _operation: "update"
-        // - the primary key (id or name)
-        // - the modified data
-
-        // For simplicity, we'll serialize the entire XML and pass it
-        // The SDK's Write method accepts XML strings
-        const payload = {
-          xtkschema: schemaId,
-          _operation: "update",
-        };
-
-        // Add primary key
-        if (id) {
-          payload.id = id;
-        } else if (name) {
-          payload.name = name;
-        } else {
-          // Try to find other keys
-          const internalName = rootElement.getAttribute("internalName");
-          if (internalName) {
-            payload.internalName = internalName;
-          }
-        }
-
-        // For XML content, we need to use the XML representation
-        // The SDK's xtkSession.write can accept an Element or an object
-        // We'll try passing the rootElement directly
-
-        // Try to use the SDK's write method
-        // First, get the appropriate proxy
-        const nlws = this.client.NLWS.xml;
-
-        // Build a simple JSON representation for logging
-        this.logger.verbose(
-          `  Pushing ${schemaId} with id=${id || name || "unknown"}`,
-        );
-
-        // Use xtk:session#Write
-        // The Write method accepts a DOM Element or a SimpleJson object
-        // We'll pass the rootElement which is already a DOM Element
-
-        // Set _operation attribute on the element
-        rootElement.setAttribute("_operation", "update");
-
-        // Call Write
-        await nlws.xtkSession.write(rootElement);
-
-        spinner.succeed(`Pushed ${chalk.bgCyan(schemaId)} to server`);
-        return;
-      } catch (err) {
-        lastError = err;
-        this.logger.verbose(
-          `  Push attempt ${attempt} failed: ${err.message || String(err)}`,
-        );
-
-        if (attempt < this.MAX_RETRY_ATTEMPTS) {
-          // Wait a bit before retrying
-          const delay = Math.pow(2, attempt) * 100; // Exponential backoff
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
+      if (!rootElement) {
+        throw new Error("No root element in entity XML");
       }
-    }
 
-    spinner.fail(`Failed to push ${chalk.bgCyan(schemaId)}`);
-    throw new INSTANCE_WATCH_PUSH_FAILED({
-      messageValues: [schemaId, lastError?.message || "unknown error"],
-    });
+      const id = rootElement.getAttribute("id");
+      const name = rootElement.getAttribute("name");
+      const namespace = rootElement.getAttribute("namespace");
+      const internalName = rootElement.getAttribute("internalName");
+
+      const schema = await this.client.application.getSchema(schemaId);
+      // build payload
+      const payloadDocument = this.buildXmlFromPath(
+        xpath,
+        currentContent,
+        schema.name,
+      );
+      const payload = payloadDocument.documentElement;
+      payload.setAttribute("xtkschema", schemaId);
+      payload.setAttribute("_operation", "update");
+      // Add keys
+      // TODO: keys from sdk getSchema
+      if (id) {
+        payload.setAttribute("id", id);
+      }
+      if (name) {
+        payload.setAttribute("name", name);
+      }
+      if (namespace) {
+        payload.setAttribute("namespace", namespace);
+      }
+      if (internalName) {
+        payload.setAttribute("internalName", internalName);
+      }
+
+      await this.adapterWrite(payloadDocument);
+
+      this.spinner.succeed(`Written ${chalk.bgCyan(schemaId)} to server`);
+    } catch (err) {
+      this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
+
+      this.spinner.fail(`Failed to push ${chalk.bgCyan(schemaId)}`);
+      throw new INSTANCE_WATCH_PUSH_FAILED({
+        messageValues: [schemaId, err?.message || "unknown error"],
+      });
+    }
   }
 
   /**
@@ -748,22 +655,6 @@ class CampaignWatcher {
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED);
     }
-  }
-
-  /**
-   * Maps a schema id to the camelCase namespace key the NLWS proxy expects,
-   * e.g. "nms:delivery" -> "nmsDelivery", "xtk:queryDef" -> "xtkQueryDef".
-   * Inverse of the SDK's Util.schemaIdFromNamespace.
-   *
-   * @param {string} schema - schema id ("namespace:entity")
-   * @returns {string} the proxy key
-   */
-  _toSchemaKey(schema) {
-    const [ns, entity] = schema.split(":");
-    if (!entity) {
-      return schema; // already a key (or malformed): pass through
-    }
-    return ns + entity.charAt(0).toUpperCase() + entity.slice(1);
   }
 }
 
