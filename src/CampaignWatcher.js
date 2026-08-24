@@ -18,6 +18,9 @@ const {
  * Only files described by the "decompose" key in acc.config.json are watched.
  * When a file is edited, its content is wrapped in CDATA and pushed to the server.
  *
+ * At start: _getDecomposedSchemas > _buildWatchList > _storeSchemaForPattern
+ * On file change: _onFileChange > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
+ *
  * @class CampaignWatcher
  * @classdesc Class for watching and syncing decomposed files to ACC instances
  */
@@ -70,6 +73,11 @@ class CampaignWatcher {
    * @type {Function} to create spinner, injected for easier unit testing
    */
   createSpinner;
+
+  /**
+   * @type {object} spinner instance for displaying progress
+   */
+  spinner;
 
   /**
    * Chokidar watcher instance
@@ -371,6 +379,10 @@ class CampaignWatcher {
    * @param {string} filePath - The path of the changed file
    */
   async _onFileChange(filePath) {
+    this.spinner = this.createSpinner(
+      `Watch: ${chalk.cyan(path.basename(filePath))} changed`,
+    ).start();
+
     const absolutePath = path.isAbsolute(filePath)
       ? filePath
       : path.join(this.watchPath, filePath);
@@ -620,9 +632,8 @@ class CampaignWatcher {
    */
   async _pushEntityToServer(entityXml, schemaConfig) {
     const { schemaId } = schemaConfig;
-    const spinner = this.createSpinner(
-      `Pushing ${chalk.bgCyan(schemaId)} to server`,
-    ).start();
+
+    this.spinner.text = `Watch>Metadata>Push: Writing ${chalk.bgCyan(schemaId)} to the instance`;
 
     let attempt = 0;
     let lastError = null;
