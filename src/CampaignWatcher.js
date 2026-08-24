@@ -120,6 +120,10 @@ class CampaignWatcher {
     this.accConfig = accConfig;
     this.watchPath = cliOptions.path || process.cwd();
     this.createSpinner = createSpinner;
+    // TODO: remove when stable
+    this.logger.warn(
+      "`acc instance watch` is in early access and subject to change. Always test in sandbox first.",
+    );
   }
 
   /**
