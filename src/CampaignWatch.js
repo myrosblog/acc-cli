@@ -103,12 +103,6 @@ class CampaignWatch {
   isRunning = false;
 
   /**
-   * Map of file paths to their last known content hash (for change detection)
-   * @type {Map<string, string>}
-   */
-  fileContentHashes = new Map();
-
-  /**
    * Creates a new CampaignWatch.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
@@ -206,8 +200,9 @@ class CampaignWatch {
       .on("add", (filePath) => this._onFileChange(filePath))
       .on("change", (filePath) => this._onFileChange(filePath))
       .on("unlink", (filePath) => {
-        this.logger.verbose(`File deleted: ${filePath}`);
-        this.fileContentHashes.delete(filePath);
+        this.logger.verbose(
+          `Watch(${chalk.green(this.currentFilename)}): File deleted`,
+        );
       })
       .on("error", (error) => {
         this.logger.error(`Watcher error: ${error.message}`);
@@ -237,7 +232,6 @@ class CampaignWatch {
     this.chokidarWatcher = null;
     this.isRunning = false;
     this.watchedFiles.clear();
-    this.fileContentHashes.clear();
     this.logger.info("✅ File watcher stopped.");
   }
 
@@ -418,21 +412,7 @@ class CampaignWatch {
     const { schemaConfig, xpath } = match;
 
     try {
-      // Check if content actually changed (avoid infinite loops)
       const currentContent = fs.readFileSync(absolutePath, "utf8");
-      const currentHash = this._hashContent(currentContent);
-
-      const lastHash = this.fileContentHashes.get(absolutePath);
-      if (lastHash === currentHash) {
-        this.logger.verbose(`  Content unchanged, skipping.`);
-        this.spinner.fail(
-          `Watch(${chalk.green(this.currentFilename)}): content unchanged, skipping.`,
-        );
-        return;
-      }
-
-      // Update hash
-      this.fileContentHashes.set(absolutePath, currentHash);
 
       // Rebuild entity from file
       const metadataDocument = await this._getMetadataDocument(
@@ -458,7 +438,7 @@ class CampaignWatch {
         schemaConfig,
       );
 
-      this.logger.info(
+      this.logger.verbose(
         `✅ ${chalk.green(path.basename(absolutePath))} pushed to ${chalk.cyan(schemaConfig.schemaId)}`,
       );
     } catch (err) {
@@ -466,23 +446,6 @@ class CampaignWatch {
         `❌ Failed to push ${path.basename(absolutePath)}: ${err.message}`,
       );
     }
-  }
-
-  /**
-   * Creates a simple hash of file content for change detection.
-   *
-   * @param {string} content - File content
-   * @returns {string} Hash string
-   */
-  _hashContent(content) {
-    // Simple hash using string length and first/last characters
-    // For production, consider using a proper hash function
-    if (!content || content.length === 0) {
-      return "";
-    }
-    return `${content.length}:${content.substring(0, 10)}:${content.substring(
-      content.length - 10,
-    )}`;
   }
 
   /**
