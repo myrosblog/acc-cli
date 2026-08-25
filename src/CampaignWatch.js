@@ -80,6 +80,11 @@ class CampaignWatch {
   spinner;
 
   /**
+   * @type {string}
+   */
+  currentFilename;
+
+  /**
    * Chokidar watcher instance
    * @type {object | null}
    */
@@ -206,6 +211,9 @@ class CampaignWatch {
       })
       .on("error", (error) => {
         this.logger.error(`Watcher error: ${error.message}`);
+        this.spinner.fail(
+          `Watch(${chalk.green(this.currentFilename)}): Error "${error.message}"`,
+        );
       });
 
     this.isRunning = true;
@@ -383,8 +391,10 @@ class CampaignWatch {
    * @param {string} filePath - The path of the changed file
    */
   async _onFileChange(filePath) {
+    this.currentFilename = path.basename(filePath);
+
     this.spinner = this.createSpinner(
-      `Watch: ${chalk.cyan(path.basename(filePath))} changed`,
+      `Watch(${chalk.green(this.currentFilename)}): content changed`,
     ).start();
 
     const absolutePath = path.isAbsolute(filePath)
@@ -399,6 +409,9 @@ class CampaignWatch {
       this.logger.verbose(
         `  File ${absolutePath} not part of any decomposed schema, skipping.`,
       );
+      this.spinner.fail(
+        `Watch(${chalk.green(this.currentFilename)}): not part of any decomposed schema, skipping.`,
+      );
       return;
     }
 
@@ -411,7 +424,10 @@ class CampaignWatch {
 
       const lastHash = this.fileContentHashes.get(absolutePath);
       if (lastHash === currentHash) {
-        this.logger.verbose(`  Content unchanged, skipping push.`);
+        this.logger.verbose(`  Content unchanged, skipping.`);
+        this.spinner.fail(
+          `Watch(${chalk.green(this.currentFilename)}): content unchanged, skipping.`,
+        );
         return;
       }
 
@@ -428,6 +444,9 @@ class CampaignWatch {
 
       if (!metadataDocument) {
         this.logger.warn(`  Could not get metadata for ${absolutePath}`);
+        this.spinner.fail(
+          `Watch(${chalk.green(this.currentFilename)})>Metadata: could not get metadata, skipping.`,
+        );
         return;
       }
 
@@ -480,7 +499,7 @@ class CampaignWatch {
   async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
     const { filename: metaFilename } = schemaConfig;
 
-    this.spinner.text = `Watch>Metadata: Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
+    this.spinner.text = `Watch(${chalk.green(this.currentFilename)})>Metadata: Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
 
     // Generate the meta file path by replacing the decomposed file extension
     // with .meta.xml (or .xml if metaFilename ends with that)
@@ -589,7 +608,7 @@ class CampaignWatch {
   ) {
     const { schemaId } = schemaConfig;
 
-    this.spinner.text = `Watch>Metadata>Push: Writing ${chalk.bgCyan(schemaId)} to the instance`;
+    this.spinner.text = `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Writing ${chalk.bgCyan(schemaId)} to the instance`;
 
     try {
       const rootElement = metadataDocument.documentElement;
@@ -630,11 +649,15 @@ class CampaignWatch {
 
       await this.adapterWrite(payloadDocument);
 
-      this.spinner.succeed(`Written ${chalk.bgCyan(schemaId)} to server`);
+      this.spinner.succeed(
+        `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Written ${chalk.bgCyan(schemaId)} to server`,
+      );
     } catch (err) {
       this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
 
-      this.spinner.fail(`Failed to push ${chalk.bgCyan(schemaId)}`);
+      this.spinner.fail(
+        `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Failed to push ${chalk.bgCyan(schemaId)}`,
+      );
       throw new INSTANCE_WATCH_PUSH_FAILED({
         messageValues: [schemaId, err?.message || "unknown error"],
       });
