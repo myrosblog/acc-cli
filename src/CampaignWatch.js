@@ -26,28 +26,10 @@ const {
  */
 class CampaignWatch {
   /**
-   * Regular expression to extract config attributes from filename patterns
-   * @type {RegExp}
-   */
-  REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
-
-  /**
-   * XPath attribute prefix character
-   * @type {string}
-   */
-  CONFIG_XPATH_ATTR = "@";
-
-  /**
    * Default debounce time in milliseconds
    * @type {number}
    */
   DEFAULT_DEBOUNCE_TIME = 300;
-
-  /**
-   * Maximum retry attempts for push operations
-   * @type {number}
-   */
-  MAX_RETRY_ATTEMPTS = 3;
 
   /**
    * @type {AioLogger}
