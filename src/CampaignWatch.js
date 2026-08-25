@@ -19,7 +19,7 @@ const {
  * When a file is edited, its content is wrapped in CDATA and pushed to the server.
  *
  * At start: _getDecomposedSchemas > _buildWatchList > _storeSchemaForPattern
- * On file change: _onFileChange > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
+ * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
  * @class CampaignWatch
  * @classdesc Class for watching and syncing decomposed files to ACC instances
@@ -64,7 +64,12 @@ class CampaignWatch {
   /**
    * @type {string}
    */
-  currentFilename;
+  spinnerFilename;
+
+  /**
+   * @type {string}
+   */
+  spinnerMetadata;
 
   /**
    * Chokidar watcher instance
@@ -182,14 +187,12 @@ class CampaignWatch {
       .on("add", (filePath) => this._onFileChange(filePath))
       .on("change", (filePath) => this._onFileChange(filePath))
       .on("unlink", (filePath) => {
-        this.logger.verbose(
-          `Watch(${chalk.green(this.currentFilename)}): File deleted`,
-        );
+        this.logger.verbose(this._getSpinnerPrefix(0) + `File deleted`);
       })
       .on("error", (error) => {
         this.logger.error(`Watcher error: ${error.message}`);
         this.spinner.fail(
-          `Watch(${chalk.green(this.currentFilename)}): Error "${error.message}"`,
+          this._getSpinnerPrefix(0) + `Error "${error.message}"`,
         );
       });
 
@@ -367,10 +370,10 @@ class CampaignWatch {
    * @param {string} filePath - The path of the changed file
    */
   async _onFileChange(filePath) {
-    this.currentFilename = path.basename(filePath);
+    this.spinnerFilename = path.basename(filePath);
 
     this.spinner = this.createSpinner(
-      `Watch(${chalk.green(this.currentFilename)}): content changed`,
+      this._getSpinnerPrefix(0) + `content changed`,
     ).start();
 
     const absolutePath = path.isAbsolute(filePath)
@@ -431,6 +434,22 @@ class CampaignWatch {
   }
 
   /**
+   * @param {number} stage 0/1/2
+   * @returns {string} the prefix
+   */
+  _getSpinnerPrefix(stage) {
+    let prefix = `Watch(${chalk.green(this.spinnerFilename)})`;
+    if (stage > 0) {
+      prefix += `>Metadata(xpath: ${chalk.yellow(this.spinnerMetadata)})`;
+    }
+    if (stage > 1) {
+      prefix += `>Push`;
+    }
+    prefix += ": ";
+    return prefix;
+  }
+
+  /**
    * Rebuilds the complete entity XML from a decomposed file.
    * Loads the meta XML file, finds the target node by XPath, and inserts
    * the file content as CDATA.
@@ -444,7 +463,11 @@ class CampaignWatch {
   async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
     const { filename: metaFilename } = schemaConfig;
 
-    this.spinner.text = `Watch(${chalk.green(this.currentFilename)})>Metadata: Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
+    this.spinnerMetadata = xpath;
+
+    this.spinner.text =
+      this._getSpinnerPrefix(1) +
+      `Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
 
     // Generate the meta file path by replacing the decomposed file extension
     // with .meta.xml (or .xml if metaFilename ends with that)
@@ -553,7 +576,9 @@ class CampaignWatch {
   ) {
     const { schemaId } = schemaConfig;
 
-    this.spinner.text = `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Writing ${chalk.bgCyan(schemaId)} to the instance`;
+    this.spinner.text =
+      this._getSpinnerPrefix(2) +
+      `Writing ${chalk.bgCyan(schemaId)} to the instance`;
 
     try {
       const rootElement = metadataDocument.documentElement;
@@ -595,7 +620,8 @@ class CampaignWatch {
       await this.adapterWrite(payloadDocument);
 
       this.spinner.succeed(
-        `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Written ${chalk.bgCyan(schemaId)} to server`,
+        this._getSpinnerPrefix(2) +
+          `Written ${chalk.bgCyan(schemaId)} to server`,
       );
     } catch (err) {
       this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
@@ -621,6 +647,7 @@ class CampaignWatch {
     try {
       return await this.client.NLWS.xml.xtkSession.write(element);
     } catch (err) {
+      this.spinner.fail(this._getSpinnerPrefix(2) + `Error "${err.message}"`);
       throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED);
     }
   }
