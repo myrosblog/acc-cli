@@ -21,10 +21,10 @@ const {
  * At start: _getDecomposedSchemas > _buildWatchList > _storeSchemaForPattern
  * On file change: _onFileChange > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
- * @class CampaignWatcher
+ * @class CampaignWatch
  * @classdesc Class for watching and syncing decomposed files to ACC instances
  */
-class CampaignWatcher {
+class CampaignWatch {
   /**
    * Regular expression to extract config attributes from filename patterns
    * @type {RegExp}
@@ -104,7 +104,7 @@ class CampaignWatcher {
   fileContentHashes = new Map();
 
   /**
-   * Creates a new CampaignWatcher.
+   * Creates a new CampaignWatch.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
@@ -112,7 +112,7 @@ class CampaignWatcher {
    * @param {object} cliOptions - Command-line options including path
    * @param {Function} createSpinner - Ora spinner instance for displaying progress
    * @example
-   * const watcher = new CampaignWatcher(logger, client, accConfig, cliOptions, createSpinner);
+   * const watcher = new CampaignWatch(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -658,4 +658,4 @@ class CampaignWatcher {
   }
 }
 
-export default CampaignWatcher;
+export default CampaignWatch;

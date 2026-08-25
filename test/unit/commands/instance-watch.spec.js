@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import CampaignAuth from "../../../src/CampaignAuth.js";
 import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignWatcher from "../../../src/CampaignWatcher.js";
+import CampaignWatch from "../../../src/CampaignWatch.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
 
 describe("InstanceWatch", () => {
@@ -74,8 +74,8 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock CampaignWatcher
-    sinon.stub(CampaignWatcher.prototype, "startWatching").resolves();
+    // Mock CampaignWatch
+    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
 
     // Mock getInstance to return instance with client and config
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
@@ -87,7 +87,7 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(CampaignWatcher.prototype.startWatching);
+    sinon.assert.calledOnce(CampaignWatch.prototype.startWatching);
 
     sinon.restore();
   });
@@ -125,7 +125,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(CampaignWatcher.prototype, "startWatching").resolves();
+    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -135,10 +135,10 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(CampaignWatcher.prototype.startWatching);
+    sinon.assert.calledOnce(CampaignWatch.prototype.startWatching);
 
     // Check that custom debounce was passed
-    sinon.assert.calledWith(CampaignWatcher.prototype.startWatching, 500);
+    sinon.assert.calledWith(CampaignWatch.prototype.startWatching, 500);
 
     sinon.restore();
   });
@@ -167,9 +167,9 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock CampaignWatcher to throw error
+    // Mock CampaignWatch to throw error
     const error = new Error("No schemas with 'decompose' configuration found");
-    sinon.stub(CampaignWatcher.prototype, "startWatching").rejects(error);
+    sinon.stub(CampaignWatch.prototype, "startWatching").rejects(error);
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -230,7 +230,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(CampaignWatcher.prototype, "startWatching").resolves();
+    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,

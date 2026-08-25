@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // acc
-import CampaignWatcher from "../../src/CampaignWatcher.js";
+import CampaignWatch from "../../src/CampaignWatch.js";
 
 // Test configuration with decomposed schemas
 const testConfig = {
@@ -62,7 +62,7 @@ const testConfigNoDecompose = {
   ],
 };
 
-describe("CampaignWatcher", () => {
+describe("CampaignWatch", () => {
   let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
 
   beforeEach(() => {
@@ -88,7 +88,7 @@ describe("CampaignWatcher", () => {
     };
 
     // create watcher instance
-    watcher = new CampaignWatcher(
+    watcher = new CampaignWatch(
       mockLogger,
       mockClient,
       testConfig,
@@ -110,7 +110,7 @@ describe("CampaignWatcher", () => {
     });
 
     it("should use process.cwd() when no path provided", () => {
-      const watcherNoPath = new CampaignWatcher(
+      const watcherNoPath = new CampaignWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -133,7 +133,7 @@ describe("CampaignWatcher", () => {
     });
 
     it("should return empty array when no schemas have decompose", () => {
-      const watcherNoDecompose = new CampaignWatcher(
+      const watcherNoDecompose = new CampaignWatch(
         mockLogger,
         mockClient,
         testConfigNoDecompose,
@@ -155,7 +155,7 @@ describe("CampaignWatcher", () => {
           },
         ],
       };
-      const watcherEmpty = new CampaignWatcher(
+      const watcherEmpty = new CampaignWatch(
         mockLogger,
         mockClient,
         configWithEmptyDecompose,
@@ -398,7 +398,7 @@ describe("CampaignWatcher", () => {
     });
 
     it("should throw if no decomposed schemas found", async () => {
-      const watcherNoDecompose = new CampaignWatcher(
+      const watcherNoDecompose = new CampaignWatch(
         mockLogger,
         mockClient,
         testConfigNoDecompose,
@@ -546,7 +546,7 @@ describe("CampaignWatcher", () => {
       cliOptions = { path: tempDir };
 
       // Create watcher with temp dir
-      watcher = new CampaignWatcher(
+      watcher = new CampaignWatch(
         mockLogger,
         mockClient,
         testConfig,
