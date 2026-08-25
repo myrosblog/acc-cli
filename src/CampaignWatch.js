@@ -376,31 +376,39 @@ class CampaignWatch {
       this._getSpinnerPrefix(0) + `content changed`,
     ).start();
 
-    const absolutePath = path.isAbsolute(filePath)
-      ? filePath
-      : path.join(this.watchPath, filePath);
+    let match, absolutePath;
 
-    this.logger.verbose(`File changed: ${absolutePath}`);
+    try {
+      absolutePath = path.isAbsolute(filePath)
+        ? filePath
+        : path.join(this.watchPath, filePath);
 
-    // Find which schema this file belongs to
-    const match = this._findSchemaForFile(absolutePath);
-    if (!match) {
-      this.logger.verbose(
-        `  File ${absolutePath} not part of any decomposed schema, skipping.`,
-      );
+      this.logger.verbose(`File changed: ${absolutePath}`);
+
+      // Find which schema this file belongs to
+      match = this._findSchemaForFile(absolutePath);
+      if (!match) {
+        throw new Error(
+          `File ${absolutePath} not part of any decomposed schema, skipping`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(err);
       this.spinner.fail(
-        `Watch(${chalk.green(this.currentFilename)}): not part of any decomposed schema, skipping.`,
+        this._getSpinnerPrefix(0) +
+          `not part of any decomposed schema, skipping.`,
       );
       return;
     }
 
     const { schemaConfig, xpath } = match;
+    let currentContent, metadataDocument;
 
     try {
-      const currentContent = fs.readFileSync(absolutePath, "utf8");
+      currentContent = fs.readFileSync(absolutePath, "utf8");
 
       // Rebuild entity from file
-      const metadataDocument = await this._getMetadataDocument(
+      metadataDocument = await this._getMetadataDocument(
         schemaConfig,
         absolutePath,
         xpath,
@@ -408,13 +416,17 @@ class CampaignWatch {
       );
 
       if (!metadataDocument) {
-        this.logger.warn(`  Could not get metadata for ${absolutePath}`);
-        this.spinner.fail(
-          `Watch(${chalk.green(this.currentFilename)})>Metadata: could not get metadata, skipping.`,
-        );
-        return;
+        throw new Error(`Could not get metadata for ${absolutePath}`);
       }
+    } catch (err) {
+      this.logger.error(err);
+      this.spinner.fail(
+        this._getSpinnerPrefix(1) + `Exception: ${err.message}`,
+      );
+      return;
+    }
 
+    try {
       // Push to server
       await this._pushEntityToServer(
         xpath,
@@ -427,6 +439,9 @@ class CampaignWatch {
         `✅ ${chalk.green(path.basename(absolutePath))} pushed to ${chalk.cyan(schemaConfig.schemaId)}`,
       );
     } catch (err) {
+      this.spinner.fail(
+        this._getSpinnerPrefix(2) + `Exception: ${err.message}`,
+      );
       this.logger.error(
         `❌ Failed to push ${path.basename(absolutePath)}: ${err.message}`,
       );
@@ -459,6 +474,7 @@ class CampaignWatch {
    * @param {string} xpath - The xpath key from decompose config
    * @param {string} fileContent - Content of the changed file
    * @returns {Promise<Document|null>} The complete entity XML as string, or null if failed
+   * @throws {Error}
    */
   async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
     const { filename: metaFilename } = schemaConfig;
@@ -475,36 +491,19 @@ class CampaignWatch {
     const metaFilePath = this._getMetaFilePath(filePath, metaFilename);
 
     if (!fs.existsSync(metaFilePath)) {
-      this.logger.warn(
-        `  Meta file not found: ${metaFilePath}. Cannot rebuild entity.`,
-      );
       throw new INSTANCE_WATCH_META_FILE_MISSING({
         messageValues: [metaFilePath],
       });
     }
 
     // Load and parse the meta XML
-    let metaXmlContent;
-    try {
-      metaXmlContent = fs.readFileSync(metaFilePath, "utf8");
-    } catch (err) {
-      this.logger.error(`  Failed to read meta file: ${err.message}`);
-      return null;
-    }
-
-    let document;
-    try {
-      document = DomUtil.parse(metaXmlContent);
-    } catch (err) {
-      this.logger.error(`  Failed to parse meta XML: ${err.message}`);
-      return null;
-    }
+    const metaXmlContent = fs.readFileSync(metaFilePath, "utf8"); // @throws
+    const document = DomUtil.parse(metaXmlContent); // @throws
 
     // Find the root element (should be the entity)
     const rootElement = document.documentElement;
     if (!rootElement) {
-      this.logger.error(`  No root element found in meta XML`);
-      return null;
+      throw new Error(`No root element found in meta XML`);
     }
 
     return document;
@@ -626,9 +625,6 @@ class CampaignWatch {
     } catch (err) {
       this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
 
-      this.spinner.fail(
-        `Watch(${chalk.green(this.currentFilename)})>Metadata>Push: Failed to push ${chalk.bgCyan(schemaId)}`,
-      );
       throw new INSTANCE_WATCH_PUSH_FAILED({
         messageValues: [schemaId, err?.message || "unknown error"],
       });
