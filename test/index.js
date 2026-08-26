@@ -22,6 +22,7 @@ import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
 import "./unit/CampaignInstance.spec.js";
 import "./unit/CampaignMonitor.spec.js";
+import "./unit/CampaignWatch.spec.js";
 import "./unit/InstanceCommand.spec.js";
 import "./unit/adapters/PromptAdapter.spec.js";
 import "./unit/commands/auth-init.spec.js";
@@ -36,6 +37,7 @@ import "./unit/commands/instance-exec.spec.js";
 import "./unit/commands/instance-querydef.spec.js";
 import "./unit/commands/instance-soap.spec.js";
 import "./unit/commands/instance-info.spec.js";
+import "./unit/commands/instance-watch.spec.js";
 import "./unit/commands/monitor-test.spec.js";
 
 // integration tests
