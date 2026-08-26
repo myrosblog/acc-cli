@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Cancel superseded runs when new commits land on the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -32,12 +37,15 @@ jobs:
       - name: Run Mocha tests with coverage
         run: npm run coverage
 
+      # Only merged code reaches Codecov. The coverage badge in README.md
+      # reads the default branch, so pull request commits must not be sent.
       - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
-          # Never block a PR on Codecov itself: fork PRs and dependabot PRs
-          # cannot read CODECOV_TOKEN, so the upload is expected to fail there
+          # Never turn main red on a Codecov outage: the c8 thresholds in
+          # package.json are the gate, this upload only publishes the report
           fail_ci_if_error: false
           skip_validation: true # bypass GPG validation @since 2026-06-08
