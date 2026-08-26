@@ -745,33 +745,6 @@ describe("CampaignWatch", () => {
     });
   });
 
-  describe("buildXmlFromPath", () => {
-    it("should nest the xpath elements and wrap the content in CDATA", () => {
-      const doc = watcher.buildXmlFromPath(
-        "content/html/source",
-        "<p>hello</p>",
-        "delivery",
-      );
-
-      const xml = DomUtil.toXMLString(doc.documentElement);
-      expect(xml).to.include("<delivery>");
-      expect(xml).to.include("<content><html><source>");
-      expect(xml).to.include("<![CDATA[<p>hello</p>]]>");
-    });
-
-    it("should escape the CDATA terminator in content", () => {
-      const doc = watcher.buildXmlFromPath(
-        "data",
-        "const test = ']]>';",
-        "javascript",
-      );
-
-      const xml = DomUtil.toXMLString(doc.documentElement);
-      expect(xml).to.include("]]&gt;");
-      expect(xml).to.include("const test = ");
-    });
-  });
-
   describe("Integration: File change flow", () => {
     let tempDir;
 

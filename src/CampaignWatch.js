@@ -480,32 +480,6 @@ class CampaignWatch {
   }
 
   /**
-   * Builds an XML document the content as CDATA
-   *
-   * @param {string} xpath the xpath from acc.config.json
-   * @param {string} currentContent the content of the watched file
-   * @param {string} schemaName the schema name to use as the XML root tag
-   * @returns {Document} the XML built
-   * @see XPath.getElements()
-   */
-  buildXmlFromPath(xpath, currentContent, schemaName) {
-    const parts = xpath.split("/");
-    const doc = DomUtil.newDocument(schemaName); // docRoot must be the schemaName
-    let current = doc.documentElement;
-    const firstIndex = 0;
-    for (let i = firstIndex; i < parts.length; i++) {
-      const el = doc.createElement(parts[i]);
-      current.appendChild(el);
-      current = el;
-    }
-    // A CDATA section cannot carry its own terminator, and the DOM throws on it.
-    // Escaping keeps the payload valid for files that legitimately contain "]]>".
-    const safeContent = currentContent.replaceAll("]]>", "]]&gt;");
-    current.appendChild(doc.createCDATASection(safeContent));
-    return doc;
-  }
-
-  /**
    * Generates the meta file path from a decomposed file path.
    * Replaces the file extension with .meta.xml or adjusts based on the
    * schema's filename template.
@@ -573,7 +547,7 @@ class CampaignWatch {
       this.spinner.text = this._getSpinnerPrefix(2) + `Writing to the instance`;
 
       // build payload
-      const payloadDocument = this.buildXmlFromPath(
+      const payloadDocument = DomUtilAcc.buildXmlFromPath(
         xpath,
         currentContent,
         schema.name,

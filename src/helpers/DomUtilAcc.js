@@ -85,6 +85,34 @@ class DomUtilAcc extends DomUtil {
 
     return node;
   }
+
+  /**
+   * Builds an XML document with the content as CDATA, nesting one element per
+   * xpath chunk under a root named after the schema.
+   * This is the write-side mirror of findLastElement, which walks an existing
+   * document to decompose it.
+   *
+   * @param {string} xpath the xpath from acc.config.json
+   * @param {string} currentContent the content of the watched file
+   * @param {string} schemaName the schema name to use as the XML root tag
+   * @returns {Document} the XML built
+   */
+  static buildXmlFromPath(xpath, currentContent, schemaName) {
+    const parts = xpath.split("/");
+    const doc = DomUtil.newDocument(schemaName); // docRoot must be the schemaName
+    let current = doc.documentElement;
+    const firstIndex = 0;
+    for (let i = firstIndex; i < parts.length; i++) {
+      const el = doc.createElement(parts[i]);
+      current.appendChild(el);
+      current = el;
+    }
+    // A CDATA section cannot carry its own terminator, and the DOM throws on it.
+    // Escaping keeps the payload valid for files that legitimately contain "]]>".
+    const safeContent = currentContent.replaceAll("]]>", "]]&gt;");
+    current.appendChild(doc.createCDATASection(safeContent));
+    return doc;
+  }
 }
 
 export default DomUtilAcc;
