@@ -281,91 +281,6 @@ describe("CampaignWatch", () => {
     });
   });
 
-  describe("_hashContent", () => {
-    it("should return empty string for empty content", () => {
-      const hash = watcher._hashContent("");
-      expect(hash).to.equal("");
-    });
-
-    it("should return same hash for same content", () => {
-      const content = "const test = 'hello';";
-      const hash1 = watcher._hashContent(content);
-      const hash2 = watcher._hashContent(content);
-      expect(hash1).to.equal(hash2);
-    });
-
-    it("should return different hash for different content", () => {
-      const content1 = "const test = 'hello';";
-      const content2 = "const test = 'world';";
-      const hash1 = watcher._hashContent(content1);
-      const hash2 = watcher._hashContent(content2);
-      expect(hash1).to.not.equal(hash2);
-    });
-  });
-
-  describe("_findNodeBySimpleXPath", () => {
-    it("should find direct child node by name", () => {
-      const xml = DomUtil.parse("<root><child>content</child></root>");
-      const root = xml.documentElement;
-
-      const result = watcher._findNodeBySimpleXPath(root, "child");
-
-      expect(result).to.not.be.null;
-      expect(result.nodeName).to.equal("child");
-    });
-
-    it("should find nested node by path", () => {
-      const xml = DomUtil.parse(
-        "<root><level1><level2>content</level2></level1></root>",
-      );
-      const root = xml.documentElement;
-
-      const result = watcher._findNodeBySimpleXPath(root, "level1/level2");
-
-      expect(result).to.not.be.null;
-      expect(result.nodeName).to.equal("level2");
-    });
-
-    it("should return null for non-existent node", () => {
-      const xml = DomUtil.parse("<root><child>content</child></root>");
-      const root = xml.documentElement;
-
-      const result = watcher._findNodeBySimpleXPath(root, "nonexistent");
-
-      expect(result).to.be.null;
-    });
-
-    it("should handle nested path with content/html/source", () => {
-      const xml = DomUtil.parse(
-        "<delivery><content><html><source>test</source></html></content></delivery>",
-      );
-      const root = xml.documentElement;
-
-      const result = watcher._findNodeBySimpleXPath(
-        root,
-        "content/html/source",
-      );
-
-      expect(result).to.not.be.null;
-      expect(result.nodeName).to.equal("source");
-    });
-  });
-
-  describe("_toSchemaKey", () => {
-    it("should convert schema id to camelCase key", () => {
-      expect(watcher._toSchemaKey("nms:delivery")).to.equal("nmsDelivery");
-      expect(watcher._toSchemaKey("xtk:javascript")).to.equal("xtkJavascript");
-      expect(watcher._toSchemaKey("xtk:queryDef")).to.equal("xtkQueryDef");
-    });
-
-    it("should handle malformed schema id", () => {
-      expect(watcher._toSchemaKey("alreadyCamelCase")).to.equal(
-        "alreadyCamelCase",
-      );
-      expect(watcher._toSchemaKey("")).to.equal("");
-    });
-  });
-
   describe("startWatching and stopWatching", () => {
     let chokidarStub, mockChokidarWatcher;
 
@@ -423,7 +338,7 @@ describe("CampaignWatch", () => {
     });
   });
 
-  describe("_rebuildEntityFromFile", () => {
+  describe("_getMetadataDocument", () => {
     let tempDir;
 
     beforeEach(async () => {
@@ -455,7 +370,7 @@ describe("CampaignWatch", () => {
       const filePath = join(tempDir, "testScript.js");
       const fileContent = "const test = 'hello';";
 
-      const result = await watcher._rebuildEntityFromFile(
+      const result = await watcher._getMetadataDocument(
         schemaConfig,
         filePath,
         "data",
@@ -473,7 +388,7 @@ describe("CampaignWatch", () => {
       const filePath = join(tempDir, "testScript.js");
       const fileContent = "const test = ']]>';";
 
-      const result = await watcher._rebuildEntityFromFile(
+      const result = await watcher._getMetadataDocument(
         schemaConfig,
         filePath,
         "data",
@@ -491,7 +406,7 @@ describe("CampaignWatch", () => {
       const fileContent = "const test = 'hello';";
 
       try {
-        await watcher._rebuildEntityFromFile(
+        await watcher._getMetadataDocument(
           schemaConfig,
           filePath,
           "data",
@@ -515,7 +430,7 @@ describe("CampaignWatch", () => {
       const fileContent = "const test = 'hello';";
 
       // Should not throw, just return the original XML
-      const result = await watcher._rebuildEntityFromFile(
+      const result = await watcher._getMetadataDocument(
         schemaConfig,
         filePath,
         "nonexistent",
