@@ -57,7 +57,8 @@ export default [
       "jsdoc/tag-lines": ["warn", "never", { startLines: null }],
       // Types that exist but that a JS-only project cannot import:
       // - aio-lib-core-logging: AioLogger
-      // - acc-js-sdk: Client, ConnectionParameters, CampaignException
+      // - acc-js-sdk: Client, ConnectionParameters, CampaignException,
+      //   XtkSchema, XtkSchemaKey
       // - @xmldom: Element, Document
       // - Node: DOM, NodeJS.ReadStream
       "jsdoc/no-undefined-types": [
@@ -74,6 +75,8 @@ export default [
             "Element",
             "NodeJS.ReadStream",
             "PromptAdapter",
+            "XtkSchema",
+            "XtkSchemaKey",
           ],
         },
       ],
