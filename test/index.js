@@ -37,6 +37,7 @@ import "./unit/commands/instance-exec.spec.js";
 import "./unit/commands/instance-querydef.spec.js";
 import "./unit/commands/instance-soap.spec.js";
 import "./unit/commands/instance-info.spec.js";
+import "./unit/commands/instance-watch.spec.js";
 import "./unit/commands/monitor-test.spec.js";
 
 // integration tests

@@ -4,8 +4,11 @@ import CampaignAuth from "../../../src/CampaignAuth.js";
 import CampaignConfig from "../../../src/CampaignConfig.js";
 import CampaignWatch from "../../../src/CampaignWatch.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
+import { makeLogger } from "../../helpers.js";
 
 describe("InstanceWatch", () => {
+  afterEach(() => sinon.restore());
+
   it("should have correct description", () => {
     expect(InstanceWatch.description).to.include("Watch decomposed files");
     expect(InstanceWatch.description).to.include("acc.config.json");
@@ -26,7 +29,9 @@ describe("InstanceWatch", () => {
 
   it("should have debounce flag", () => {
     expect(InstanceWatch.flags.debounce).to.exist;
-    expect(InstanceWatch.flags.debounce.description).to.include("debounce");
+    expect(InstanceWatch.flags.debounce.description).to.include(
+      "Debounce time in milliseconds",
+    );
     expect(InstanceWatch.flags.debounce.default).to.equal(300);
   });
 
@@ -88,8 +93,6 @@ describe("InstanceWatch", () => {
 
     expect(result).to.be.undefined;
     sinon.assert.calledOnce(CampaignWatch.prototype.startWatching);
-
-    sinon.restore();
   });
 
   it("should run with custom debounce value", async () => {
@@ -139,8 +142,6 @@ describe("InstanceWatch", () => {
 
     // Check that custom debounce was passed
     sinon.assert.calledWith(CampaignWatch.prototype.startWatching, 500);
-
-    sinon.restore();
   });
 
   it("should exit with error when startWatching throws", async () => {
@@ -176,11 +177,9 @@ describe("InstanceWatch", () => {
       accConfig: configInstance,
     });
 
-    // Mock logger.error
-    const loggerErrorStub = sinon.stub();
-    sinon.stub(InstanceWatch.prototype, "logger").get(() => ({
-      error: loggerErrorStub,
-    }));
+    // Mock the logger
+    const logger = makeLogger();
+    sinon.stub(InstanceWatch.prototype, "logger").get(() => logger);
 
     // Mock process.exit
     const processExitStub = sinon.stub(process, "exit");
@@ -191,9 +190,8 @@ describe("InstanceWatch", () => {
     } catch {
       // May or may not throw
     } finally {
-      expect(loggerErrorStub.calledOnce).to.be.true;
+      expect(logger.error).to.have.been.calledOnceWith(error.message);
       expect(processExitStub.calledWith(1)).to.be.true;
-      sinon.restore();
     }
   });
 
@@ -245,7 +243,5 @@ describe("InstanceWatch", () => {
 
     // Check that SIGINT handler was set up
     expect(onStub.calledWith("SIGINT")).to.be.true;
-
-    sinon.restore();
   });
 });
