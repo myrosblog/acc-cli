@@ -590,7 +590,7 @@ describe("CampaignWatch", () => {
   describe("_getWriteKey", () => {
     const parseMeta = (xml) => DomUtil.parse(xml).documentElement;
 
-    it("should reconcile on the internal key when it is valued", () => {
+    it("should reconcile on the internal key over the external one", () => {
       const schema = makeSchema(javascriptSchemaXml);
       const rootElement = parseMeta(
         `<javascript id="456" name="myScript" namespace="cus"/>`,
@@ -605,8 +605,14 @@ describe("CampaignWatch", () => {
       ]);
     });
 
-    it("should fall back to the external key when the id is absent", () => {
-      const schema = makeSchema(javascriptSchemaXml);
+    it("should use the external key when the schema has no internal one", () => {
+      const schema = makeSchema(`<schema namespace="xtk" name="javascript">
+        <element name="javascript">
+          <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
+          <attribute name="name" type="string"/>
+          <attribute name="namespace" type="string"/>
+        </element>
+      </schema>`);
       const rootElement = parseMeta(
         `<javascript name="myScript" namespace="cus"/>`,
       );
@@ -615,20 +621,32 @@ describe("CampaignWatch", () => {
 
       expect(key.name).to.equal("name");
       expect(key.isInternal).to.be.false;
+      // composite fields, in keyfield order
       expect(keyValues.map(({ value }) => value)).to.deep.equal([
         "myScript",
         "cus",
       ]);
     });
 
-    it("should fall back to the external key when the id is empty", () => {
+    it("should throw when the key attribute is absent", () => {
+      const schema = makeSchema(javascriptSchemaXml);
+      const rootElement = parseMeta(
+        `<javascript name="myScript" namespace="cus"/>`,
+      );
+
+      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
+        /no value for the key "id"/,
+      );
+    });
+
+    it("should throw when the key attribute is empty", () => {
       const schema = makeSchema(javascriptSchemaXml);
       const rootElement = parseMeta(
         `<javascript id="" name="myScript" namespace="cus"/>`,
       );
 
-      expect(watcher._getWriteKey(schema, rootElement).key.name).to.equal(
-        "name",
+      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
+        /no value for the key "id"/,
       );
     });
 
@@ -660,11 +678,11 @@ describe("CampaignWatch", () => {
       const rootElement = parseMeta(`<thing><label>hello</label></thing>`);
 
       expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /No usable key/,
+        /no value for the key "byElement"/,
       );
     });
 
-    it("should throw when no key of the schema is valued", () => {
+    it("should name the schema and the key it could not read", () => {
       const schema = makeSchema(javascriptSchemaXml);
       const rootElement = parseMeta(`<javascript label="orphan"/>`);
 
@@ -674,7 +692,7 @@ describe("CampaignWatch", () => {
       } catch (err) {
         expect(err.code).to.equal("INSTANCE_WATCH_NO_WRITE_KEY");
         expect(err.message).to.include("xtk:javascript");
-        expect(err.message).to.include("id, name");
+        expect(err.message).to.include('"id"');
       }
     });
 
@@ -685,7 +703,7 @@ describe("CampaignWatch", () => {
       const rootElement = parseMeta(`<keyless id="1"/>`);
 
       expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /none defined/,
+        /\(none defined\)/,
       );
     });
   });
@@ -819,20 +837,15 @@ describe("CampaignWatch", () => {
       expect(xml).to.not.include("namespace=");
     });
 
-    it("should push the external key when the meta file has no id", async () => {
-      const scriptDir = join(
-        tempDir,
-        "Admin",
-        "Config",
-        "JavaScript codes",
-        "test",
-      );
-      await fs.writeFile(
-        join(scriptDir, "integrationTest.meta.xml"),
-        `<?xml version="1.0" encoding="UTF-8"?>
-        <javascript name="integrationTest" namespace="test">
-          <data></data>
-        </javascript>`,
+    it("should push a composite key as _key and both attributes", async () => {
+      mockClient.application.getSchema.resolves(
+        makeSchema(`<schema namespace="xtk" name="javascript">
+          <element name="javascript">
+            <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
+            <attribute name="name" type="string"/>
+            <attribute name="namespace" type="string"/>
+          </element>
+        </schema>`),
       );
 
       await watcher._onFileChange(
@@ -845,6 +858,28 @@ describe("CampaignWatch", () => {
       expect(xml).to.include('name="integrationTest"');
       expect(xml).to.include('namespace="test"');
       expect(xml).to.not.include("id=");
+    });
+
+    it("should report a meta file that cannot supply the key", async () => {
+      await fs.writeFile(
+        join(
+          tempDir,
+          "Admin/Config/JavaScript codes/test/integrationTest.meta.xml",
+        ),
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <javascript name="integrationTest" namespace="test">
+          <data></data>
+        </javascript>`,
+      );
+
+      await watcher._onFileChange(
+        "Admin/Config/JavaScript codes/test/integrationTest.js",
+      );
+
+      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
+      expect(mockLogger.error).to.have.been.calledWithMatch(
+        /no value for the key "id"/,
+      );
     });
 
     it("should report an unknown schema", async () => {

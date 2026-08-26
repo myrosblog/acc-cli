@@ -199,7 +199,7 @@ E(
 );
 E(
   "INSTANCE_WATCH_NO_WRITE_KEY",
-  "No usable key found to update %s. The meta file has no value for any key of the schema (%s).",
+  "Cannot update %s: the meta file has no value for the key %s.",
 );
 E(
   "INSTANCE_WATCH_PUSH_FAILED",

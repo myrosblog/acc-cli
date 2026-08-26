@@ -606,34 +606,26 @@ class CampaignWatch {
 
   /**
    * Picks the key to reconcile the entity on, and reads its values from the meta
-   * document. Keys are tried internal first, as the SDK does, falling through to
-   * the next one when the meta file has no value for every field of a key.
+   * document. The key is the schema's first one, internal before external, as
+   * the SDK itself resolves it.
    *
    * @param {XtkSchema} schema - The schema of the entity, from the SDK
    * @param {Element} rootElement - Root element of the meta document
    * @returns {{key: XtkSchemaKey, keyValues: Array<{xpath: string, attributeName: string, value: string}>}} the key and its values
-   * @throws {INSTANCE_WATCH_NO_WRITE_KEY} If no key of the schema is fully valued
+   * @throws {INSTANCE_WATCH_NO_WRITE_KEY} If the meta file does not supply the key
    * @see https://opensource.adobe.com/acc-js-sdk/application.html
    */
   _getWriteKey(schema, rootElement) {
-    const candidateKeys = [
-      schema.root.firstInternalKeyDef(),
-      schema.root.firstExternalKeyDef(),
-    ].filter(Boolean);
+    const key = schema.root.firstKeyDef(); // internal key first, external otherwise
+    const keyValues = key && this._getKeyValues(key, rootElement);
 
-    for (const key of candidateKeys) {
-      const keyValues = this._getKeyValues(key, rootElement);
-      if (keyValues) {
-        return { key, keyValues };
-      }
+    if (!keyValues) {
+      throw new INSTANCE_WATCH_NO_WRITE_KEY({
+        messageValues: [schema.id, key ? `"${key.name}"` : "(none defined)"],
+      });
     }
 
-    throw new INSTANCE_WATCH_NO_WRITE_KEY({
-      messageValues: [
-        schema.id,
-        candidateKeys.map((key) => key.name).join(", ") || "none defined",
-      ],
-    });
+    return { key, keyValues };
   }
 
   /**
@@ -681,6 +673,8 @@ class CampaignWatch {
   /**
    * Formats key values for display. The SDK has no equivalent: its toString()
    * dumps the schema tree and ignores keys.
+   *
+   * To explore: sdk.XtkCaster.asString => "xtk:sql|4521" "xtk:javascript|New|cus"
    *
    * @param {Array<{attributeName: string, value: string}>} keyValues - The key values
    * @returns {string} "DM123" for a single field, "cus:New" for name + namespace, "a, b" otherwise
