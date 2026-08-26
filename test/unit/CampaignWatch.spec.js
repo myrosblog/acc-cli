@@ -338,21 +338,21 @@ describe("CampaignWatch", () => {
     it("should generate meta file path from decomposed file path", () => {
       const metaFilename =
         "/Admin/Config/JavaScript codes/{@namespace}/{@name}.meta.xml";
-      const decomposedFilePath = "/some/path/cus/myScript.js";
+      const decomposedFilePath = join("some", "path", "cus", "myScript.js");
 
       const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
 
       // Should replace .js with .meta.xml in the same directory
-      expect(result).to.equal("/some/path/cus/myScript.meta.xml");
+      expect(result).to.equal(join("some", "path", "cus", "myScript.meta.xml"));
     });
 
     it("should handle files with multiple dots in name", () => {
       const metaFilename = "/path/to/{@name}.meta.xml";
-      const decomposedFilePath = "/some/path/my.file.js";
+      const decomposedFilePath = join("some", "path", "my.file.js");
 
       const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
 
-      expect(result).to.equal("/some/path/my.file.meta.xml");
+      expect(result).to.equal(join("some", "path", "my.file.meta.xml"));
     });
   });
 
