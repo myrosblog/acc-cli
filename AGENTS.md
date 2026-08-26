@@ -147,7 +147,7 @@ Unit/integration tests must never touch the network or the filesystem, inject st
 
 ### Commits & pull requests
 
-- Use **Conventional Commits** keywords whitelist: `feat:` `fix:` `test:` `docs:` `chore:` `refactor:`.
+- Use **Conventional Commits** keywords whitelist: `feat:` `fix:` `test:` `docs:` `chore:` `refactor:` `build:` `style:`.
 - All changes land through a GitHub **pull request** (no direct push to `main`).
 
 ## Knowledge
