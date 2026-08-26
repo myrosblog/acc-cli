@@ -6,11 +6,15 @@ import { minimatch } from "minimatch";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
+import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
+import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
   INSTANCE_WATCH_FILE_NOT_IN_SCOPE,
   INSTANCE_WATCH_META_FILE_MISSING,
+  INSTANCE_WATCH_SCHEMA_NOT_FOUND,
+  INSTANCE_WATCH_NO_WRITE_KEY,
   INSTANCE_WATCH_PUSH_FAILED,
   INSTANCE_WATCH_ALREADY_RUNNING,
 } = codes;
@@ -71,6 +75,12 @@ class CampaignWatch {
    * @type {string}
    */
   spinnerMetadata;
+
+  /**
+   * Formatted reconciliation keys of the entity being pushed, or undefined until resolved
+   * @type {string | undefined}
+   */
+  spinnerKeys;
 
   /**
    * Chokidar watcher instance
@@ -328,6 +338,7 @@ class CampaignWatch {
    */
   async _onFileChange(filePath) {
     this.spinnerFilename = path.basename(filePath);
+    this.spinnerKeys = undefined; // resolved later, from the schema of this file
 
     this.spinner = this.createSpinner(
       this._getSpinnerPrefix(0) + `content changed`,
@@ -388,6 +399,10 @@ class CampaignWatch {
         schemaConfig,
       );
 
+      this.spinner.succeed(
+        this._getSpinnerPrefix(2) +
+          `Write successful to ${chalk.cyan(schemaConfig.schemaId)}`,
+      );
       this.logger.verbose(
         `✅ ${chalk.green(path.basename(absolutePath))} pushed to ${chalk.cyan(schemaConfig.schemaId)}`,
       );
@@ -411,7 +426,9 @@ class CampaignWatch {
       prefix += `>Metadata(xpath: ${chalk.yellow(this.spinnerMetadata)})`;
     }
     if (stage > 1) {
-      prefix += `>Push`;
+      prefix += this.spinnerKeys
+        ? `>Push(${chalk.blue(this.spinnerKeys)})`
+        : `>Push`;
     }
     prefix += ": ";
     return prefix;
@@ -531,10 +548,6 @@ class CampaignWatch {
   ) {
     const { schemaId } = schemaConfig;
 
-    this.spinner.text =
-      this._getSpinnerPrefix(2) +
-      `Writing ${chalk.bgCyan(schemaId)} to the instance`;
-
     try {
       const rootElement = metadataDocument.documentElement;
 
@@ -542,12 +555,23 @@ class CampaignWatch {
         throw new Error("No root element in entity XML");
       }
 
-      const id = rootElement.getAttribute("id");
-      const name = rootElement.getAttribute("name");
-      const namespace = rootElement.getAttribute("namespace");
-      const internalName = rootElement.getAttribute("internalName");
-
       const schema = await this.client.application.getSchema(schemaId);
+      if (!schema) {
+        throw new INSTANCE_WATCH_SCHEMA_NOT_FOUND({
+          messageValues: [schemaId],
+        });
+      }
+
+      // The reconciliation key comes from the schema, not from a guess
+      const { key, keyValues } = this._getWriteKey(schema, rootElement);
+      this.spinnerKeys = this._formatKeyValues(keyValues);
+
+      this.logger.verbose(
+        `Reconciling ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
+      );
+
+      this.spinner.text = this._getSpinnerPrefix(2) + `Writing to the instance`;
+
       // build payload
       const payloadDocument = this.buildXmlFromPath(
         xpath,
@@ -557,34 +581,128 @@ class CampaignWatch {
       const payload = payloadDocument.documentElement;
       payload.setAttribute("xtkschema", schemaId);
       payload.setAttribute("_operation", "update");
-      // Add keys
-      // TODO: keys from sdk getSchema
-      if (id) {
-        payload.setAttribute("id", id);
-      }
-      if (name) {
-        payload.setAttribute("name", name);
-      }
-      if (namespace) {
-        payload.setAttribute("namespace", namespace);
-      }
-      if (internalName) {
-        payload.setAttribute("internalName", internalName);
+      // Declare the key so the server reconciles on it rather than on whichever
+      // attribute it finds first
+      payload.setAttribute(
+        "_key",
+        keyValues.map(({ xpath: keyXpath }) => keyXpath).join(","),
+      );
+      for (const { attributeName, value } of keyValues) {
+        payload.setAttribute(attributeName, value);
       }
 
       await this.adapterWrite(payloadDocument);
-
-      this.spinner.succeed(
-        this._getSpinnerPrefix(2) +
-          `Write to ${chalk.bgCyan(schemaId)} successful`,
-      );
     } catch (err) {
-      this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
+      this.logger.verbose(`  Push failed: ${err.message || String(err)}`);
 
-      throw new INSTANCE_WATCH_PUSH_FAILED({
-        messageValues: [schemaId, err?.message || "unknown error"],
-      });
+      // adapterWrite already reports SDK failures as AccErrors: re-wrapping one
+      // would nest the message inside itself
+      if (err?.sdk === "acc") {
+        throw err;
+      }
+      throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED, { schemaId });
     }
+  }
+
+  /**
+   * Picks the key to reconcile the entity on, and reads its values from the meta
+   * document. Keys are tried internal first, as the SDK does, falling through to
+   * the next one when the meta file has no value for every field of a key.
+   *
+   * @param {XtkSchema} schema - The schema of the entity, from the SDK
+   * @param {Element} rootElement - Root element of the meta document
+   * @returns {{key: XtkSchemaKey, keyValues: Array<{xpath: string, attributeName: string, value: string}>}} the key and its values
+   * @throws {INSTANCE_WATCH_NO_WRITE_KEY} If no key of the schema is fully valued
+   * @see https://opensource.adobe.com/acc-js-sdk/application.html
+   */
+  _getWriteKey(schema, rootElement) {
+    const candidateKeys = [
+      schema.root.firstInternalKeyDef(),
+      schema.root.firstExternalKeyDef(),
+    ].filter(Boolean);
+
+    for (const key of candidateKeys) {
+      const keyValues = this._getKeyValues(key, rootElement);
+      if (keyValues) {
+        return { key, keyValues };
+      }
+    }
+
+    throw new INSTANCE_WATCH_NO_WRITE_KEY({
+      messageValues: [
+        schema.id,
+        candidateKeys.map((key) => key.name).join(", ") || "none defined",
+      ],
+    });
+  }
+
+  /**
+   * Reads the values of every field of a key from the meta document.
+   *
+   * @param {XtkSchemaKey} key - The key definition, from the SDK schema
+   * @param {Element} rootElement - Root element of the meta document
+   * @returns {Array<{xpath: string, attributeName: string, value: string}>|null} the values, or null if the key cannot be used
+   */
+  _getKeyValues(key, rootElement) {
+    const keyValues = [];
+
+    for (const field of key.fields) {
+      // nodePath is absolute ("/@name"), the keyfield xpath is relative to the root
+      const keyXpath = field.nodePath.replace(/^\//, "");
+      const xpathElements = new XPath(keyXpath).getElements();
+      const lastXpathElement = xpathElements[xpathElements.length - 1];
+
+      // A key on an element rather than an attribute cannot be written as an
+      // attribute of the payload, so the whole key is unusable
+      if (
+        !lastXpathElement ||
+        !DomUtilAcc.xpathElementIsAttribute(lastXpathElement)
+      ) {
+        return null;
+      }
+
+      const lastNode = DomUtilAcc.findLastElement(rootElement, keyXpath);
+      if (!lastNode) {
+        return null;
+      }
+
+      const attributeName = DomUtilAcc.getXpathAttributeName(lastXpathElement);
+      const value = lastNode.getAttribute(attributeName);
+      if (!value) {
+        return null;
+      }
+
+      keyValues.push({ xpath: keyXpath, attributeName, value });
+    }
+
+    return keyValues.length > 0 ? keyValues : null;
+  }
+
+  /**
+   * Formats key values for display. The SDK has no equivalent: its toString()
+   * dumps the schema tree and ignores keys.
+   *
+   * @param {Array<{attributeName: string, value: string}>} keyValues - The key values
+   * @returns {string} "DM123" for a single field, "cus:New" for name + namespace, "a, b" otherwise
+   */
+  _formatKeyValues(keyValues) {
+    const values = keyValues.map(({ value }) => value);
+
+    if (keyValues.length === 1) {
+      return values[0];
+    }
+
+    // "namespace:name" is how Adobe Campaign names these entities everywhere else
+    if (keyValues.length === 2) {
+      const byName = Object.fromEntries(
+        keyValues.map(({ attributeName, value }) => [attributeName, value]),
+      );
+      if (byName.name && byName.namespace) {
+        return `${byName.namespace}:${byName.name}`;
+      }
+    }
+
+    return values.join(", ");
   }
 
   /**
@@ -599,7 +717,7 @@ class CampaignWatch {
     try {
       return await this.client.NLWS.xml.xtkSession.write(element);
     } catch (err) {
-      this.spinner.fail(this._getSpinnerPrefix(2) + `Error "${err.message}"`);
+      // Reporting is left to the caller, which owns the spinner
       throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED);
     }
   }

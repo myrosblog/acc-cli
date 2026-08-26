@@ -8,7 +8,7 @@ import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import { makeLogger, makeSpinner, makeClient } from "../helpers.js";
+import { makeLogger, makeSpinner, makeClient, makeSchema } from "../helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,6 +61,18 @@ const testConfigNoDecompose = {
     },
   ],
 };
+
+// An entity schema as the SDK returns it: an internal key on @id, an external
+// key on @name + @namespace
+const javascriptSchemaXml = `<schema namespace="xtk" name="javascript">
+  <element name="javascript">
+    <key name="id" internal="true"><keyfield xpath="@id"/></key>
+    <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
+    <attribute name="id" type="long"/>
+    <attribute name="name" type="string"/>
+    <attribute name="namespace" type="string"/>
+  </element>
+</schema>`;
 
 describe("CampaignWatch", () => {
   let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
@@ -575,6 +587,146 @@ describe("CampaignWatch", () => {
     });
   });
 
+  describe("_getWriteKey", () => {
+    const parseMeta = (xml) => DomUtil.parse(xml).documentElement;
+
+    it("should reconcile on the internal key when it is valued", () => {
+      const schema = makeSchema(javascriptSchemaXml);
+      const rootElement = parseMeta(
+        `<javascript id="456" name="myScript" namespace="cus"/>`,
+      );
+
+      const { key, keyValues } = watcher._getWriteKey(schema, rootElement);
+
+      expect(key.name).to.equal("id");
+      expect(key.isInternal).to.be.true;
+      expect(keyValues).to.deep.equal([
+        { xpath: "@id", attributeName: "id", value: "456" },
+      ]);
+    });
+
+    it("should fall back to the external key when the id is absent", () => {
+      const schema = makeSchema(javascriptSchemaXml);
+      const rootElement = parseMeta(
+        `<javascript name="myScript" namespace="cus"/>`,
+      );
+
+      const { key, keyValues } = watcher._getWriteKey(schema, rootElement);
+
+      expect(key.name).to.equal("name");
+      expect(key.isInternal).to.be.false;
+      expect(keyValues.map(({ value }) => value)).to.deep.equal([
+        "myScript",
+        "cus",
+      ]);
+    });
+
+    it("should fall back to the external key when the id is empty", () => {
+      const schema = makeSchema(javascriptSchemaXml);
+      const rootElement = parseMeta(
+        `<javascript id="" name="myScript" namespace="cus"/>`,
+      );
+
+      expect(watcher._getWriteKey(schema, rootElement).key.name).to.equal(
+        "name",
+      );
+    });
+
+    it("should resolve a keyfield nested under an element", () => {
+      const schema = makeSchema(`<schema namespace="nms" name="delivery">
+        <element name="delivery">
+          <key name="content"><keyfield xpath="content/@code"/></key>
+          <element name="content"><attribute name="code" type="string"/></element>
+        </element>
+      </schema>`);
+      const rootElement = parseMeta(
+        `<delivery><content code="DM123"/></delivery>`,
+      );
+
+      const { keyValues } = watcher._getWriteKey(schema, rootElement);
+
+      expect(keyValues).to.deep.equal([
+        { xpath: "content/@code", attributeName: "code", value: "DM123" },
+      ]);
+    });
+
+    it("should reject a key whose keyfield is an element", () => {
+      const schema = makeSchema(`<schema namespace="cus" name="thing">
+        <element name="thing">
+          <key name="byElement"><keyfield xpath="label"/></key>
+          <element name="label" type="string"/>
+        </element>
+      </schema>`);
+      const rootElement = parseMeta(`<thing><label>hello</label></thing>`);
+
+      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
+        /No usable key/,
+      );
+    });
+
+    it("should throw when no key of the schema is valued", () => {
+      const schema = makeSchema(javascriptSchemaXml);
+      const rootElement = parseMeta(`<javascript label="orphan"/>`);
+
+      try {
+        watcher._getWriteKey(schema, rootElement);
+        expect.fail("Should have thrown");
+      } catch (err) {
+        expect(err.code).to.equal("INSTANCE_WATCH_NO_WRITE_KEY");
+        expect(err.message).to.include("xtk:javascript");
+        expect(err.message).to.include("id, name");
+      }
+    });
+
+    it("should throw when the schema defines no key at all", () => {
+      const schema = makeSchema(`<schema namespace="cus" name="keyless">
+        <element name="keyless"><attribute name="id" type="long"/></element>
+      </schema>`);
+      const rootElement = parseMeta(`<keyless id="1"/>`);
+
+      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
+        /none defined/,
+      );
+    });
+  });
+
+  describe("_formatKeyValues", () => {
+    it("should render a single field as its bare value", () => {
+      const formatted = watcher._formatKeyValues([
+        { attributeName: "internalName", value: "DM123" },
+      ]);
+
+      expect(formatted).to.equal("DM123");
+    });
+
+    it("should render name and namespace as namespace:name", () => {
+      const formatted = watcher._formatKeyValues([
+        { attributeName: "name", value: "New" },
+        { attributeName: "namespace", value: "cus" },
+      ]);
+
+      expect(formatted).to.equal("cus:New");
+    });
+
+    it("should render namespace:name whatever the keyfield order", () => {
+      const formatted = watcher._formatKeyValues([
+        { attributeName: "namespace", value: "cus" },
+        { attributeName: "name", value: "New" },
+      ]);
+
+      expect(formatted).to.equal("cus:New");
+    });
+
+    it("should join any other composite key with a comma", () => {
+      const formatted = watcher._formatKeyValues([
+        { attributeName: "internalName", value: "DM123" },
+        { attributeName: "messageType", value: "email" },
+      ]);
+
+      expect(formatted).to.equal("DM123, email");
+    });
+  });
+
   describe("buildXmlFromPath", () => {
     it("should nest the xpath elements and wrap the content in CDATA", () => {
       const doc = watcher.buildXmlFromPath(
@@ -627,7 +779,7 @@ describe("CampaignWatch", () => {
       await fs.writeFile(join(scriptDir, "integrationTest.js"), "// initial");
 
       mockClient.application = {
-        getSchema: sinon.stub().resolves({ name: "javascript" }),
+        getSchema: sinon.stub().resolves(makeSchema(javascriptSchemaXml)),
       };
 
       // Create watcher rooted on the temp dir
@@ -660,8 +812,52 @@ describe("CampaignWatch", () => {
       const xml = DomUtil.toXMLString(payload.documentElement);
       expect(xml).to.include('xtkschema="xtk:javascript"');
       expect(xml).to.include('_operation="update"');
-      expect(xml).to.include('id="456"');
       expect(xml).to.include("// updated content");
+      // Reconciled on the internal key only
+      expect(xml).to.include('_key="@id"');
+      expect(xml).to.include('id="456"');
+      expect(xml).to.not.include("namespace=");
+    });
+
+    it("should push the external key when the meta file has no id", async () => {
+      const scriptDir = join(
+        tempDir,
+        "Admin",
+        "Config",
+        "JavaScript codes",
+        "test",
+      );
+      await fs.writeFile(
+        join(scriptDir, "integrationTest.meta.xml"),
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <javascript name="integrationTest" namespace="test">
+          <data></data>
+        </javascript>`,
+      );
+
+      await watcher._onFileChange(
+        "Admin/Config/JavaScript codes/test/integrationTest.js",
+      );
+
+      const payload = mockClient.NLWS.xml.xtkSession.write.firstCall.args[0];
+      const xml = DomUtil.toXMLString(payload.documentElement);
+      expect(xml).to.include('_key="@name,@namespace"');
+      expect(xml).to.include('name="integrationTest"');
+      expect(xml).to.include('namespace="test"');
+      expect(xml).to.not.include("id=");
+    });
+
+    it("should report an unknown schema", async () => {
+      mockClient.application.getSchema.resolves(null);
+
+      await watcher._onFileChange(
+        "Admin/Config/JavaScript codes/test/integrationTest.js",
+      );
+
+      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
+      expect(mockLogger.error).to.have.been.calledWithMatch(
+        /Schema xtk:javascript not found/,
+      );
     });
 
     it("should stop before pushing when the meta file is missing", async () => {

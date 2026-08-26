@@ -194,8 +194,16 @@ E(
   "Meta XML file not found for entity. Cannot rebuild without the meta file: %s",
 );
 E(
+  "INSTANCE_WATCH_SCHEMA_NOT_FOUND",
+  "Schema %s not found on the instance. Check the schemaId in acc.config.json.",
+);
+E(
+  "INSTANCE_WATCH_NO_WRITE_KEY",
+  "No usable key found to update %s. The meta file has no value for any key of the schema (%s).",
+);
+E(
   "INSTANCE_WATCH_PUSH_FAILED",
-  "Failed to push entity to server after 3 attempts. Cause: %s",
+  "Failed to push the entity to the server. Cause: %s",
 );
 E(
   "INSTANCE_WATCH_ALREADY_RUNNING",
