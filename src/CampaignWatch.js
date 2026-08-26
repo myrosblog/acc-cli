@@ -2,27 +2,28 @@
 import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
+import { minimatch } from "minimatch";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
+  INSTANCE_WATCH_FILE_NOT_IN_SCOPE,
   INSTANCE_WATCH_META_FILE_MISSING,
   INSTANCE_WATCH_PUSH_FAILED,
   INSTANCE_WATCH_ALREADY_RUNNING,
 } = codes;
 
 /**
- * Campaign Watcher class for watching decomposed files and pushing changes to ACC.
+ * Campaign Watcher class for watching decomposed files and pushing changes to AC.
  * Only files described by the "decompose" key in acc.config.json are watched.
  * When a file is edited, its content is wrapped in CDATA and pushed to the server.
  *
- * At start: _getDecomposedSchemas > _buildWatchList > _storeSchemaForPattern
+ * At start: _getDecomposedSchemas > _buildWatchList
  * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
  * @class CampaignWatch
- * @classdesc Class for watching and syncing decomposed files to ACC instances
  */
 class CampaignWatch {
   /**
@@ -78,10 +79,11 @@ class CampaignWatch {
   chokidarWatcher = null;
 
   /**
-   * Map of watched file paths to their schema config
-   * @type {Map<string, object>}
+   * Watch targets derived from the `decompose` config, one entry per glob pattern.
+   * Patterns are relative to `watchPath` and use "/" separators.
+   * @type {Array<{pattern: string, schemaConfig: object, xpath: string}>}
    */
-  watchedFiles = new Map();
+  watchTargets = [];
 
   /**
    * Whether the watcher is currently running
@@ -93,7 +95,7 @@ class CampaignWatch {
    * Creates a new CampaignWatch.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
-   * @param {Client} client - Authenticated ACC client
+   * @param {Client} client - Authenticated SDK client
    * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
    * @param {object} cliOptions - Command-line options including path
    * @param {Function} createSpinner - Ora spinner instance for displaying progress
@@ -113,7 +115,7 @@ class CampaignWatch {
   }
 
   /**
-   * Starts watching decomposed files for changes and pushing them to the server.
+   * Starts watching decomposed files for changes and pushing them to the instance.
    *
    * @param {number} [debounceTime] - Debounce time in milliseconds (default: 300)
    * @returns {Promise<void>} Resolves when watching has started
@@ -139,9 +141,9 @@ class CampaignWatch {
       `Found ${decomposedSchemas.length} schemas with decompose configuration`,
     );
 
-    // Build watch list and file to schema mapping
-    const { filePatterns, fileToSchemaMap } =
-      this._buildWatchList(decomposedSchemas);
+    // Build the watch targets, one per decompose entry
+    this.watchTargets = this._buildWatchList(decomposedSchemas);
+    const filePatterns = this.watchTargets.map((target) => target.pattern);
 
     if (filePatterns.length === 0) {
       this.logger.warn(
@@ -151,12 +153,11 @@ class CampaignWatch {
     }
 
     this.logger.verbose(`Watching patterns: ${filePatterns.join(", ")}`);
-    this.watchedFiles = fileToSchemaMap;
 
     // Import chokidar (added as a dependency in package.json)
     let chokidar;
     try {
-      chokidar = await import("chokidar");
+      chokidar = await this._importChokidar();
     } catch (err) {
       this.logger.error(
         "chokidar dependency is required for watch functionality. Please install it with: npm install chokidar",
@@ -164,8 +165,11 @@ class CampaignWatch {
       throw err;
     }
 
-    // Create watcher
+    // Create watcher. `cwd` keeps both the patterns and the emitted paths relative
+    // to the watch path, so an absolute prefix containing glob metacharacters
+    // (e.g. /Users/me/my[work]/) can never be read as part of a pattern.
     const watcherOptions = {
+      cwd: this.watchPath,
       persistent: true,
       ignoreInitial: true,
       awaitWriteFinish: {
@@ -187,11 +191,13 @@ class CampaignWatch {
       .on("add", (filePath) => this._onFileChange(filePath))
       .on("change", (filePath) => this._onFileChange(filePath))
       .on("unlink", (filePath) => {
+        this.spinnerFilename = path.basename(filePath);
         this.logger.verbose(this._getSpinnerPrefix(0) + `File deleted`);
       })
       .on("error", (error) => {
         this.logger.error(`Watcher error: ${error.message}`);
-        this.spinner.fail(
+        // A watcher error can fire before any file change, i.e. before a spinner exists
+        this.spinner?.fail(
           this._getSpinnerPrefix(0) + `Error "${error.message}"`,
         );
       });
@@ -216,7 +222,7 @@ class CampaignWatch {
     await this.chokidarWatcher.close();
     this.chokidarWatcher = null;
     this.isRunning = false;
-    this.watchedFiles.clear();
+    this.watchTargets = [];
     this.logger.info("✅ File watcher stopped.");
   }
 
@@ -235,139 +241,90 @@ class CampaignWatch {
   }
 
   /**
-   * Builds a list of file patterns to watch and a map of files to their schema configs.
-   * For each decomposed schema, generates the expected file patterns based on the
-   * filename template in the config.
+   * Builds the watch targets, one per entry of every decomposed schema.
+   * Each target pairs the glob pattern of a decomposed file with the schema and
+   * xpath that produced it, so a changed file can be traced back to its origin.
    *
    * @param {Array<object>} decomposedSchemas - Schemas with decompose config
-   * @returns {object} Object with filePatterns array and fileToSchemaMap
+   * @returns {Array<{pattern: string, schemaConfig: object, xpath: string}>} the watch targets
    */
   _buildWatchList(decomposedSchemas) {
-    const filePatterns = [];
-    const fileToSchemaMap = new Map();
+    const watchTargets = [];
 
     for (const schemaConfig of decomposedSchemas) {
       const { decompose, schemaId } = schemaConfig;
 
-      // For each decompose entry, generate the file pattern
       for (const [xpath, decomposedFilename] of Object.entries(decompose)) {
-        // The decomposed filename follows the same pattern as metaFilename
-        // Extract the directory and replace the extension
-        const decomposedDir = path.dirname(decomposedFilename);
-        const decomposedBasename = path.basename(decomposedFilename);
+        const pattern = this._convertTemplateToGlob(decomposedFilename);
 
-        // Generate glob patterns for the watch path
-        // Replace template placeholders with glob patterns
-        const globPattern = this._convertTemplateToGlob(
-          path.join(this.watchPath, decomposedDir, decomposedBasename),
-        );
-
-        filePatterns.push(globPattern);
+        watchTargets.push({ pattern, schemaConfig, xpath });
 
         this.logger.verbose(
-          `  Schema ${schemaId}: watching ${globPattern} (xpath: ${xpath})`,
+          `  Schema ${schemaId}: watching ${pattern} (xpath: ${xpath})`,
         );
-
-        // Store mapping info for later lookup
-        // We can't pre-populate the map with actual files, but we store the schema config
-        // for each pattern. Actual file to schema mapping happens in _onFileChange.
-        this._storeSchemaForPattern(globPattern, schemaConfig, xpath);
       }
     }
 
-    return { filePatterns, fileToSchemaMap };
+    return watchTargets;
   }
 
   /**
-   * Converts a filename template with placeholders to a glob pattern.
-   * Placeholders like {name} or {namespace} become * for glob matching.
+   * Converts a filename template from acc.config.json into a glob pattern
+   * relative to the watch path.
    *
-   * @param {string} templatePath - Path with template placeholders
-   * @returns {string} Glob pattern
+   * Each placeholder becomes a single "*": CampaignInstance sanitizes attribute
+   * values before substituting them, so a placeholder can never expand to more
+   * than one path segment.
+   *
+   * @param {string} template - Filename template with attribute placeholders
+   * @returns {string} Glob pattern relative to the watch path
+   * @see CampaignInstance._sanitizeFilenameValue
    */
-  _convertTemplateToGlob(templatePath) {
-    // Replace all {placeholder} with * for glob matching
-    // Also handle the @ prefix if present
-    return templatePath.replace(/\{@?[^}]+\}/g, "*");
+  _convertTemplateToGlob(template) {
+    // Templates are rooted at the download directory, not at the filesystem root
+    const relativeTemplate = template.replace(/^\/+/, "");
+    return relativeTemplate.replace(/\{@?[^}]+\}/g, "*");
   }
 
   /**
-   * Stores schema config and xpath info for a glob pattern.
-   * This is used later to look up which schema a changed file belongs to.
+   * Finds the schema config and xpath a changed file belongs to.
    *
-   * @param {string} globPattern - The glob pattern
-   * @param {object} schemaConfig - The schema configuration
-   * @param {string} xpath - The xpath key from decompose
-   */
-  _storeSchemaForPattern(globPattern, schemaConfig, xpath) {
-    // Store in a simple structure for pattern matching
-    // This is a simplified approach - in production, we'd use a more robust
-    // pattern matching library or convert globs to regex
-    if (!this._patternMap) {
-      this._patternMap = new Map();
-    }
-
-    // Normalize the pattern for matching
-    const normalizedPattern = globPattern
-      .replace(/\\/g, "/")
-      .replace(/\*\*/g, "*")
-      .replace(/\*$/, "");
-
-    if (!this._patternMap.has(normalizedPattern)) {
-      this._patternMap.set(normalizedPattern, []);
-    }
-    this._patternMap.get(normalizedPattern).push({ schemaConfig, xpath });
-  }
-
-  /**
-   * Finds the schema config and xpath for a given file path.
-   *
-   * @param {string} filePath - The absolute path of the changed file
-   * @returns {object|null} Object with schemaConfig and xpath, or null if not found
+   * @param {string} filePath - Path of the changed file, relative to the watch path
+   * @returns {{pattern: string, schemaConfig: object, xpath: string}|null} the matching target, or null
    */
   _findSchemaForFile(filePath) {
-    if (!this._patternMap) {
+    const posixPath = filePath.split(path.sep).join("/");
+    const matches = this.watchTargets.filter((target) =>
+      minimatch(posixPath, target.pattern),
+    );
+
+    if (matches.length === 0) {
       return null;
     }
-
-    const normalizedPath = filePath.replace(/\\/g, "/");
-
-    // Try to match the file path against stored patterns
-    for (const [pattern, configs] of this._patternMap) {
-      // Convert glob pattern to regex for matching
-      const regexPattern = this._globToRegex(pattern);
-      if (regexPattern.test(normalizedPath)) {
-        // For now, return the first matching config
-        // In a more robust implementation, we'd need to handle multiple matches
-        return configs[0];
-      }
+    if (matches.length > 1) {
+      // Two decompose entries claiming the same file is a configuration problem,
+      // so report it rather than silently picking one.
+      this.logger.warn(
+        `${posixPath} matches ${matches.length} decompose patterns, using ${matches[0].schemaConfig.schemaId}`,
+      );
     }
-
-    return null;
+    return matches[0];
   }
 
   /**
-   * Converts a glob pattern to a regex.
+   * Imports chokidar lazily, isolated in its own method so unit tests can stub it.
    *
-   * @param {string} glob - Glob pattern
-   * @returns {RegExp} Regex for matching
+   * @returns {Promise<object>} the chokidar module namespace
    */
-  _globToRegex(glob) {
-    // Escape special regex chars except * and **
-    // This is a simplified conversion
-    const escaped = glob
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*\*/g, ".*")
-      .replace(/\*/g, "[^/]*");
-
-    return new RegExp(`^${escaped}$`);
+  async _importChokidar() {
+    return import("chokidar");
   }
 
   /**
    * Callback for file change events.
-   * Rebuilds the entity from the changed file and pushes to server.
+   * Rebuilds the entity from the changed file and pushes to instance.
    *
-   * @param {string} filePath - The path of the changed file
+   * @param {string} filePath - The path of the changed file, relative to the watch path
    */
   async _onFileChange(filePath) {
     this.spinnerFilename = path.basename(filePath);
@@ -379,18 +336,15 @@ class CampaignWatch {
     let match, absolutePath;
 
     try {
-      absolutePath = path.isAbsolute(filePath)
-        ? filePath
-        : path.join(this.watchPath, filePath);
+      // path.resolve leaves an already absolute path untouched
+      absolutePath = path.resolve(this.watchPath, filePath);
 
       this.logger.verbose(`File changed: ${absolutePath}`);
 
       // Find which schema this file belongs to
-      match = this._findSchemaForFile(absolutePath);
+      match = this._findSchemaForFile(filePath);
       if (!match) {
-        throw new Error(
-          `File ${absolutePath} not part of any decomposed schema, skipping`,
-        );
+        throw new INSTANCE_WATCH_FILE_NOT_IN_SCOPE();
       }
     } catch (err) {
       this.logger.error(err);
@@ -427,7 +381,6 @@ class CampaignWatch {
     }
 
     try {
-      // Push to server
       await this._pushEntityToServer(
         xpath,
         currentContent,
@@ -528,7 +481,10 @@ class CampaignWatch {
       current.appendChild(el);
       current = el;
     }
-    current.appendChild(doc.createCDATASection(currentContent));
+    // A CDATA section cannot carry its own terminator, and the DOM throws on it.
+    // Escaping keeps the payload valid for files that legitimately contain "]]>".
+    const safeContent = currentContent.replaceAll("]]>", "]]&gt;");
+    current.appendChild(doc.createCDATASection(safeContent));
     return doc;
   }
 
@@ -557,7 +513,7 @@ class CampaignWatch {
   }
 
   /**
-   * Pushes the rebuilt entity XML to the Adobe Campaign server.
+   * Pushes the rebuilt entity XML to the instance.
    * Uses xtk:session#Write with _operation: "update".
    *
    * @param {string} xpath - The xpath key from decompose config
@@ -620,7 +576,7 @@ class CampaignWatch {
 
       this.spinner.succeed(
         this._getSpinnerPrefix(2) +
-          `Written ${chalk.bgCyan(schemaId)} to server`,
+          `Write to ${chalk.bgCyan(schemaId)} successful`,
       );
     } catch (err) {
       this.logger.verbose(`  Attempt failed: ${err.message || String(err)}`);
