@@ -3,7 +3,9 @@ import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthLogin extends BaseCommand {
   static description =
-    "Read credentials (from local .aio file) and login to an Adobe Campaign instance. Must be ran after `auth init`.";
+    "Read credentials (from local .aio file) and login to an Adobe Campaign instance.\n" +
+    "\n" +
+    "Must be ran after `auth init`.";
 
   static examples = [
     {

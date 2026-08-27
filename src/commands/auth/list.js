@@ -3,12 +3,14 @@ import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthList extends BaseCommand {
   static description =
-    "Read credentials (from local .aio file) and output configured Adobe Campaign instances. Must be ran after `auth init`.";
+    "Read credentials (from local .aio file) and display configured Adobe Campaign instances.\n" +
+    "\n" +
+    "Must be ran after `auth init`.";
 
   static examples = [
     {
       command: "<%= config.bin %> auth list",
-      description: "Output as table",
+      description: "Display your instances as table",
     },
     {
       command: "<%= config.bin %> auth list --json",
@@ -18,8 +20,6 @@ export default class AuthList extends BaseCommand {
 
   static enableJsonFlag = true;
 
-  // Columns shown both in the table and in --json output. No password ever:
-  // the raw secret stays reachable only via the explicit `acc config get`.
   static COLUMNS = ["alias", "host", "user", "method"];
 
   async run() {

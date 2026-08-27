@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import BaseCommand from "../../BaseCommand.js";
+import { EXAMPLE_INSTANCE } from "../../helpers/helpText.js";
 
 export default class MonitorTest extends BaseCommand {
   static description =
@@ -7,8 +8,7 @@ export default class MonitorTest extends BaseCommand {
 
   static flags = {
     host: Flags.string({
-      description:
-        "Instance root URL to probe anonymously, e.g. https://acme.campaign.adobe.com",
+      description: `Instance root URL to probe anonymously, e.g. ${EXAMPLE_INSTANCE}`,
       exclusive: ["alias"],
     }),
     alias: Flags.string({

@@ -1,6 +1,7 @@
 import { Flags } from "@oclif/core";
 import BaseCommand from "../../BaseCommand.js";
 import { AUTH_METHODS } from "../../CampaignAuth.js";
+import { EXAMPLE_INSTANCE, DOC_IMS } from "../../helpers/helpText.js";
 
 export default class AuthInit extends BaseCommand {
   static description =
@@ -11,7 +12,9 @@ export default class AuthInit extends BaseCommand {
     "- Operator User/Password: the classic operator login, for local instances or instances without IMS.\n" +
     "\n" +
     "The `auth init` command saves credentials in the local .aio file, and then logs in to the instance. " +
-    "The `auth login` command can be used later to re-login without re-entering credentials.";
+    "The `auth login` command can be used later to re-login without re-entering credentials.\n" +
+    "\n" +
+    DOC_IMS;
 
   static examples = [
     {
@@ -19,20 +22,17 @@ export default class AuthInit extends BaseCommand {
       description: "Initialize authentication with menu selection (preferred).",
     },
     {
-      command:
-        "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsServerToServer --json-file ./oauth-s2s.json",
+      command: `<%= config.bin %> auth init --alias prod --host ${EXAMPLE_INSTANCE} --method ImsServerToServer --json-file ./oauth-s2s.json`,
       description:
         "For CI/CD: Initialize authentication with OAuth Server-to-Server method.",
     },
     {
-      command:
-        "<%= config.bin %> auth init --alias prod --host https://instance.com --method ImsBearerToken --token eyJ...",
+      command: `<%= config.bin %> auth init --alias prod --host ${EXAMPLE_INSTANCE} --method ImsBearerToken --token eyJ...`,
       description:
         "For CI/CD: Initialize authentication with OAuth Access Token method.",
     },
     {
-      command:
-        "<%= config.bin %> auth init --alias local --host http://localhost:8080 --method UserPassword --user admin",
+      command: `<%= config.bin %> auth init --alias local --host ${EXAMPLE_INSTANCE} --method UserPassword --user admin`,
       description:
         "For CI/CD: Initialize authentication with Operator User/Password method.",
     },
@@ -43,7 +43,7 @@ export default class AuthInit extends BaseCommand {
       description: "Local alias for this instance, e.g. prod, staging, local",
     }),
     host: Flags.string({
-      description: "URL of Adobe Campaign root, e.g. http://localhost:8080",
+      description: `URL of Adobe Campaign instance, e.g. ${EXAMPLE_INSTANCE}`,
     }),
     method: Flags.string({
       options: [
