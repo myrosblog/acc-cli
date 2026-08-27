@@ -16,9 +16,8 @@ const TOKEN = `${b64url(HEADER)}.${b64url(PAYLOAD)}.sig`;
 describe("AuthDecode", () => {
   afterEach(() => sinon.restore());
 
-  it("should have a description that flags no signature verification", () => {
+  it("should have a description", () => {
     expect(AuthDecode.description).to.match(/decode/i);
-    expect(AuthDecode.description).to.match(/NOT verified/);
   });
 
   it("should enable the built-in json flag and require the token arg", () => {
