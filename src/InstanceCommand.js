@@ -22,14 +22,14 @@ export default class InstanceCommand extends BaseCommand {
         "Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of acc.config.json.",
     }),
     path: Flags.string({
-      description:
-        "Path where the command should run. Defaults to current working directory.",
+      description: "Path where the command should run.",
       default: () => process.cwd(),
+      defaultHelp: () => "current working directory", // for generated README
     }),
     config: Flags.string({
-      description:
-        "Path to the configuration file. Defaults ./acc.config.json.",
+      description: "Path to the configuration file.",
       default: () => path.join(process.cwd(), "acc.config.json"),
+      defaultHelp: () => "./acc.config.json", // for generated README
     }),
   };
 

@@ -5,6 +5,7 @@ import accSdk from "@adobe/acc-js-sdk";
 const { ConnectionParameters } = accSdk;
 // acc
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+import { EXAMPLE_INSTANCE } from "./helpers/helpText.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
@@ -507,7 +508,7 @@ class CampaignAuth {
     // method-specific identity/secret, and finally the local alias.
     if (missing(opts.host)) {
       opts.host = await this.prompt.input(
-        "Adobe Campaign host URL (e.g. https://instance.com)",
+        `Adobe Campaign instance (e.g. ${EXAMPLE_INSTANCE})`,
       );
     }
     if (missing(opts.method)) {

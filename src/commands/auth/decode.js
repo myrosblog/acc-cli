@@ -1,24 +1,32 @@
 import { Args } from "@oclif/core";
 import BaseCommand from "../../BaseCommand.js";
 import { decodeJwt, summarizeExpiry, formatExpiry } from "../../helpers/jwt.js";
+import { DOC_IMS } from "../../helpers/helpText.js";
 
 export default class AuthDecode extends BaseCommand {
   static description =
-    "Decode an Adobe IMS access token (JWT) for debugging: base64 → JSON, plus an expiry summary. The signature is NOT verified.";
+    "Decode an access token. Use it to troubleshoot Adobe IMS authentication errors.\n" +
+    "\n" +
+    DOC_IMS;
 
   static examples = [
-    '<%= config.bin %> auth decode "eyJhbGci…"',
-    '<%= config.bin %> auth decode "eyJhbGci…" --json',
+    {
+      command: '<%= config.bin %> auth decode "eyJhbGci…"',
+      description:
+        "Display the decoded information: issued at, expires at, organization id...",
+    },
+    {
+      command: '<%= config.bin %> auth decode "eyJhbGci…" --json',
+      description: "Display the decoded information as a JSON object.",
+    },
   ];
 
-  // Enables the built-in oclif `--json` flag: when set, oclif serialises the
-  // object returned by run() instead of printing the human report below.
   static enableJsonFlag = true;
 
   static args = {
     token: Args.string({
       required: true,
-      description: "IMS access token / JWT to decode (starts with 'eyJ')",
+      description: "IMS Access token (starts with 'eyJ')",
     }),
   };
 
