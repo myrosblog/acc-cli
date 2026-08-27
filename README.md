@@ -4,11 +4,11 @@
 
 # acc, the command line interface for Adobe Campaign developers
 
-Save time, reduce risk, and improve code health with `acc`! This CLI tool helps you build on your Adobe Campaign Classic instances. It quickly downloads Adobe Campaign v7 **configuration, campaigns and online resources**. You can also use it to automate many common development tasks.
-
-Full documentation available on [Getting started with acc](https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=readme)
+Save time, reduce risk, and improve code health with `acc`! This tool helps you develop on your Adobe Campaign Classic instances. It quickly downloads AC v7/v8 configuration: from **schemas, to deliveries, to workflows** and more! You can also use it to automate many common development tasks: **query records in any schema, call soap methods**...
 
 ![acc CLI downloading an Adobe Campaign instance](docs/media/acc-pull.gif)
+
+Full documentation available on [Getting started with acc](https://myrosblog.com/adobe-campaign/acc-cli).
 
 ## Table of contents
 
@@ -16,42 +16,143 @@ Full documentation available on [Getting started with acc](https://myrosblog.com
 - [Quick Start](#-quick-start)
   - [Installation](#installation)
   - [Usage](#usage)
-  - [Advanced Configuration](#-advanced-configuration)
-- [Command reference](#-command-reference)
-- [Roadmap](#️-roadmap)
-- [Architecture & Security](#-architecture--security)
 - [Changelog](#-changelog)
-- [Contributing](#-contributing)
+- [Architecture & Security](#-architecture--security)
+- [Command reference](#-command-reference)
+- [Advanced configuration](#-advanced-configuration)
 
 ## Features
 
-- Download all Marketing content: Campaigns, Deliveries, Web apps, and more!
-- Download all Technical content: Data schemas, Javascript codes & pages, Workflows and more!
-- Replace manual exports with scriptable, auditable, and repeatable operations
-- Query instance data with a read-only `queryDef` (read-only by construction, safe on production, and for AI agents)
-- Decompose sources into codes (JS, HTML, CSS) and metadata (fields @created, @lastModified…)
-- Allow local code checkers, highlighters and linters
-- Work on any instance: local, staging, production ; and any OS: Windows, macOS, Linux
+- **Authenticate** to your AC instances via username/password, or OAuth Server-to-Sever
+- **Extract** configuration (schemas, deliveries, forms...) from AC as local files (HTML, JS, CSS, XML)
+- **Version control** these local files with Git to reduce risk when developing/migrating/upgrading
+- **Query** records using read-only queryDef operations. For production target analysis & AI assistants
+- **Call SOAP** methods on any schema via the NLWS functionality, for any recurring maintenance
+- **Use your tools** like VSCode, syntax checks (prettier) and code checkers (eslint)
+- **Work anywhere** on any instance: local, staging, production ; and any OS: Windows, macOS, Linux
+
+`acc` addresses the challenge of managing AC configurations with JavaScript development rather than through the AC Client Console.
 
 ## 🚀 Quick Start
 
-### Installation & Update
+`acc` is a NodeJS CLI that is based on the official Adobe Campaign JS SDK (`@adobe/acc-js-sdk`). Install and update with npm.
+
+### Installation
+
+Install `acc` globally by running:
 
 ```bash
 npm install -g campaign-cli
 ```
 
-### Usage
+### First time authentication
 
-First time authentication:
+After installation, initialize the authentication to your instance. This creates a local profile identified by an `--alias`.
 
 ```bash
 acc auth init
 # Host (i.e. https://instance1.campaign.adobe.com):
-# Authentication method: (OAuth Server-to-Server, IMS bearer token, User + password)
+# Authentication method: (OAuth Server-to-Server, User + password)
 # Path to the OAuth Server-to-Server JSON (i.e. ~/Downloads/oauth-s2s.json):
 # Alias (i.e. staging):
 ```
+
+Verify your local aliases by listing your instances:
+
+```bash
+acc auth list
+# | staging | https://instance1.campaign.adobe.com | OAuth Server-to-Server |
+```
+
+### Usage
+
+Once authenticated, download the instance configuration:
+
+```bash
+acc instance pull --alias staging
+# Downloading
+# ✔ /Administration/Configuration/Form rendering: xtk:formRendering
+# ✔ /Administration/Configuration/Javascript codes: xtk:javascript
+# ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
+```
+
+It is best to run `acc` commands from a dedicated project directory. When you run a command like `acc instance pull`, the CLI will:
+
+- Look for an `acc.config.json` in the current directory
+- If missing, it automatically generates one with `acc instance template`
+- Download files following the AC folder hierarchy (e.g., `/Administration/Configuration/Javascript codes/`)
+
+## 📋 Changelog
+
+Read the [acc Changelog](https://myrosblog.com/adobe-campaign/acc-cli/changelog).
+
+## 🔒 Architecture & Security
+
+Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-cli/architecture).
+
+## 📖 Command reference
+
+<!-- commands -->
+
+- [`acc auth decode TOKEN`](#acc-auth-decode-token)
+- [`acc auth init`](#acc-auth-init)
+- [`acc auth ip`](#acc-auth-ip)
+- [`acc auth list`](#acc-auth-list)
+- [`acc auth login`](#acc-auth-login)
+- [`acc config`](#acc-config)
+- [`acc config clear`](#acc-config-clear)
+- [`acc config delete KEYS`](#acc-config-delete-keys)
+- [`acc config edit`](#acc-config-edit)
+- [`acc config get KEY`](#acc-config-get-key)
+- [`acc config list`](#acc-config-list)
+- [`acc config set key 'a value'       # set key to 'a value'`](#acc-config-set-key-a-value--------set-key-to-a-value)
+- [`acc info`](#acc-info)
+- [`acc instance check`](#acc-instance-check)
+- [`acc instance exec`](#acc-instance-exec)
+- [`acc instance info`](#acc-instance-info)
+- [`acc instance pull`](#acc-instance-pull)
+- [`acc instance queryDef`](#acc-instance-querydef)
+- [`acc instance soap`](#acc-instance-soap)
+- [`acc instance template`](#acc-instance-template)
+- [`acc instance watch`](#acc-instance-watch)
+- [`acc monitor test`](#acc-monitor-test)
+- [`acc report`](#acc-report)
+<!-- commandsstop -->
+
+## 🛠️ Local development
+
+```bash
+# Clone repository
+git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
+npm install
+npm test # unit tests & integration tests with XML samples
+ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against an instance
+ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a Developer Console credential
+```
+
+Coding conventions, project structure and contributor guidelines live in
+[`AGENTS.md`](AGENTS.md).
+
+## 📤 Output & logging
+
+`acc` follows the Unix convention so its output is safe to script:
+
+- **stdout** carries the command **result only**, e.g. the XML returned by
+  `acc instance exec` or the IP from `acc auth ip, raw and undecorated, so it
+  pipes cleanly.
+- **stderr** carries everything else: progress spinners, status, warnings and
+  errors. Verbosity is controlled by `AIO_LOG_LEVEL` (`info` by default; set
+  `AIO_LOG_LEVEL=debug` to troubleshoot).
+- A rotating **`acc.log`** under the CLI cache directory keeps the full trace at
+  all levels for audit/post-mortem, regardless of the console verbosity. Disable
+  it with `ACC_NO_FILE_LOG=1`.
+
+```bash
+# Only the result reaches the pipe; diagnostics stay on the terminal (stderr)
+acc instance exec --alias staging --script "context.@result = application.instanceName" | xmllint --format -
+```
+
+## 🔧 Advanced Configuration
 
 > For OAuth Server-to-Server, download the credential as JSON from the Adobe
 > Developer Console (Credentials → OAuth Server-to-Server → Download JSON) and
@@ -63,19 +164,7 @@ acc auth init
 > Debugging an IMS token? Check the advanced section to decode it to JSON and inspect its claims.
 > When using user/password instances, no change is expected so keep working unchanged.
 
-Then, recurring pulls:
-
-```bash
-acc instance pull --alias staging
-# Downloading
-# ✔ /Administration/Configuration/Form rendering: xtk:formRendering
-# ✔ /Administration/Configuration/Javascript codes: xtk:javascript
-# ✔ /Administration/Campaign Management/Typology management/Typology rules: nms:typologyRule
-```
-
-### 🔧 Advanced Configuration
-
-Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli/use-cases?utm_campaign=readme)
+Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli/use-cases)
 
 Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
@@ -127,59 +216,4 @@ Check any IMS token whether it is expired (base64 → JSON; the signature is **n
 ```bash
 acc auth decode eyJhbG...
 acc auth decode eyJhbG... --json | jq .expiry
-```
-
-## 📖 Command reference
-
-The full command reference (every command, flag and example) lives in the
-[acc Reference](https://myrosblog.com/adobe-campaign/acc-cli?utm_campaign=readme).
-You can also run `acc --help` or `acc <topic> --help` for inline help.
-
-## 🗓️ Roadmap
-
-Read the [acc Roadmap](https://myrosblog.com/adobe-campaign/acc-cli/roadmap?utm_campaign=readme).
-
-## 🔒 Architecture & Security
-
-Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-cli/architecture?utm_campaign=readme).
-
-## 📋 Changelog
-
-Read the [acc Changelog](https://myrosblog.com/adobe-campaign/acc-cli/changelog?utm_campaign=readme).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open a Github Pull Request!
-
-### 🛠️ Local development
-
-```bash
-# Clone repository
-git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
-npm install
-npm test # unit tests & integration tests with XML samples
-ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against an instance
-ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a Developer Console credential
-```
-
-Coding conventions, project structure and contributor guidelines live in
-[`AGENTS.md`](AGENTS.md).
-
-### 📤 Output & logging
-
-`acc` follows the Unix convention so its output is safe to script:
-
-- **stdout** carries the command **result only**, e.g. the XML returned by
-  `acc instance exec` or the IP from `acc auth ip, raw and undecorated, so it
-  pipes cleanly.
-- **stderr** carries everything else: progress spinners, status, warnings and
-  errors. Verbosity is controlled by `AIO_LOG_LEVEL` (`info` by default; set
-  `AIO_LOG_LEVEL=debug` to troubleshoot).
-- A rotating **`acc.log`** under the CLI cache directory keeps the full trace at
-  all levels for audit/post-mortem, regardless of the console verbosity. Disable
-  it with `ACC_NO_FILE_LOG=1`.
-
-```bash
-# Only the result reaches the pipe; diagnostics stay on the terminal (stderr)
-acc instance exec --alias staging --script "context.@result = application.instanceName" | xmllint --format -
 ```
