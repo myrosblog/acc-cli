@@ -9,3 +9,30 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+    # The default is 5, which leaves further updates waiting behind the cap
+    open-pull-requests-limit: 10
+
+    # Collapse routine bumps into one pull request per family. Major versions
+    # are left out on purpose: each one needs its own review.
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      production:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+
+    ignore:
+      # neostandard 0.13, which eslint.config.js builds on, declares
+      # peerDependencies.eslint ^9.0.0, so eslint 10 cannot be installed.
+      # Remove this entry once neostandard supports eslint 10.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+
+      # chokidar removed glob support in v4, and CampaignWatch passes the
+      # patterns from _convertTemplateToGlob() straight to watch(). The unit
+      # tests stub the import, so CI would not catch the breakage.
+      # Remove this entry once the watcher filters paths itself.
+      - dependency-name: "chokidar"
+        update-types: ["version-update:semver-major"]
