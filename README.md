@@ -117,6 +117,7 @@ Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-
 - [`acc instance watch`](#acc-instance-watch)
 - [`acc monitor test`](#acc-monitor-test)
 - [`acc report`](#acc-report)
+
 <!-- commandsstop -->
 
 ## 🛠️ Local development
@@ -166,7 +167,7 @@ acc instance exec --alias staging --script "context.@result = application.instan
 
 Read the [Advanced Use Cases documentation](https://myrosblog.com/adobe-campaign/acc-cli/use-cases)
 
-Auth can be fully scripted: `acc auth init --host https://instance.com --user username --pass 's3cret' --alias staging`
+Auth can be fully scripted: `acc auth init --host https://instance1.campaign.adobe.com --user username --pass 's3cret' --alias staging`
 (or `--method ImsBearerToken --token '...'` for a hand-pasted IMS token, or
 `--method ImsServerToServer --json-file ./oauth-s2s.json` to generate IMS tokens
 automatically from the OAuth Server-to-Server credential downloaded from the
