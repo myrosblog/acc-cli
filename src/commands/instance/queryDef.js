@@ -7,8 +7,20 @@ export default class InstanceQueryDef extends InstanceCommand {
     "Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.";
 
   static examples = [
-    `<%= config.bin %> instance queryDef --alias staging --query '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'`,
-    "<%= config.bin %> instance queryDef --alias staging --file ./queries/recipients.json --json",
+    {
+      command: `<%= config.bin %> instance queryDef --query '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'`,
+      description: `Get an option in XML format (SQL Read, queryDef Get). Result: <option stringValue="..."/>`,
+    },
+    {
+      command: `<%= config.bin %> instance queryDef --query '{"schema":"xtk:option", "operation": "get", "select": {"node": [{"expr": "@stringValue"}] } }' --json`,
+      description: `Get an option in JSON format (SQL Read, queryDef Get). Result: {stringValue: "..."}`,
+    },
+    {
+      command:
+        "<%= config.bin %> instance queryDef --file ./queries/recipients.json --json",
+      description:
+        "For big or recurrent queries, consider saving them in a file: get a list of recipients (SQL Read, queryDef select)",
+    },
   ];
 
   // Enables the built-in oclif `--json` flag: when set, the SimpleJson result is
