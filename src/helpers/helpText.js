@@ -24,3 +24,15 @@ export const DOC_IMS =
  */
 export const DOC_WHITELIST =
   "Adobe Campaign authentication: https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration";
+
+/**
+ * @type {string}
+ */
+export const DOC_QUERYDEF =
+  "Adobe Campaign querydef: https://experienceleague.adobe.com/en/docs/campaign-classic/using/configuring-campaign-classic/api/data-oriented-apis";
+
+/**
+ * @type {string}
+ */
+export const DOC_SOAP =
+  "Adobe Campaign SOAP: https://experienceleague.adobe.com/en/docs/campaign-classic/using/configuring-campaign-classic/api/soap-methods-in-javascript";

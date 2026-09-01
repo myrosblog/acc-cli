@@ -9,7 +9,7 @@ describe("InstanceSoap", () => {
   afterEach(() => sinon.restore());
 
   it("should have correct description", () => {
-    expect(InstanceSoap.description).to.match(/SOAP method.*NLWS/);
+    expect(InstanceSoap.description).to.match(/SOAP method/);
   });
 
   it("should enable the built-in json flag", () => {

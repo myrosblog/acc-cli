@@ -1,10 +1,13 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
+import { DOC_QUERYDEF } from "../../helpers/helpText.js";
 
 export default class InstanceQueryDef extends InstanceCommand {
   static description =
-    "Run a read-only query on an Adobe Campaign instance (xtk:queryDef#ExecuteQuery). " +
-    "Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.";
+    "Run a read-only query on an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). " +
+    "Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`." +
+    "\n" +
+    DOC_QUERYDEF;
 
   static examples = [
     {
