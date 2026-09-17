@@ -113,6 +113,21 @@ class DomUtilAcc extends DomUtil {
     current.appendChild(doc.createCDATASection(safeContent));
     return doc;
   }
+
+  /**
+   * Returns the content to save for a decomposed element: the element itself
+   * as XML when it holds child elements, its text or CDATA value otherwise.
+   * DomUtil.elementValue only reads text nodes, so child elements would be lost.
+   *
+   * @param {Element} element the element targeted by the decompose xpath
+   * @returns {string} the XML of the element, or its text value
+   */
+  static getDecomposedContent(element) {
+    if (DomUtil.getFirstChildElement(element)) {
+      return DomUtil.toXMLString(element);
+    }
+    return DomUtil.elementValue(element);
+  }
 }
 
 export default DomUtilAcc;

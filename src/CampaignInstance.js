@@ -768,13 +768,13 @@ class CampaignInstance {
           if (!lastNode) {
             continue; // if xpath not found, skip to next one without throwing error as it can be optional
           }
-          const elementValue = DomUtil.elementValue(lastNode);
+          const content = DomUtilAcc.getDecomposedContent(lastNode);
           // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);
           if (!isPreview) {
-            fs.outputFileSync(datapath, elementValue);
+            fs.outputFileSync(datapath, content);
           }
-          // empty element
+          // empty element (text and child elements): the meta keeps an empty placeholder
           lastNode.textContent = "";
         } catch (err) {
           this.logger.verbose(`(⚠️ warning:parse ${err.message})`);

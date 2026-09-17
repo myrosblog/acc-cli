@@ -30,4 +30,36 @@ describe("helpers/DomUtilAcc", () => {
       expect(xml).to.include("const test = ");
     });
   });
+
+  describe("getDecomposedContent", () => {
+    const firstChild = (xml) => DomUtil.parse(xml).documentElement.firstChild;
+
+    it("should return the text value", () => {
+      const element = firstChild(`<sql><data>SELECT 1;</data></sql>`);
+      expect(DomUtilAcc.getDecomposedContent(element)).to.equal("SELECT 1;");
+    });
+
+    it("should return the CDATA value", () => {
+      const element = firstChild(
+        `<sql><data><![CDATA[SELECT '<b>';]]></data></sql>`,
+      );
+      expect(DomUtilAcc.getDecomposedContent(element)).to.equal(
+        "SELECT '<b>';",
+      );
+    });
+
+    it("should return the element as XML when it holds child elements", () => {
+      const element = firstChild(
+        `<workflow><activities id="1"><end name="end"/></activities></workflow>`,
+      );
+      expect(DomUtilAcc.getDecomposedContent(element)).to.equal(
+        `<activities id="1"><end name="end"/></activities>`,
+      );
+    });
+
+    it("should return an empty string for an empty element", () => {
+      const element = firstChild(`<workflow><activities/></workflow>`);
+      expect(DomUtilAcc.getDecomposedContent(element)).to.equal("");
+    });
+  });
 });
