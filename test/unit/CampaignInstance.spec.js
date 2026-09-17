@@ -807,6 +807,45 @@ describe("CampaignInstance", () => {
         expect(contentSql).to.not.contain(`>`);
       });
 
+      it("xtk:workflow (element with child elements)", async () => {
+        instance = new CampaignInstance(
+          mockLogger,
+          mockClient,
+          configDefaultFull,
+          optionsFull,
+        );
+        const schemaConfig = {
+          schemaId: "xtk:workflow",
+          filename: "/Workflows/{@internalName}.meta.xml",
+          decompose: {
+            activities: "/Workflows/{@internalName}.activities.xml",
+          },
+        };
+        const workflow = DomUtil.getFirstChildElement(
+          DomUtil.parse(
+            `<workflow xmlns="urn:xtk:queryDef" internalName="WKF1"><activities><end label="End" name="end"/><start name="start"><transitions><initial target="end"/></transitions></start></activities><variables/></workflow>`,
+          ),
+        );
+        instance.parse(workflow, schemaConfig);
+
+        const contentActivities = fs.readFileSync(
+          join(pathFull, "Workflows/WKF1.activities.xml"),
+          "utf8",
+        );
+        const contentMeta = fs.readFileSync(
+          join(pathFull, "Workflows/WKF1.meta.xml"),
+          "utf8",
+        );
+        expect(contentActivities).to.match(/^<activities[ >]/);
+        expect(contentActivities).to.contain(`<end label="End" name="end"/>`);
+        expect(contentActivities).to.contain(
+          `<transitions><initial target="end"/></transitions>`,
+        );
+        expect(contentActivities).to.match(/<\/activities>$/);
+        expect(contentMeta).to.contain(`<activities/><variables/>`);
+        expect(contentMeta).to.not.contain(`<end`);
+      });
+
       it("nms:delivery (meta)", async () => {
         instance = new CampaignInstance(
           mockLogger,
