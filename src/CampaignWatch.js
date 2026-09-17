@@ -392,12 +392,16 @@ class CampaignWatch {
     }
 
     try {
-      await this._pushEntityToServer(
+      const pushed = await this._pushEntityToServer(
         xpath,
         currentContent,
         metadataDocument,
         schemaConfig,
       );
+      if (!pushed) {
+        this.spinner.warn(this._getSpinnerPrefix(2) + `not pushed`);
+        return;
+      }
 
       this.spinner.succeed(
         this._getSpinnerPrefix(2) +
@@ -511,7 +515,7 @@ class CampaignWatch {
    * @param {string} currentContent - The current content of the changed file
    * @param {Document} metadataDocument - The complete metadata document
    * @param {object} schemaConfig - Schema configuration
-   * @returns {Promise<void>} Resolves when push is complete
+   * @returns {Promise<boolean>} true when pushed, false when skipped (XML element)
    * @throws {INSTANCE_WATCH_PUSH_FAILED} If push fails after retries
    */
   async _pushEntityToServer(
@@ -544,6 +548,16 @@ class CampaignWatch {
         `Reconciling ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
       );
 
+      // Only text values (e.g. delivery html source) can be pushed: an element
+      // holding child elements (e.g. workflow activities) would be overwritten
+      // by a CDATA section
+      if (await this._isElementOnly(schema, xpath)) {
+        this.logger.warn(
+          `${schemaId} "${xpath}" is an XML element: pushing it is not supported yet, the file was not pushed.`,
+        );
+        return false;
+      }
+
       this.spinner.text = this._getSpinnerPrefix(2) + `Writing to the instance`;
 
       // build payload
@@ -566,6 +580,7 @@ class CampaignWatch {
       }
 
       await this.adapterWrite(payloadDocument);
+      return true;
     } catch (err) {
       this.logger.verbose(`  Push failed: ${err.message || String(err)}`);
 
@@ -576,6 +591,20 @@ class CampaignWatch {
       }
       throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED, { schemaId });
     }
+  }
+
+  /**
+   * Tells whether the decomposed xpath is an element that can hold child
+   * elements rather than a text value (memo, html, CDATA...).
+   *
+   * @param {XtkSchema} schema - The schema of the entity, from the SDK
+   * @param {string} xpath - The xpath key from decompose config
+   * @returns {Promise<boolean>} true if the schema node has no type
+   * @see https://opensource.adobe.com/acc-js-sdk/application.html
+   */
+  async _isElementOnly(schema, xpath) {
+    const node = await schema.root.findNode(xpath);
+    return !!node?.isElementOnly;
   }
 
   /**

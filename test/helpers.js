@@ -24,6 +24,7 @@ const makeSpinner = () => ({
     return this;
   },
   succeed() {},
+  warn() {},
   fail() {},
   get text() {
     return "";
