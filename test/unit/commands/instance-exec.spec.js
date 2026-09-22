@@ -44,4 +44,37 @@ describe("InstanceExec", () => {
     expect(logStub.calledOnceWith("<context result='ok'/>")).to.be.true;
     sinon.restore();
   });
+
+  describe("--file/--script validation", () => {
+    // Flag validation must reject before login: a missing/conflicting flag
+    // is a pure input mistake and shouldn't cost a network round trip.
+    afterEach(() => sinon.restore());
+
+    it("rejects with neither --file nor --script, without logging in", async () => {
+      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const argv = ["--alias", "test"];
+
+      await expect(InstanceExec.run(argv)).to.be.rejectedWith(
+        /Exactly one of the following must be provided: --file, --script/,
+      );
+      expect(authLoginStub.called).to.be.false;
+    });
+
+    it("rejects with both --file and --script, without logging in", async () => {
+      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const argv = [
+        "--alias",
+        "test",
+        "--file",
+        "./script.js",
+        "--script",
+        "logInfo('hi')",
+      ];
+
+      await expect(InstanceExec.run(argv)).to.be.rejectedWith(
+        /--script cannot also be provided when using --file/,
+      );
+      expect(authLoginStub.called).to.be.false;
+    });
+  });
 });

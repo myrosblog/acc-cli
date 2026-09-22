@@ -77,4 +77,35 @@ describe("InstanceQueryDef", () => {
     expect(queryDefStub.firstCall.args[0].json).to.equal(true);
     expect(logStub.called).to.be.false; // raw XML is never written in json mode
   });
+
+  describe("--query/--file validation", () => {
+    // Flag validation must reject before login: a missing/conflicting flag
+    // is a pure input mistake and shouldn't cost a network round trip.
+    it("rejects with neither --query nor --file, without logging in", async () => {
+      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const argv = ["--alias", "test"];
+
+      await expect(InstanceQueryDef.run(argv)).to.be.rejectedWith(
+        /Exactly one of the following must be provided: --file, --query/,
+      );
+      expect(authLoginStub.called).to.be.false;
+    });
+
+    it("rejects with both --query and --file, without logging in", async () => {
+      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const argv = [
+        "--alias",
+        "test",
+        "--query",
+        QUERY,
+        "--file",
+        "./query.json",
+      ];
+
+      await expect(InstanceQueryDef.run(argv)).to.be.rejectedWith(
+        /--file cannot also be provided when using --query/,
+      );
+      expect(authLoginStub.called).to.be.false;
+    });
+  });
 });
