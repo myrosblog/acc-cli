@@ -808,6 +808,15 @@ describe("CampaignWatch", () => {
       expect(xml).to.include('_key="@id"');
       expect(xml).to.include('id="456"');
       expect(xml).to.not.include("namespace=");
+
+      // The push is journaled for auditing, alongside CampaignPullLog for pull
+      expect(mockLogger.debug).to.have.been.calledOnce;
+      const pushLogSummary = mockLogger.debug.firstCall.args[0];
+      expect(pushLogSummary.schemaId).to.equal("xtk:javascript");
+      expect(pushLogSummary.filePath).to.equal(join(tempDir, relativePath));
+      expect(pushLogSummary.operation).to.equal("update");
+      expect(pushLogSummary.payloadXml).to.equal(xml);
+      expect(pushLogSummary.error).to.be.undefined;
     });
 
     it("should push a composite key as _key and both attributes", async () => {
