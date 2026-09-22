@@ -495,6 +495,56 @@ describe("CampaignAuth", function () {
       expect(makeCache.calledOnce).to.be.true;
     });
 
+    it("logs the resolved SDK cache directory when caching is enabled", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+
+      const makeCache = sinon.stub().returns({ dir: "/cache/sdk-cache/local" });
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        makeCache,
+      );
+
+      await auth.login({ alias: "local" });
+
+      expect(
+        mockLogger.info.calledWith(
+          "📁 SDK cache directory: /cache/sdk-cache/local",
+        ),
+      ).to.be.true;
+    });
+
+    it("exposes the logged-in client on auth.client", async function () {
+      mockConfig.get.returns({
+        local: {
+          host: "http://localhost",
+          user: "testuser",
+          password: "testpass",
+        },
+      });
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
+
+      const client = await auth.login({ alias: "local" });
+
+      // BaseCommand.finally() reaches the client via auth.client to log a
+      // final cache stats snapshot once the command has done its work.
+      expect(auth.client).to.equal(client);
+    });
+
     it("wires the injected cache factory as SDK storage", async function () {
       mockConfig.get.returns({
         local: { host: "http://localhost", user: "u", password: "p" },
@@ -541,6 +591,24 @@ describe("CampaignAuth", function () {
 
       expect(makeCache.notCalled).to.be.true;
       expect(prepStub.firstCall.args[2].storage).to.be.undefined;
+    });
+
+    it("logs when SDK storage cache is disabled", async function () {
+      mockConfig.get.returns({
+        local: { host: "http://localhost", user: "u", password: "p" },
+      });
+      const makeCache = sinon.stub();
+      auth = new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        makeCache,
+      );
+
+      await auth.login({ alias: "local" }, { noStorage: true });
+
+      expect(mockLogger.verbose.calledWith("📁 SDK cache disabled")).to.be.true;
     });
 
     it("runs without SDK storage when no cache factory is injected", async function () {
