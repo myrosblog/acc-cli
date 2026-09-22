@@ -306,10 +306,12 @@ class CampaignAuth {
         this.makeCache &&
         (sdkOptions.noStorage === undefined || sdkOptions.noStorage === false)
       ) {
-        this.logger.verbose(`Using AccCache for SDK storage`);
         // Per-instance cache: each alias gets its own sub-directory (the
         // Console stores each instance separately too).
         sdkOptions.storage = this.makeCache(cliOptions.alias);
+        this.logger.info(`📁 SDK cache directory: ${sdkOptions.storage.dir}`);
+      } else {
+        this.logger.verbose(`📁 SDK cache disabled`);
       }
       this.connectionParameters = this._prepareConnectionParameters(
         authMethod,
@@ -345,6 +347,10 @@ class CampaignAuth {
     this.logger.info(
       `✅ Logged in to ${serverInfo.instanceName} (${serverInfo.releaseName} build ${serverInfo.buildNumber}) successfully.`,
     );
+    // Exposed so BaseCommand.finally() can log a final cache stats snapshot
+    // once the command has done its actual work, without threading the
+    // client through every command.
+    this.client = client;
     return client;
   }
 

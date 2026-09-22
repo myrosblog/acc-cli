@@ -11,6 +11,7 @@ import AccCache from "./helpers/AccCache.js";
 import CampaignAuth from "./CampaignAuth.js";
 import CampaignConfig from "./CampaignConfig.js";
 import CampaignMonitor from "./CampaignMonitor.js";
+import logCacheStats from "./helpers/cacheStatsLogger.js";
 
 /**
  * Base oclif command for acc.
@@ -88,5 +89,20 @@ export default class BaseCommand extends Command {
    */
   spinner(text) {
     return ora(text);
+  }
+
+  /**
+   * Runs after every command invocation, success or failure. Logs a final
+   * snapshot of the SDK's internal cache stats so the numbers reflect the
+   * command's actual work (schema/method/option lookups), not just the
+   * near-zero state right after login.
+   * @param {Error} [err] the error the command failed with, if any
+   * @returns {Promise<void>}
+   */
+  async finally(err) {
+    if (this._auth?.client) {
+      logCacheStats(this.logger, this._auth.client);
+    }
+    return super.finally(err);
   }
 }
