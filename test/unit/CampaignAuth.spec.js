@@ -608,8 +608,7 @@ describe("CampaignAuth", function () {
 
       await auth.login({ alias: "local" }, { noStorage: true });
 
-      expect(mockLogger.verbose.calledWith("SDK storage cache disabled")).to.be
-        .true;
+      expect(mockLogger.verbose.calledWith("📁 SDK cache disabled")).to.be.true;
     });
 
     it("runs without SDK storage when no cache factory is injected", async function () {
