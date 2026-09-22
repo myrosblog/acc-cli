@@ -8,6 +8,7 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
+import CampaignPushLog from "./helpers/CampaignPushLog.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
@@ -397,6 +398,7 @@ class CampaignWatch {
         currentContent,
         metadataDocument,
         schemaConfig,
+        absolutePath,
       );
       if (!pushed) {
         this.spinner.warn(this._getSpinnerPrefix(2) + `not pushed`);
@@ -515,6 +517,7 @@ class CampaignWatch {
    * @param {string} currentContent - The current content of the changed file
    * @param {Document} metadataDocument - The complete metadata document
    * @param {object} schemaConfig - Schema configuration
+   * @param {string} filePath - Absolute path of the file that changed, logged for auditing
    * @returns {Promise<boolean>} true when pushed, false when skipped (XML element)
    * @throws {INSTANCE_WATCH_PUSH_FAILED} If push fails after retries
    */
@@ -523,8 +526,12 @@ class CampaignWatch {
     currentContent,
     metadataDocument,
     schemaConfig,
+    filePath,
   ) {
     const { schemaId } = schemaConfig;
+    const pushLog = new CampaignPushLog(schemaConfig);
+    pushLog.filePath = filePath;
+    pushLog.xpath = xpath;
 
     try {
       const rootElement = metadataDocument.documentElement;
@@ -542,10 +549,11 @@ class CampaignWatch {
 
       // The reconciliation key comes from the schema, not from a guess
       const { key, keyValues } = this._getWriteKey(schema, rootElement);
+      pushLog.keyValues = keyValues;
       this.spinnerKeys = this._formatKeyValues(keyValues);
 
       this.logger.verbose(
-        `Reconciling ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
+        `CampaignPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
       );
 
       // Only text values (e.g. delivery html source) can be pushed: an element
@@ -579,10 +587,14 @@ class CampaignWatch {
         payload.setAttribute(attributeName, value);
       }
 
+      pushLog.operation = "update";
+      pushLog.payloadXml = payloadDocument;
+
       await this.adapterWrite(payloadDocument);
       return true;
     } catch (err) {
       this.logger.verbose(`  Push failed: ${err.message || String(err)}`);
+      pushLog.error = err;
 
       // adapterWrite already reports SDK failures as AccErrors: re-wrapping one
       // would nest the message inside itself
@@ -590,6 +602,9 @@ class CampaignWatch {
         throw err;
       }
       throw wrapSdkError(err, INSTANCE_WATCH_PUSH_FAILED, { schemaId });
+    } finally {
+      pushLog.endTime = new Date();
+      this.logger.debug(pushLog.toLog());
     }
   }
 
