@@ -14,10 +14,12 @@ export default class InstanceExec extends InstanceCommand {
     file: Flags.string({
       char: "f",
       description: "Path to a JavaScript file to execute on the server",
+      exactlyOne: ["file", "script"],
     }),
     script: Flags.string({
       char: "s",
       description: "Inline JavaScript to execute (alternative to --file)",
+      exactlyOne: ["file", "script"],
     }),
     name: Flags.string({
       description:

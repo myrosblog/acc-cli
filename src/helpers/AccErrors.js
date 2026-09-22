@@ -209,14 +209,6 @@ E(
   "INSTANCE_WATCH_ALREADY_RUNNING",
   "Watch is already running. Stop the current watch before starting a new one.",
 );
-E(
-  "INSTANCE_EXEC_NO_SCRIPT",
-  "Exec failed: no script provided. Use --file <path> or --script <code>.",
-);
-E(
-  "INSTANCE_EXEC_BOTH_SCRIPT",
-  "Exec failed: --file and --script are mutually exclusive. Provide only one.",
-);
 E("INSTANCE_EXEC_FILE_NOT_FOUND", "Exec failed: script file not found: %s");
 E(
   "INSTANCE_EXEC_SDK_EVALUATE_FAILED",
@@ -243,14 +235,6 @@ E(
   `Instance info failed: nl:monitoring#DumpCurrentInstanceState error. ${TRACED}`,
 );
 E(
-  "INSTANCE_QUERYDEF_NO_QUERY",
-  "queryDef failed: no query provided. Use --query <json> or --file <path>.",
-);
-E(
-  "INSTANCE_QUERYDEF_BOTH_QUERY",
-  "queryDef failed: --query and --file are mutually exclusive. Provide only one.",
-);
-E(
   "INSTANCE_QUERYDEF_FILE_NOT_FOUND",
   "queryDef failed: queryDef file not found: %s",
 );
@@ -261,10 +245,6 @@ E(
 E(
   "INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED",
   `queryDef failed: server-side xtk:queryDef#ExecuteQuery error. ${TRACED}`,
-);
-E(
-  "INSTANCE_SOAP_NO_TARGET",
-  "soap failed: --schema and --method are both required.",
 );
 E("INSTANCE_SOAP_BAD_ARGS", "soap failed: --args is not valid JSON: %s");
 E(
