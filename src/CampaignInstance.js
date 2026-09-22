@@ -33,6 +33,7 @@ const {
 } = codes;
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
+import CampaignPullLog from "./helpers/CampaignPullLog.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -195,7 +196,7 @@ class CampaignInstance {
         this.logger.debug(
           `Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
         );
-        this.logger.debug(pullLog);
+        this.logger.debug(pullLog.toLog());
       } while (recordsLengthOfThisBatch >= lineCount);
       const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;
       const errorMsg = errorCount > 0 ? `(⚠️ ${errorCount} errors)` : "";
@@ -844,63 +845,6 @@ class CampaignInstance {
         .replace(/[\x00-\x1f]/g, "") // NUL + control characters
         .replace(/^\.+$/, (dots) => "_".repeat(dots.length))
     ); // "." / ".." -> "_" / "__"
-  }
-}
-
-/**
- * Log data retrieved by CampaignInstance.pull() for troubleshooting and auditing
- * 1 instance per batch, i.e. 15 records with lineCount=10 yields 2 CampaignPullLogs
- * @class CampaignPullLog
- */
-class CampaignPullLog {
-  /**
-   * @type {object}
-   */
-  schemaConfig;
-
-  /**
-   * @type {Date}
-   */
-  startTime;
-
-  /**
-   * @type {Date}
-   */
-  endTime;
-
-  /**
-   * @type {Array<Element>}
-   */
-  elements;
-
-  /**
-   * Flat array, not nested for the moment
-   * @type {Array<Error>}
-   */
-  errors;
-
-  /**
-   * Save request as JSON
-   * @type {object}
-   */
-  queryDef;
-
-  /**
-   * Save request as XML, converted from this.queryDef by DomUtil.fromJSON
-   * @type {Element}
-   */
-  queryDefXml;
-
-  /**
-   * @type {Array<string>}
-   */
-  parsedFilenames = [];
-
-  constructor(schemaConfig) {
-    this.startTime = new Date();
-    this.elements = [];
-    this.schemaConfig = schemaConfig;
-    this.errors = [];
   }
 }
 
