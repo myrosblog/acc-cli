@@ -194,7 +194,7 @@ class CampaignInstance {
         }
         // debug pullLog
         this.logger.debug(
-          `Pull log for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
+          `CampaignPullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
         );
         this.logger.debug(pullLog.toLog());
       } while (recordsLengthOfThisBatch >= lineCount);
