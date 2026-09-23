@@ -37,7 +37,7 @@ Enter
 Sleep 2s
 
 # --- 2. the hero command: a recurring pull ---
-Type "acc instance pull --alias local"
+Type "acc instance pull"
 Enter
 Sleep 8s
 
