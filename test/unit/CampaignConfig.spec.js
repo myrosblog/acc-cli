@@ -82,6 +82,96 @@ describe("CampaignAuth", function () {
         expect(config.schemas).to.deep.equal(configJson.schemas);
       });
 
+      it("should list warnings, not throw, on queryDef keys misplaced inside where", () => {
+        const configJson = {
+          schemas: [
+            {
+              schemaId: "xtk:form",
+              filename: "{@name}.xml",
+              queryDef: {
+                where: {
+                  condition: [{ expr: "@namespace NOT IN ('xtk')" }],
+                  orderBy: { node: [{ expr: "@name" }] },
+                  lineCount: 100,
+                },
+              },
+            },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.schemas).to.deep.equal(configJson.schemas);
+        const [warnings] = config.queryDefWarnings;
+        expect(warnings).to.have.length(2);
+        expect(warnings[0]).to.include(
+          'xtk:form (schemas[0]) queryDef/where: unknown key "orderBy"',
+        );
+        expect(warnings[1]).to.include(
+          'xtk:form (schemas[0]) queryDef/where: unknown key "lineCount"',
+        );
+        // logged by the pull, next to the schema, not when reading the config
+        expect(logger.warn.called).to.be.false;
+      });
+
+      it("should not warn on orderBy and lineCount next to where", () => {
+        const configJson = {
+          schemas: [
+            {
+              schemaId: "xtk:form",
+              filename: "{@name}.xml",
+              queryDef: {
+                where: { condition: [{ expr: "@namespace NOT IN ('xtk')" }] },
+                orderBy: { node: [{ expr: "@namespace" }, { expr: "@name" }] },
+                lineCount: 100,
+              },
+            },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        expect(config.queryDefWarnings).to.deep.equal([[]]);
+      });
+
+      it("should warn on queryDef values xtk:queryDef does not accept", () => {
+        const configJson = {
+          schemas: [
+            {
+              schemaId: "xtk:form",
+              filename: "{@name}.xml",
+              queryDef: {
+                where: { condition: [{ expr: "@a", boolOperator: "XOR" }] },
+                lineCount: "100",
+              },
+            },
+          ],
+        };
+        fs.writeJsonSync(tmpConfigPath, configJson);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath);
+
+        const [warnings] = config.queryDefWarnings;
+        expect(warnings).to.have.length(2);
+        expect(warnings.join("\n"))
+          .to.include("queryDef/lineCount: must be integer")
+          .and.to.include(
+            "queryDef/where/condition/0/boolOperator: must be equal to one of the allowed values: AND, OR",
+          );
+      });
+
+      it("should not warn on the template queryDefs", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath); // creates the file from the template
+
+        expect(config.queryDefWarnings.flat()).to.deep.equal([]);
+      });
+
       it("should read the project alias when present", () => {
         const configJson = {
           alias: "prod",
