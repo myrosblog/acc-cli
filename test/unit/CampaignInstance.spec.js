@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 // npm
 import { expect } from "chai";
+import hjson from "hjson";
 import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
@@ -16,7 +17,9 @@ import {
 } from "../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const loadJson = (file) => JSON.parse(fs.readFileSync(join(__dirname, file)));
+// hjson, as the template contains comments
+const loadJson = (file) =>
+  hjson.parse(fs.readFileSync(join(__dirname, file), "utf8"));
 const configPathXml = join(__dirname, "../mocks/acc-js-sdk-xml/");
 const loadXml = (file) =>
   DomUtil.getFirstChildElement(

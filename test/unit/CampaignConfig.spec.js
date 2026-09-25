@@ -1,6 +1,10 @@
+// node
+import path from "node:path";
+import { fileURLToPath } from "url";
 // npm
 import fs from "fs-extra";
 import { expect } from "chai";
+import hjson from "hjson";
 import tmp from "tmp";
 // sdk
 import { makeLogger } from "../helpers.js";
@@ -13,6 +17,10 @@ const {
   CONFIG_PARSE_ERROR,
   CONFIG_VALIDATE_ERRORS,
 } = codes;
+const templatePath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../src/templates/acc.config.json",
+);
 
 describe("CampaignAuth", function () {
   let tmpConfigPath, logger;
@@ -61,7 +69,7 @@ describe("CampaignAuth", function () {
         const fileExists = fs.existsSync(tmpConfigPath);
         expect(fileExists).to.be.true;
 
-        const parsed = fs.readJsonSync(tmpConfigPath);
+        const parsed = hjson.parse(fs.readFileSync(tmpConfigPath, "utf8"));
 
         expect(parsed).to.have.property("schemas");
         expect(parsed.schemas).to.be.an("array");
@@ -197,23 +205,56 @@ describe("CampaignAuth", function () {
         expect(config.alias).to.be.undefined;
       });
 
-      it("should set createdFromTemplate when the file is generated", () => {
+      it("should generate the config as the template, byte for byte, without alias", () => {
         const config = new CampaignConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
-        expect(config.createdFromTemplate).to.be.true;
+        expect(fs.readFileSync(tmpConfigPath, "utf8")).to.equal(
+          fs.readFileSync(templatePath, "utf8"),
+        );
       });
 
-      it("should not set createdFromTemplate when the file pre-exists", () => {
-        const configJson = {
-          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
-        };
-        fs.writeJsonSync(tmpConfigPath, configJson);
-
+      it("should leave the alias placeholder commented out without alias", () => {
         const config = new CampaignConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
-        expect(config.createdFromTemplate).to.be.false;
+        expect(config.alias).to.be.undefined;
+      });
+
+      it("should seed the alias by uncommenting the template placeholder", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath, "prod");
+
+        expect(config.alias).to.equal("prod");
+        const generatedLines = fs
+          .readFileSync(tmpConfigPath, "utf8")
+          .split("\n");
+        const templateLines = fs.readFileSync(templatePath, "utf8").split("\n");
+        const changedLines = generatedLines.filter(
+          (line, index) => line !== templateLines[index],
+        );
+        expect(generatedLines).to.have.lengthOf(templateLines.length);
+        expect(changedLines).to.deep.equal([
+          '  "alias": "prod", // Default instance alias, used when --alias is omitted',
+        ]);
+      });
+
+      it("should escape a seeded alias containing a quote", () => {
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath, 'my"alias');
+
+        expect(config.alias).to.equal('my"alias');
+      });
+
+      it("should not modify a pre-existing config when an alias is given", () => {
+        const content = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" }]}`;
+        fs.outputFileSync(tmpConfigPath, content);
+
+        const config = new CampaignConfig(logger, tmpConfigPath);
+        config.init(tmpConfigPath, "prod");
+
+        expect(config.alias).to.be.undefined;
+        expect(fs.readFileSync(tmpConfigPath, "utf8")).to.equal(content);
       });
 
       it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
@@ -227,23 +268,33 @@ describe("CampaignAuth", function () {
         }
       });
 
-      it("should throw CONFIG_PARSE_ERROR when config file misses quotes", () => {
-        const configJson = `{"schemas": [{ "schemaId": "nms:delivery", filename: "{@name}.meta.xml" }]}`;
+      it("should accept comments and trailing commas", () => {
+        const configJson = `{
+  // line comment
+  /* block comment */
+  # hash comment
+  "alias": "prod", // trailing comment
+  "schemas": [
+    { "schemaId": "nms:delivery", "filename": "{@name}.meta.xml", },
+  ],
+}`;
         fs.outputFileSync(tmpConfigPath, configJson);
+
         const config = new CampaignConfig(logger, tmpConfigPath);
-        try {
-          config.init(tmpConfigPath);
-          throw new Error("should have failed");
-        } catch (err) {
-          expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-          expect(err.message).to.include(
-            "Expected double-quoted property name in JSON at position",
-          );
-        }
+        config.init(tmpConfigPath);
+
+        expect(config.alias).to.equal("prod");
+        expect(config.schemas).to.deep.equal([
+          { schemaId: "nms:delivery", filename: "{@name}.meta.xml" },
+        ]);
       });
 
-      it("should throw CONFIG_PARSE_ERROR when config file has trailing comma", () => {
-        const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml", }]}`;
+      it("should throw CONFIG_PARSE_ERROR with the line when config file has a double comma", () => {
+        const configJson = `{
+  "schemas": [
+    { "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" },,
+  ]
+}`;
         fs.outputFileSync(tmpConfigPath, configJson);
         const config = new CampaignConfig(logger, tmpConfigPath);
         try {
@@ -251,9 +302,7 @@ describe("CampaignAuth", function () {
           throw new Error("should have failed");
         } catch (err) {
           expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-          expect(err.message).to.include(
-            "Expected double-quoted property name in JSON at position",
-          );
+          expect(err.message).to.include("at line 3,");
         }
       });
 
@@ -266,9 +315,7 @@ describe("CampaignAuth", function () {
           throw new Error("should have failed");
         } catch (err) {
           expect(err).to.be.instanceOf(CONFIG_PARSE_ERROR);
-          expect(err.message).to.include(
-            "Expected ',' or ']' after array element in JSON at position",
-          );
+          expect(err.message).to.include("at line 1,");
         }
       });
 
@@ -429,45 +476,6 @@ describe("CampaignAuth", function () {
         config.init(tmpConfigPath);
 
         expect(config.accJsSdkOptions).to.deep.equal({});
-      });
-    });
-
-    describe("seedAlias", () => {
-      it("should write the alias into a freshly created config", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
-        config.init(tmpConfigPath);
-        config.seedAlias("prod");
-
-        expect(config.alias).to.equal("prod");
-        expect(fs.readJsonSync(tmpConfigPath).alias).to.equal("prod");
-      });
-
-      it("should not touch a pre-existing config file", () => {
-        const configJson = {
-          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
-        };
-        fs.writeJsonSync(tmpConfigPath, configJson);
-
-        const config = new CampaignConfig(logger, tmpConfigPath);
-        config.init(tmpConfigPath);
-        config.seedAlias("prod");
-
-        expect(config.alias).to.be.undefined;
-        expect(fs.readJsonSync(tmpConfigPath)).to.not.have.property("alias");
-      });
-
-      it("should not overwrite an existing alias", () => {
-        const configJson = {
-          alias: "staging",
-          schemas: [{ schemaId: "nms:delivery", filename: "{@name}.meta.xml" }],
-        };
-        fs.writeJsonSync(tmpConfigPath, configJson);
-
-        const config = new CampaignConfig(logger, tmpConfigPath);
-        config.init(tmpConfigPath);
-        config.seedAlias("prod");
-
-        expect(config.alias).to.equal("staging");
       });
     });
 
