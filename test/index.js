@@ -23,6 +23,7 @@ import "./unit/helpers/jwt.spec.js";
 import "./unit/helpers/DomUtilAcc.spec.js";
 import "./unit/helpers/CampaignPullLog.spec.js";
 import "./unit/helpers/CampaignPushLog.spec.js";
+import "./unit/validators/queryDef.spec.js";
 import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
 import "./unit/CampaignInstance.spec.js";

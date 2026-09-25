@@ -588,6 +588,38 @@ describe("CampaignInstance", () => {
       );
     });
 
+    it("should log the queryDef warnings of pulled schemas only", async () => {
+      const config = {
+        ...filterSchemas(
+          configDefaultFull,
+          "nms:deliveryMapping",
+          "xtk:olapCube",
+        ),
+        // as built by CampaignConfig.init(), at the same index as schemas
+        queryDefWarnings: [
+          ["⚠️ deliveryMapping warning"],
+          ["⚠️ olapCube warning"],
+        ],
+      };
+      instance = new CampaignInstance(
+        mockLogger,
+        mockClient,
+        config,
+        { ...optionsFull, metadata: "nms:deliveryMapping" },
+        mockSpinner,
+      );
+      sinon
+        .stub(instance, "adapterCreateAndExecuteQuery")
+        .resolves(nmsDeliveryMappingsRecipientAndSubscribe);
+
+      await instance.pull(true);
+
+      expect(mockLogger.warn.calledOnce).to.be.true;
+      expect(mockLogger.warn.firstCall.args[0]).to.equal(
+        "⚠️ deliveryMapping warning",
+      );
+    });
+
     it("should skip all schemas when --metadata lists an unknown schemaId", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
       instance = new CampaignInstance(mockLogger, mockClient, config, {
