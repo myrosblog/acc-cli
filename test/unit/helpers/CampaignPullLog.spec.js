@@ -20,6 +20,7 @@ describe("helpers/CampaignPullLog", () => {
       expect(pullLog.elements).to.deep.equal([]);
       expect(pullLog.errors).to.deep.equal([]);
       expect(pullLog.parsedFilenames).to.deep.equal([]);
+      expect(pullLog.parsedPaths).to.deep.equal([]);
     });
   });
 
@@ -38,6 +39,7 @@ describe("helpers/CampaignPullLog", () => {
       const error = new Error("boom");
       pullLog.errors.push(error);
       pullLog.parsedFilenames.push("OU1.meta.xml");
+      pullLog.parsedPaths.push("/Organizational entities/OU1.meta.xml");
 
       const summary = pullLog.toLog();
 
@@ -48,6 +50,9 @@ describe("helpers/CampaignPullLog", () => {
       expect(summary.durationMs).to.equal(10);
       expect(summary.elementCount).to.equal(2);
       expect(summary.parsedFilenames).to.deep.equal(["OU1.meta.xml"]);
+      expect(summary.parsedPaths).to.deep.equal([
+        "/Organizational entities/OU1.meta.xml",
+      ]);
       expect(summary.errors).to.deep.equal(["boom"]);
       expect(summary.queryDef).to.equal(pullLog.queryDef);
       expect(summary.queryDefXml).to.be.a("string");
