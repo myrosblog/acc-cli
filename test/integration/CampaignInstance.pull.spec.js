@@ -4,12 +4,15 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 // npm
 import { expect } from "chai";
+import hjson from "hjson";
 import sinon from "sinon";
 // helpers
 import { makeClient, makeLogger, makeSpinner, loadXml } from "../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const loadJson = (file) => JSON.parse(fs.readFileSync(join(__dirname, file)));
+// hjson, as the template contains comments
+const loadJson = (file) =>
+  hjson.parse(fs.readFileSync(join(__dirname, file), "utf8"));
 const dir = "mocks/acc-js-sdk-xml/xtk/queryDef/executeQuery/";
 
 // mocks
