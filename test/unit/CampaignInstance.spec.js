@@ -371,6 +371,89 @@ describe("CampaignInstance", () => {
       expect(pullLog3.startTime).to.be.lessThan(pullLog3.endTime);
     });
 
+    it("should warn when pages overlap and records overwrite each other (xtk:olapCube)", async () => {
+      const config = filterSchemas(configDefaultFull, "xtk:olapCube");
+      config.schemas[0].queryDef.lineCount = 2;
+      const spinner = makeSpinner();
+      const spinnerWarnSpy = sinon.spy(spinner, "warn");
+      const spinnerSucceedSpy = sinon.spy(spinner, "succeed");
+      instance = new CampaignInstance(
+        mockLogger,
+        mockClient,
+        config,
+        optionsFull,
+        () => spinner,
+      );
+      adapterExecuteQueryStub = sinon.stub(
+        instance,
+        "adapterCreateAndExecuteQuery",
+      );
+      // page 2 returns the same records as page 1, like a query without orderBy
+      adapterExecuteQueryStub.onFirstCall().resolves(xtkOlapCubes1);
+      adapterExecuteQueryStub.onSecondCall().resolves(xtkOlapCubes1);
+      adapterExecuteQueryStub.onThirdCall().resolves(xtkOlapCubes3);
+
+      await instance.pull(true);
+
+      expect(instance.pullLogs[1].parsedPaths).to.deep.equal([
+        "/Administration/Configuration/Cubes/trackinglogrcp.meta.xml",
+        "/Administration/Configuration/Cubes/trackingStats.meta.xml",
+      ]);
+      expect(mockLogger.warn.calledOnce).to.be.true;
+      expect(mockLogger.warn.firstCall.args[0]).to.include(
+        "xtk:olapCube: 2 records were written to a file already written",
+      );
+      expect(
+        mockLogger.verbose.calledWith(
+          [
+            "/Administration/Configuration/Cubes/trackinglogrcp.meta.xml",
+            "/Administration/Configuration/Cubes/trackingStats.meta.xml",
+          ].join("\n"),
+        ),
+      ).to.be.true;
+      expect(spinnerSucceedSpy.called).to.be.false;
+      expect(spinnerWarnSpy.calledOnce).to.be.true;
+      expect(spinnerWarnSpy.firstCall.args[0]).to.include(
+        "5 parsed, 3 files (⚠️ 2 overwritten)",
+      );
+    });
+
+    it("should not warn when records share a basename in different folders", async () => {
+      const config = {
+        schemas: [
+          {
+            schemaId: "xtk:form",
+            filename: "/Input forms/{@namespace}/{@name}.xml",
+          },
+        ],
+      };
+      const spinner = makeSpinner();
+      const spinnerWarnSpy = sinon.spy(spinner, "warn");
+      instance = new CampaignInstance(
+        mockLogger,
+        mockClient,
+        config,
+        optionsFull,
+        () => spinner,
+      );
+      sinon
+        .stub(instance, "adapterCreateAndExecuteQuery")
+        .resolves(
+          DomUtil.parse(
+            '<form-collection><form namespace="cus" name="category"/><form namespace="nms" name="category"/></form-collection>',
+          ).documentElement,
+        );
+
+      await instance.pull(true);
+
+      expect(instance.pullLogs[0].parsedPaths).to.deep.equal([
+        "/Input forms/cus/category.xml",
+        "/Input forms/nms/category.xml",
+      ]);
+      expect(mockLogger.warn.called).to.be.false;
+      expect(spinnerWarnSpy.called).to.be.false;
+    });
+
     it("should record error in pullLog when adapterCreateAndExecuteQuery rejects", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
       instance = new CampaignInstance(

@@ -140,6 +140,9 @@ class CampaignInstance {
     for (const schemaConfig of this.accConfig.schemas) {
       const { schemaId, filename, queryDef } = schemaConfig;
       const pullLogsForThisSchema = [];
+      // save filenames to report duplicates
+      const writtenPaths = new Set();
+      const overwrittenPaths = [];
       // skip if metadata option was included and not matching
       if (this.metadata) {
         const metadata = this.metadata.split(",").map((id) => id.trim());
@@ -178,6 +181,12 @@ class CampaignInstance {
         recordsLengthOfThisBatch = elementsForThisBatch.length;
         startLine += lineCount;
         recordsParsedTotal += recordsLengthOfThisBatch;
+        for (const parsedPath of pullLog.parsedPaths) {
+          if (writtenPaths.has(parsedPath)) {
+            overwrittenPaths.push(parsedPath);
+          }
+          writtenPaths.add(parsedPath);
+        }
         pullLog.endTime = new Date();
         // Like the console, pagination ends with one empty batch when the total
         // is an exact multiple of lineCount. Don't journal that trailing empty
@@ -195,9 +204,20 @@ class CampaignInstance {
       } while (recordsLengthOfThisBatch >= lineCount);
       const errorCount = pullLogsForThisSchema.flatMap((x) => x.errors).length;
       const errorMsg = errorCount > 0 ? `(⚠️ ${errorCount} errors)` : "";
-      spinner.succeed(
-        `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
-      );
+      if (overwrittenPaths.length > 0) {
+        spinner.warn(
+          `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed, ${writtenPaths.size} files (⚠️ ${overwrittenPaths.length} overwritten) ${errorMsg}`,
+        );
+        this.logger.warn(
+          `⚠️ ${schemaId}: ${overwrittenPaths.length} records were written to a file already written in this pull. The pagination order is not stable or the filename template is not unique. Add a unique queryDef.orderBy.node[].expr next to where.`,
+        );
+        this.logger.verbose(`⚠️ Listing overwritten files for ${schemaId}:`);
+        this.logger.verbose(overwrittenPaths.join("\n"));
+      } else {
+        spinner.succeed(
+          `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
+        );
+      }
       // display errors if any
       const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
       if (flatErrors.length > 0) {
@@ -256,7 +276,9 @@ class CampaignInstance {
       pullLog.elements.push(element);
 
       try {
-        const filenameOnly = this.parse(element, schemaConfig, isPreview);
+        const parsedPath = this.parse(element, schemaConfig, isPreview);
+        const filenameOnly = path.basename(parsedPath);
+        pullLog.parsedPaths.push(parsedPath);
         pullLog.parsedFilenames.push(filenameOnly);
         filenamesForThisBatch.push(`${chalk.underline(filenameOnly)}`);
       } catch (err) {
@@ -684,7 +706,7 @@ class CampaignInstance {
    * @param {Element} childElement - the record element
    * @param {object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
    * @param {boolean} isPreview - when true, compute filenames but write nothing
-   * @returns {string} the base filename of the saved record
+   * @returns {string} the path of the saved record, relative to the download path
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
@@ -695,7 +717,6 @@ class CampaignInstance {
       configAttributes,
       childElement,
     );
-    const filenameOnly = path.basename(computedFilename);
     const datapath = path.join(this.downloadPath, computedFilename);
 
     // prepare XML by removing excluded attributes
@@ -768,7 +789,7 @@ class CampaignInstance {
       }
     }
 
-    return filenameOnly;
+    return computedFilename;
   }
 
   /**
