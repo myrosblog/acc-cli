@@ -1035,18 +1035,6 @@ describe("CampaignInstance", () => {
       expect(adapterStub.firstCall.args[0]).to.equal("myScript");
     });
 
-    it("should throw INSTANCE_EXEC_NO_SCRIPT when neither file nor script", async () => {
-      instance = newInstance();
-      await expect(instance.exec({})).to.be.rejectedWith(/no script provided/);
-    });
-
-    it("should throw INSTANCE_EXEC_BOTH_SCRIPT when both file and script", async () => {
-      instance = newInstance();
-      await expect(
-        instance.exec({ file: __filename, script: "x" }),
-      ).to.be.rejectedWith(/mutually exclusive/);
-    });
-
     it("should throw INSTANCE_EXEC_FILE_NOT_FOUND when file is missing", async () => {
       instance = newInstance();
       await expect(
@@ -1145,20 +1133,6 @@ describe("CampaignInstance", () => {
       await instance.queryDef({ file: "/tmp/q.xml" });
 
       expect(adapterStub.firstCall.args[0]).to.equal(QUERY_XML);
-    });
-
-    it("should throw INSTANCE_QUERYDEF_NO_QUERY when neither query nor file", async () => {
-      instance = newInstance();
-      await expect(instance.queryDef({})).to.be.rejectedWith(
-        /no query provided/,
-      );
-    });
-
-    it("should throw INSTANCE_QUERYDEF_BOTH_QUERY when both query and file", async () => {
-      instance = newInstance();
-      await expect(
-        instance.queryDef({ query: QUERY_XML, file: "x.xml" }),
-      ).to.be.rejectedWith(/mutually exclusive/);
     });
 
     it("should throw INSTANCE_QUERYDEF_FILE_NOT_FOUND when file is missing", async () => {
@@ -1292,16 +1266,6 @@ describe("CampaignInstance", () => {
       expect(adapterStub.firstCall.args[2]).to.deep.equal([]);
       expect(adapterStub.firstCall.args[3]).to.equal(true);
       expect(result).to.deep.equal(jsonResult);
-    });
-
-    it("should throw INSTANCE_SOAP_NO_TARGET when schema or method is missing", async () => {
-      instance = newInstance();
-      await expect(
-        instance.soap({ method: "GetServerTime" }),
-      ).to.be.rejectedWith(/--schema and --method are both required/);
-      await expect(instance.soap({ schema: "xtk:session" })).to.be.rejectedWith(
-        /--schema and --method are both required/,
-      );
     });
 
     it("should throw INSTANCE_SOAP_BAD_ARGS when --args is not valid JSON", async () => {

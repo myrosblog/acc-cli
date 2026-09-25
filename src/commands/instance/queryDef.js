@@ -34,11 +34,13 @@ export default class InstanceQueryDef extends InstanceCommand {
     query: Flags.string({
       char: "q",
       description: "queryDef as a JSON string (alternative to --file)",
+      exactlyOne: ["query", "file"],
     }),
     file: Flags.string({
       char: "f",
       description:
         "Path to a .json file containing the queryDef (alternative to --query)",
+      exactlyOne: ["query", "file"],
     }),
   };
 
