@@ -47,9 +47,16 @@ class CampaignPullLog {
   queryDefXml;
 
   /**
+   * Filenames-only of the written files
    * @type {Array<string>}
    */
   parsedFilenames = [];
+
+  /**
+   * Paths of the written files, relative to the download path
+   * @type {Array<string>}
+   */
+  parsedPaths = [];
 
   constructor(schemaConfig) {
     this.startTime = new Date();
@@ -74,6 +81,7 @@ class CampaignPullLog {
       durationMs: this.endTime ? this.endTime - this.startTime : undefined,
       elementCount: this.elements.length,
       parsedFilenames: this.parsedFilenames,
+      parsedPaths: this.parsedPaths,
       errors: this.errors.map((err) => err.message || String(err)),
       queryDef: this.queryDef,
       queryDefXml: this.queryDefXml
