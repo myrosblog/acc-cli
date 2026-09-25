@@ -9,4 +9,5 @@ import "./auth-init-s2s.spec.js";
 import "./instance-exec.spec.js";
 import "./instance-querydef.spec.js";
 import "./instance-soap.spec.js";
+import "./instance-pull.spec.js";
 import "./instance-info.spec.js";
