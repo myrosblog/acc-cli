@@ -142,7 +142,7 @@ class CampaignInstance {
     this.pullLogs = [];
 
     // loop schemas
-    for (const schemaConfig of this.accConfig.schemas) {
+    for (const [index, schemaConfig] of this.accConfig.schemas.entries()) {
       const { schemaId, filename, queryDef } = schemaConfig;
       const pullLogsForThisSchema = [];
       // skip if metadata option was included and not matching
@@ -152,6 +152,10 @@ class CampaignInstance {
           this.logger.verbose(`Skipping ${schemaId}`);
           continue;
         }
+      }
+      // Show queryDef warnings (ajv validation) above the schema
+      for (const warning of this.accConfig.queryDefWarnings?.[index] ?? []) {
+        this.logger.warn(warning);
       }
       const spinner = this.createSpinner(
         `${filename}: ${chalk.bgCyan(schemaId)}`,

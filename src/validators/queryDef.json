@@ -1,0 +1,239 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "xtk:queryDef",
+  "description": "Adobe Campaign xtk:queryDef in the SDK SimpleJson representation (attributes and child elements as keys). See https://opensource.adobe.com/acc-js-sdk/xtkQueryDef.html",
+  "$ref": "#/definitions/queryDef",
+  "definitions": {
+    "queryDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "xtkschema": { "type": "string" },
+        "schema": { "type": "string" },
+        "startPath": { "type": "string" },
+        "operation": {
+          "type": "string",
+          "enum": ["get", "getIfExists", "select", "count"]
+        },
+        "startLine": { "type": "integer" },
+        "lineCount": { "type": "integer" },
+        "noChangeOnAutoPkLineCount": { "type": "boolean" },
+        "sortCol": { "type": "integer" },
+        "firstRows": { "type": "boolean" },
+        "forceExprOrder": { "type": "boolean" },
+        "fullLoad": { "type": "boolean" },
+        "distinct": { "type": "boolean" },
+        "newAutoPk": { "type": "boolean" },
+        "ignoreDeleteStatus": { "type": "boolean" },
+        "unExpandMemoData": { "type": "boolean" },
+        "showSQL": { "type": "boolean" },
+        "hideSelect": { "type": "boolean" },
+        "hideWhere": { "type": "boolean" },
+        "hideOrderby": { "type": "boolean" },
+        "loadEntity": { "type": "boolean" },
+        "folderFilter": { "type": "integer" },
+        "checkActiveEnabledIf": { "type": "boolean" },
+        "expandParam": { "type": "boolean" },
+        "analyze": { "type": "boolean" },
+        "externalKey": { "type": "boolean" },
+        "exportOwnedDepth": { "type": "integer" },
+        "timeout": { "description": "timespan" },
+        "disableFolderCond": { "type": "boolean" },
+        "activeHaving": { "type": "boolean" },
+        "noLineCount": { "type": "boolean" },
+        "forceNoLineCount": { "type": "boolean" },
+        "tempSchemas": { "type": "object" },
+        "ctx": { "type": "object" },
+        "select": { "$ref": "#/definitions/select" },
+        "conditionLink": { "$ref": "#/definitions/conditionLinks" },
+        "where": { "$ref": "#/definitions/where" },
+        "groupBy": { "$ref": "#/definitions/groupBy" },
+        "having": { "$ref": "#/definitions/having" },
+        "orderBy": { "$ref": "#/definitions/orderBy" },
+        "filter": { "type": "object" },
+        "sysFilter": { "$ref": "#/definitions/sysFilters" }
+      }
+    },
+    "select": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "ref": { "type": "string" },
+        "alias": { "type": "string" },
+        "node": { "$ref": "#/definitions/nodes" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expr": { "type": "string" },
+        "sql": { "type": "string" },
+        "hidden": { "type": "boolean" },
+        "colSize": { "type": "integer" },
+        "displayFormat": { "type": "string" },
+        "type": { "type": "string" },
+        "sortDesc": { "type": "boolean" },
+        "alias": { "type": "string" },
+        "label": { "type": "string" },
+        "dataType": { "type": "string" },
+        "noSqlBind": { "type": "boolean" },
+        "groupBy": { "type": "boolean" },
+        "ignore": { "type": "boolean" },
+        "action": { "type": "string" },
+        "ref": { "type": "string" },
+        "noSortable": { "type": "boolean" },
+        "anyType": { "type": "boolean" },
+        "editable": { "type": "boolean" },
+        "sort": { "type": "boolean" },
+        "_init": { "type": "boolean" },
+        "noComputeString": { "type": "boolean" },
+        "lineCount": { "type": "integer" },
+        "singleRow": { "type": "boolean" },
+        "conditionLink": { "type": "boolean" },
+        "forceIndexHint": { "type": "string" },
+        "enabledIf": { "type": "string" },
+        "analyze": { "type": "boolean" },
+        "value": { "type": "string" },
+        "valueLabel": { "type": "string" },
+        "node": { "$ref": "#/definitions/nodes" },
+        "where": { "$ref": "#/definitions/where" }
+      }
+    },
+    "nodes": {
+      "description": "Unbound element: SimpleJson accepts one object or an array. if/then/else rather than anyOf, so that only the matching shape reports errors",
+      "if": { "type": "array" },
+      "then": { "type": "array", "items": { "$ref": "#/definitions/node" } },
+      "else": { "$ref": "#/definitions/node" }
+    },
+    "where": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "displayFilter": { "type": "string" },
+        "extendedSchema": { "type": "string" },
+        "forceHint": { "type": "string" },
+        "filterName": { "type": "string" },
+        "condition": { "$ref": "#/definitions/conditions" },
+        "ctx": { "type": "object" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expr": { "type": "string" },
+        "xpath": { "type": "string" },
+        "internalId": { "type": "string" },
+        "boolOperator": { "type": "string", "enum": ["AND", "OR"] },
+        "setOperator": {
+          "type": "string",
+          "enum": [
+            "EXISTS",
+            "NOT EXISTS",
+            "COUNT",
+            "SUM",
+            "AVG",
+            "MIN",
+            "MAX",
+            "IN",
+            "NOT IN"
+          ]
+        },
+        "ignore": { "type": "boolean" },
+        "compositeKey": { "type": "string" },
+        "dependkey": { "type": "string" },
+        "enabledIf": { "type": "string" },
+        "noSqlBind": { "type": "boolean" },
+        "sql": { "type": "string" },
+        "subQuery": {
+          "description": "Attribute (string) or element (nested queryDef)",
+          "if": { "type": "string" },
+          "else": { "$ref": "#/definitions/queryDef" }
+        },
+        "aliasSqlTable": { "type": "string" },
+        "filter-name": { "type": "string" },
+        "filterLabel": { "type": "string" },
+        "condition": { "$ref": "#/definitions/conditions" }
+      }
+    },
+    "conditions": {
+      "description": "Unbound element: SimpleJson accepts one object or an array. if/then/else rather than anyOf, so that only the matching shape reports errors",
+      "if": { "type": "array" },
+      "then": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/condition" }
+      },
+      "else": { "$ref": "#/definitions/condition" }
+    },
+    "orderBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "displayOrder": { "type": "string" },
+        "node": { "$ref": "#/definitions/nodes" }
+      }
+    },
+    "groupBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "displayGroup": { "type": "string" },
+        "node": { "$ref": "#/definitions/nodes" }
+      }
+    },
+    "having": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "condition": { "$ref": "#/definitions/conditions" }
+      }
+    },
+    "sysFilter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "displayFilter": { "type": "string" },
+        "forceHint": { "type": "string" },
+        "name": { "type": "string" },
+        "inactive": { "type": "boolean" },
+        "condition": { "$ref": "#/definitions/conditions" }
+      }
+    },
+    "sysFilters": {
+      "description": "Unbound element: SimpleJson accepts one object or an array. if/then/else rather than anyOf, so that only the matching shape reports errors",
+      "if": { "type": "array" },
+      "then": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/sysFilter" }
+      },
+      "else": { "$ref": "#/definitions/sysFilter" }
+    },
+    "conditionLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "xpath": { "type": "string" },
+        "alias": { "type": "string" },
+        "label": { "type": "string" },
+        "schema": { "type": "string" },
+        "lineCount": { "type": "integer" },
+        "singleRow": { "type": "boolean" },
+        "groupBy": { "type": "boolean" },
+        "conditionLink": { "type": "boolean" },
+        "where": { "$ref": "#/definitions/where" },
+        "orderBy": { "$ref": "#/definitions/orderBy" }
+      }
+    },
+    "conditionLinks": {
+      "description": "Unbound element: SimpleJson accepts one object or an array. if/then/else rather than anyOf, so that only the matching shape reports errors",
+      "if": { "type": "array" },
+      "then": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/conditionLink" }
+      },
+      "else": { "$ref": "#/definitions/conditionLink" }
+    }
+  }
+}

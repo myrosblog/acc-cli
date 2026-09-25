@@ -46,23 +46,7 @@
           },
           "queryDef": {
             "type": "object",
-            "properties": {
-              "where": {
-                "type": "object",
-                "properties": {
-                  "condition": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "expr": { "type": "string" }
-                      },
-                      "required": ["expr"]
-                    }
-                  }
-                }
-              }
-            }
+            "description": "xtk:queryDef, checked by queryDef.json (warnings only)"
           }
         }
       }
