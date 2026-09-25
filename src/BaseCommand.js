@@ -9,7 +9,7 @@ import Config from "@adobe/aio-lib-core-config/src/Config.js";
 import makeLogger from "./helpers/makeLogger.js";
 import AccCache from "./helpers/AccCache.js";
 import CampaignAuth from "./CampaignAuth.js";
-import CampaignConfig from "./CampaignConfig.js";
+import CampaignConfig, { CONFIG_FILENAME } from "./CampaignConfig.js";
 import CampaignMonitor from "./CampaignMonitor.js";
 import logCacheStats from "./helpers/cacheStatsLogger.js";
 
@@ -78,7 +78,7 @@ export default class BaseCommand extends Command {
   makeConfig() {
     return new CampaignConfig(
       this.logger,
-      path.join(process.cwd(), "acc.config.json"),
+      path.join(process.cwd(), CONFIG_FILENAME),
     );
   }
 

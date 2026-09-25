@@ -1,17 +1,28 @@
+/* Learn more about configuring acc at https://myrosblog.com/adobe-campaign/acc-cli/configuration */
 {
+  // "alias": "staging", // Default instance alias, used when --alias is omitted
+  // Options passed to @adobe/acc-js-sdk. See https://opensource.adobe.com/acc-js-sdk/connectionParameters
   "acc-js-sdk": {
-    "traceAPICalls": false,
-    "noStorage": false
+    "traceAPICalls": false, // Set to true to log API calls in the console
+    "noStorage": false // Set to true to disable local storage of SOAP methods
+    // "timeout": 30000, // SOAP call timeout in ms, default 5000
   },
+  // List of schemas (SQL tables) for acc:
+  // - to download, with "acc instance pull"
+  // - to upload, with "acc instance watch"
   "schemas": [
     {
+      // One entry per schema, identified by its schema id (namespace:name)
       "schemaId": "nms:localOrgUnit",
+      // Path to the file where the records are saved, relative to the project root
       "filename": "/Administration/Access Management/Organizational entities/{@name}.meta.xml"
     },
     {
       "schemaId": "xtk:operator",
       "filename": "/Administration/Access Management/Operator groups/{@name}.meta.xml",
+      // Sensitive data are removed before saving, e.g. secrets
       "excludeXPaths": ["access/@password"],
+      // Filter on the records to pull (xtk:queryDef syntax)
       "queryDef": {
         "where": { "condition": [{ "expr": "@type = 1" }] }
       }
@@ -41,11 +52,13 @@
     {
       "schemaId": "nms:typologyRule",
       "filename": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.meta.xml",
+      // XPaths extracted to their own file, e.g. code to a .js file
       "decompose": {
         "code": "/Administration/Campaign Management/Typology management/Typology rules/{@name}.js"
       },
       "queryDef": {
         "where": { "condition": [{ "expr": "@name NOT LIKE 'xtk%'" }] },
+        // Records fetched per request, default 20
         "lineCount": 10
       }
     },

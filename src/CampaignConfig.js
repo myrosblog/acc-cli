@@ -2,6 +2,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import Ajv from "ajv";
+import hjson from "hjson";
 import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // acc
@@ -12,6 +13,12 @@ const {
   CONFIG_PARSE_ERROR,
   CONFIG_VALIDATE_ERRORS,
 } = codes;
+
+/**
+ * Name of the project config file (and the name to its template)
+ * @type {string}
+ */
+export const CONFIG_FILENAME = "acc.config.json";
 
 class CampaignConfig {
   /**
@@ -29,12 +36,6 @@ class CampaignConfig {
    * @type {string | undefined}
    */
   alias;
-
-  /**
-   * True when init() just created the config file from the template.
-   * @type {boolean}
-   */
-  createdFromTemplate = false;
 
   /**
    * @type {string}
@@ -91,10 +92,11 @@ class CampaignConfig {
   /**
    * Initializes the configuration.
    * @param {string} configPath the path to the acc.config.json file
+   * @param {string} [aliasToSeed] alias written into the config when it is created from the template
    * @returns {void}
    * @throws {CONFIG_INIT_CONFIG_PATH_MISSING|CONFIG_PARSE_ERROR|CONFIG_VALIDATE_ERRORS}
    */
-  init(configPath) {
+  init(configPath, aliasToSeed) {
     if (!configPath) {
       throw new CONFIG_INIT_CONFIG_PATH_MISSING();
     }
@@ -104,15 +106,19 @@ class CampaignConfig {
       !this.fileExists(this.defaultConfigPath)
     ) {
       this.logger.info(`🛠️ Config not found, initializing ${configPath}`);
-      this.copyTemplateTo("acc.config.json", this.defaultConfigPath);
-      this.createdFromTemplate = true;
+      fs.writeFileSync(
+        this.defaultConfigPath,
+        this.renderTemplate(aliasToSeed),
+      );
+      if (aliasToSeed) {
+        this.logger.info(`🌱 Seeded alias "${aliasToSeed}" into ${configPath}`);
+      }
     } else {
       this.logger.info(`🛠️ Using config ${configPath}`);
     }
-    // parse the config
     let configJson;
     try {
-      configJson = fs.readJsonSync(configPath);
+      configJson = hjson.parse(fs.readFileSync(configPath, "utf8"));
     } catch (error) {
       throw new CONFIG_PARSE_ERROR({ messageValues: [error.message] });
     }
@@ -140,31 +146,24 @@ class CampaignConfig {
   }
 
   /**
-   * Seeds the project alias into a freshly created config file, to avoid
-   * re-typing --alias on subsequent runs. No-op if the file pre-existed or
-   * already has an alias, so an existing manifest is never overwritten.
-   * @param {string} alias - the alias to seed into the config
-   * @returns {void}
+   * Returns the acc.config.json template text.
+   * When an alias is provided, placeholder line is uncommented with its value.
+   * @param {string} [alias] the alias to write in place of the placeholder
+   * @returns {string} the template content
    */
-  seedAlias(alias) {
-    if (!this.createdFromTemplate || this.alias || !alias) {
-      return;
+  renderTemplate(alias) {
+    const content = fs.readFileSync(
+      path.join(this.templateDir, CONFIG_FILENAME),
+      "utf8",
+    );
+    if (!alias) {
+      return content;
     }
-    const configJson = fs.readJsonSync(this.configPath);
-    configJson.alias = alias;
-    fs.writeJsonSync(this.configPath, configJson, { spaces: 2 });
-    this.alias = alias;
-    this.logger.info(`🌱 Seeded alias "${alias}" into ${this.configPath}`);
-  }
-
-  /**
-   * Copy template file from /templates/ to destination path
-   * @param {string} filename - the template filename to copy
-   * @param {string} destinationPath - the destination path to copy the template to
-   * @returns {void}
-   */
-  copyTemplateTo(filename, destinationPath) {
-    fs.copySync(path.join(this.templateDir, filename), destinationPath);
+    // a replacer function, so "$" in the alias is not read as a replacement pattern
+    return content.replace(
+      '// "alias": "staging",',
+      () => `"alias": ${JSON.stringify(alias)},`,
+    );
   }
 
   /**
@@ -174,11 +173,9 @@ class CampaignConfig {
    */
   template() {
     this.logger.info(
-      `📄 Returning template content for acc.config.json from ${this.templateDir}`,
+      `📄 Returning template content for ${CONFIG_FILENAME} from ${this.templateDir}`,
     );
-    const filename = "acc.config.json";
-    const content = fs.readFileSync(path.join(this.templateDir, filename));
-    return content.toString();
+    return this.renderTemplate();
   }
 }
 

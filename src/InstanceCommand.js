@@ -4,6 +4,7 @@ import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
 import CampaignInstance from "./CampaignInstance.js";
+import { CONFIG_FILENAME } from "./CampaignConfig.js";
 import { codes } from "./helpers/AccErrors.js";
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 
@@ -28,8 +29,8 @@ export default class InstanceCommand extends BaseCommand {
     }),
     config: Flags.string({
       description: "Path to the configuration file.",
-      default: () => path.join(process.cwd(), "acc.config.json"),
-      defaultHelp: () => "./acc.config.json", // for generated README
+      default: () => path.join(process.cwd(), CONFIG_FILENAME),
+      defaultHelp: () => `./${CONFIG_FILENAME}`, // for generated README
     }),
   };
 
@@ -42,14 +43,12 @@ export default class InstanceCommand extends BaseCommand {
    */
   async getInstance(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();
-    config.init(flags.config);
+    config.init(flags.config, flags.alias);
     const alias = flags.alias || config.alias;
     if (!alias) {
       throw new INSTANCE_ALIAS_UNRESOLVED();
     }
-    // Seed the alias into a freshly created config so it needn't be retyped.
     if (flags.alias) {
-      config.seedAlias(flags.alias);
       this.logger.info(`🏷️ Instance alias "${alias}" (from CLI)`);
     } else {
       this.logger.info(`🏷️ Instance alias "${alias}" (from config)`);
