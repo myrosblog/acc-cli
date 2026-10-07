@@ -23,6 +23,7 @@ export default class AuthLogin extends BaseCommand {
   static flags = {
     alias: Flags.string({
       required: true,
+      char: "a",
       description: "Local alias for this instance, e.g. prod, staging, local",
     }),
   };

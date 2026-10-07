@@ -7,8 +7,8 @@ import InstanceCheck from "../../../src/commands/instance/check.js";
 
 describe("InstanceCheck", () => {
   it("should have correct description", () => {
-    expect(InstanceCheck.description).to.equal(
-      "Check configuration and preview data pull from Adobe Campaign instance",
+    expect(InstanceCheck.description).to.contain(
+      "Compute how many records will be downloaded",
     );
   });
 

@@ -19,15 +19,18 @@ const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 export default class InstanceCommand extends BaseCommand {
   static baseFlags = {
     alias: Flags.string({
+      char: "a",
       description:
         "Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of acc.config.json.",
     }),
     path: Flags.string({
+      char: "p",
       description: "Path where the command should run.",
       default: () => process.cwd(),
       defaultHelp: () => "current working directory", // for generated README
     }),
     config: Flags.string({
+      char: "c",
       description: "Path to the configuration file.",
       default: () => path.join(process.cwd(), CONFIG_FILENAME),
       defaultHelp: () => `./${CONFIG_FILENAME}`, // for generated README

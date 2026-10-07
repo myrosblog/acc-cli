@@ -43,7 +43,6 @@ export default class InstanceSoap extends InstanceCommand {
         "Method name (PascalCase or camelCase accepted), e.g. BuildPreviewFromId",
     }),
     args: Flags.string({
-      char: "a",
       description:
         "Method arguments as a JSON array, e.g. '[1234, \"<params/>\"]'. Omit for methods that take no argument.",
     }),

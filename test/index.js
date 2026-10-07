@@ -45,6 +45,7 @@ import "./unit/commands/instance-soap.spec.js";
 import "./unit/commands/instance-info.spec.js";
 import "./unit/commands/instance-watch.spec.js";
 import "./unit/commands/monitor-test.spec.js";
+import "./unit/commands/flag-chars.spec.js";
 
 // integration tests
 import "./integration/CampaignInstance.pull.spec.js";

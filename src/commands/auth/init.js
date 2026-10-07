@@ -40,6 +40,7 @@ export default class AuthInit extends BaseCommand {
 
   static flags = {
     alias: Flags.string({
+      char: "a",
       description: "Local alias for this instance, e.g. prod, staging, local",
     }),
     host: Flags.string({

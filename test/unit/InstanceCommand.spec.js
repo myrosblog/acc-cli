@@ -31,6 +31,12 @@ describe("InstanceCommand", () => {
     expect(InstanceCommand.baseFlags.alias.required).to.not.be.true;
   });
 
+  it("should have short flags -a, -p and -c", () => {
+    expect(InstanceCommand.baseFlags.alias.char).to.equal("a");
+    expect(InstanceCommand.baseFlags.path.char).to.equal("p");
+    expect(InstanceCommand.baseFlags.config.char).to.equal("c");
+  });
+
   it("should use the --alias flag when provided", async () => {
     cmd = makeCmd("fromConfig");
     await cmd.getInstance({ config: "acc.config.json", alias: "fromFlag" });
