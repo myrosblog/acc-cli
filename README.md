@@ -151,7 +151,7 @@ EXAMPLES
     $ acc auth decode "eyJhbGci…" --json
 ```
 
-_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/auth/decode.js)_
+_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/decode.js)_
 
 ## `acc auth init`
 
@@ -159,26 +159,26 @@ Authenticate an Adobe Campaign instance, save credentials (in local .aio file), 
 
 ```
 USAGE
-  $ acc auth init [--alias <value>] [--host <value>] [--method UserPassword|ImsBearerToken|ImsServerToServer]
+  $ acc auth init [-a <value>] [--host <value>] [--method UserPassword|ImsBearerToken|ImsServerToServer]
     [--user <value>] [--pass <value>] [--token <value>] [--json-file <value>] [--ims-env prod|stage]
 
 FLAGS
-  --alias=<value>      Local alias for this instance, e.g. prod, staging, local
-  --host=<value>       URL of Adobe Campaign instance, e.g. https://instance1.campaign.adobe.com
-  --ims-env=<option>   IMS environment for token generation (ImsServerToServer). Defaults to prod.
-                       <options: prod|stage>
-  --json-file=<value>  Path to the OAuth Server-to-Server JSON downloaded from the Developer Console (Credentials >
-                       OAuth Server-to-Server > Download JSON). Implies --method ImsServerToServer. Keeps the client
-                       secret out of your shell history, unlike passing it on the command line.
-  --method=<option>    Authentication method. Defaults to UserPassword. Use ImsServerToServer to login via JSON from the
-                       Developer Console OAuth Server-to-Server credentials, or use ImsBearerToken for a token pasted by
-                       hand.
-                       <options: UserPassword|ImsBearerToken|ImsServerToServer>
-  --pass=<value>       Operator password (UserPassword method). Omit on an interactive terminal to be prompted securely
-                       (avoids leaking it into shell history).
-  --token=<value>      IMS bearer token (ImsBearerToken method), a JWT starting with 'eyJ'. Omit on an interactive
-                       terminal to be prompted securely.
-  --user=<value>       Operator username (UserPassword method)
+  -a, --alias=<value>      Local alias for this instance, e.g. prod, staging, local
+      --host=<value>       URL of Adobe Campaign instance, e.g. https://instance1.campaign.adobe.com
+      --ims-env=<option>   IMS environment for token generation (ImsServerToServer). Defaults to prod.
+                           <options: prod|stage>
+      --json-file=<value>  Path to the OAuth Server-to-Server JSON downloaded from the Developer Console (Credentials >
+                           OAuth Server-to-Server > Download JSON). Implies --method ImsServerToServer. Keeps the client
+                           secret out of your shell history, unlike passing it on the command line.
+      --method=<option>    Authentication method. Defaults to UserPassword. Use ImsServerToServer to login via JSON from
+                           the Developer Console OAuth Server-to-Server credentials, or use ImsBearerToken for a token
+                           pasted by hand.
+                           <options: UserPassword|ImsBearerToken|ImsServerToServer>
+      --pass=<value>       Operator password (UserPassword method). Omit on an interactive terminal to be prompted
+                           securely (avoids leaking it into shell history).
+      --token=<value>      IMS bearer token (ImsBearerToken method), a JWT starting with 'eyJ'. Omit on an interactive
+                           terminal to be prompted securely.
+      --user=<value>       Operator username (UserPassword method)
 
 DESCRIPTION
   Authenticate an Adobe Campaign instance, save credentials (in local .aio file), and calls `auth login`.
@@ -215,7 +215,7 @@ EXAMPLES
     $ acc auth init --alias local --host https://instance1.campaign.adobe.com --method UserPassword --user admin
 ```
 
-_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/auth/init.js)_
+_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/init.js)_
 
 ## `acc auth ip`
 
@@ -237,7 +237,7 @@ EXAMPLES
     $ acc auth ip
 ```
 
-_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/auth/ip.js)_
+_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/ip.js)_
 
 ## `acc auth list`
 
@@ -265,7 +265,7 @@ EXAMPLES
     $ acc auth list --json
 ```
 
-_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/auth/list.js)_
+_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/list.js)_
 
 ## `acc auth login`
 
@@ -273,10 +273,10 @@ Read credentials (from local .aio file) and login to an Adobe Campaign instance.
 
 ```
 USAGE
-  $ acc auth login --alias <value>
+  $ acc auth login -a <value>
 
 FLAGS
-  --alias=<value>  (required) Local alias for this instance, e.g. prod, staging, local
+  -a, --alias=<value>  (required) Local alias for this instance, e.g. prod, staging, local
 
 DESCRIPTION
   Read credentials (from local .aio file) and login to an Adobe Campaign instance.
@@ -293,7 +293,7 @@ EXAMPLES
     $ acc auth login --alias prod
 ```
 
-_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/auth/login.js)_
+_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/login.js)_
 
 ## `acc config`
 
@@ -554,24 +554,44 @@ _See code: [@adobe/aio-cli-plugin-info](https://github.com/adobe/aio-cli-plugin-
 
 ## `acc instance check`
 
-Check configuration and preview data pull from Adobe Campaign instance
+Compute how many records will be downloaded from an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). The query definitions are read from acc.config.json and control the data retrieval.
 
 ```
 USAGE
-  $ acc instance check [--alias <value>] [--path <value>] [--config <value>] [--metadata <value>]
+  $ acc instance check [-a <value>] [-p <value>] [-c <value>] [-m <value>]
 
 FLAGS
-  --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
-                      acc.config.json.
-  --config=<value>    [default: ./acc.config.json] Path to the configuration file.
-  --metadata=<value>  Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation
-  --path=<value>      [default: current working directory] Path where the command should run.
+  -a, --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+                          acc.config.json.
+  -c, --config=<value>    [default: ./acc.config.json] Path to the configuration file.
+  -m, --metadata=<value>  Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation
+  -p, --path=<value>      [default: current working directory] Path where the command should run.
 
 DESCRIPTION
-  Check configuration and preview data pull from Adobe Campaign instance
+  Compute how many records will be downloaded from an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). The
+  query definitions are read from acc.config.json and control the data retrieval.
+  Want to download data after a check? Use the `acc instance pull` command, which will run the same queries and store
+  them as local files.
+
+EXAMPLES
+  Check records to be downloaded.
+
+    $ acc instance check
+
+  Check only the xtk:javascript records to be downloaded.
+
+    $ acc instance check --metadata xtk:javascript
+
+  Check records from your configured staging instance.
+
+    $ acc instance check --alias staging
+
+  Check records from the specified configuration file.
+
+    $ acc instance check --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/check.js)_
+_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/check.js)_
 
 ## `acc instance exec`
 
@@ -579,17 +599,16 @@ Execute server-side JavaScript on an Adobe Campaign instance (xtk:builder#Evalua
 
 ```
 USAGE
-  $ acc instance exec [--alias <value>] [--path <value>] [--config <value>] [-f <value>] [-s <value>] [--name
-    <value>]
+  $ acc instance exec [-a <value>] [-p <value>] [-c <value>] [-f <value>] [-s <value>] [--name <value>]
 
 FLAGS
-  -f, --file=<value>    Path to a JavaScript file to execute on the server
-  -s, --script=<value>  Inline JavaScript to execute (alternative to --file)
-      --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+  -a, --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
                         acc.config.json.
-      --config=<value>  [default: ./acc.config.json] Path to the configuration file.
+  -c, --config=<value>  [default: ./acc.config.json] Path to the configuration file.
+  -f, --file=<value>    Path to a JavaScript file to execute on the server
+  -p, --path=<value>    [default: current working directory] Path where the command should run.
+  -s, --script=<value>  Inline JavaScript to execute (alternative to --file)
       --name=<value>    Logical name of the script (defaults to the file basename, or 'acc-cli')
-      --path=<value>    [default: current working directory] Path where the command should run.
 
 DESCRIPTION
   Execute server-side JavaScript on an Adobe Campaign instance (xtk:builder#EvaluateJavaScript)
@@ -600,7 +619,7 @@ EXAMPLES
   $ acc instance exec --alias staging --script "context.res = application.instanceName"
 ```
 
-_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/exec.js)_
+_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/exec.js)_
 
 ## `acc instance info`
 
@@ -608,13 +627,13 @@ Diagnostic report for an Adobe Campaign instance (xtk:session#TestCnx, #GetServe
 
 ```
 USAGE
-  $ acc instance info [--alias <value>] [--path <value>] [--config <value>]
+  $ acc instance info [-a <value>] [-p <value>] [-c <value>]
 
 FLAGS
-  --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
-                    acc.config.json.
-  --config=<value>  [default: ./acc.config.json] Path to the configuration file.
-  --path=<value>    [default: current working directory] Path where the command should run.
+  -a, --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+                        acc.config.json.
+  -c, --config=<value>  [default: ./acc.config.json] Path to the configuration file.
+  -p, --path=<value>    [default: current working directory] Path where the command should run.
 
 DESCRIPTION
   Diagnostic report for an Adobe Campaign instance (xtk:session#TestCnx, #GetServerTime, #GetCnxInfo,
@@ -624,97 +643,137 @@ EXAMPLES
   $ acc instance info --alias staging
 ```
 
-_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/info.js)_
+_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/info.js)_
 
 ## `acc instance pull`
 
-Pull data from Adobe Campaign instance
+Pull data with read-only queries from an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). The query definitions are read from acc.config.json and control the data retrieval.
 
 ```
 USAGE
-  $ acc instance pull [--alias <value>] [--path <value>] [--config <value>] [--metadata <value>]
+  $ acc instance pull [-a <value>] [-p <value>] [-c <value>] [-m <value>]
 
 FLAGS
-  --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
-                      acc.config.json.
-  --config=<value>    [default: ./acc.config.json] Path to the configuration file.
-  --metadata=<value>  Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation
-  --path=<value>      [default: current working directory] Path where the command should run.
+  -a, --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+                          acc.config.json.
+  -c, --config=<value>    [default: ./acc.config.json] Path to the configuration file.
+  -m, --metadata=<value>  Comma-separated list of schema ids to retrieve, e.g. nms:delivery,nms:operation
+  -p, --path=<value>      [default: current working directory] Path where the command should run.
 
 DESCRIPTION
-  Pull data from Adobe Campaign instance
+  Pull data with read-only queries from an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). The query
+  definitions are read from acc.config.json and control the data retrieval.
+  Want to check which records will be downloaded? Use the `acc instance check` command first, which will run the same
+  queries but only return the record counts.
+
+EXAMPLES
+  Pull records and store them as local files.
+
+    $ acc instance pull
+
+  Pull only the xtk:javascript schema and store it as local files.
+
+    $ acc instance pull --metadata xtk:javascript
+
+  Pull records from your configured staging instance and store them as local files.
+
+    $ acc instance pull --alias staging
+
+  Pull records from the specified configuration file and store them as local files.
+
+    $ acc instance pull --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/pull.js)_
+_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/pull.js)_
 
 ## `acc instance queryDef`
 
-Run a read-only query on an Adobe Campaign instance (xtk:queryDef#ExecuteQuery). Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.
+Run a read-only query on an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). Pass a queryDef as JSON; it is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.
 
 ```
 USAGE
-  $ acc instance queryDef [--json] [--alias <value>] [--path <value>] [--config <value>] [-q <value>] [-f <value>]
+  $ acc instance queryDef [--json] [-a <value>] [-p <value>] [-c <value>] [-q <value>] [-f <value>]
 
 FLAGS
-  -f, --file=<value>    Path to a .json file containing the queryDef (alternative to --query)
-  -q, --query=<value>   queryDef as a JSON string (alternative to --file)
-      --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+  -a, --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
                         acc.config.json.
-      --config=<value>  [default: ./acc.config.json] Path to the configuration file.
-      --path=<value>    [default: current working directory] Path where the command should run.
+  -c, --config=<value>  [default: ./acc.config.json] Path to the configuration file.
+  -f, --file=<value>    Path to a .json file containing the queryDef (alternative to --query)
+  -p, --path=<value>    [default: current working directory] Path where the command should run.
+  -q, --query=<value>   queryDef as a JSON string (alternative to --file)
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Run a read-only query on an Adobe Campaign instance (xtk:queryDef#ExecuteQuery). Pass a queryDef as JSON; it is
-  read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.
+  Run a read-only query on an Adobe Campaign instance (via SOAP xtk:queryDef#ExecuteQuery). Pass a queryDef as JSON; it
+  is read-only by construction (no writes, read-only permission compatible), a safe alternative to `instance exec`.
+  Adobe Campaign querydef:
+  https://experienceleague.adobe.com/en/docs/campaign-classic/using/configuring-campaign-classic/api/data-oriented-apis
 
 EXAMPLES
-  $ acc instance queryDef --alias staging --query '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" /></select></queryDef>'
+  Get an option in XML format (SQL Read, queryDef Get). Result: <option stringValue="..."/>
 
-  $ acc instance queryDef --alias staging --file ./queries/recipients.json --json
+    $ acc instance queryDef --query '<queryDef schema="xtk:option" operation="get"><select><node expr="@stringValue" \
+      /></select></queryDef>'
+
+  Get an option in JSON format (SQL Read, queryDef Get). Result: {stringValue: "..."}
+
+    $ acc instance queryDef --query '{"schema":"xtk:option", "operation": "get", "select": {"node": [{"expr": \
+      "@stringValue"}] } }' --json
+
+  For big or recurrent queries, consider saving them in a file: get a list of recipients (SQL Read, queryDef select)
+
+    $ acc instance queryDef --file ./queries/recipients.json --json
 ```
 
-_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/queryDef.js)_
+_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/queryDef.js)_
 
 ## `acc instance soap`
 
-Call an arbitrary SOAP method on an Adobe Campaign instance via the acc-js-sdk NLWS proxy (e.g. nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime). The generic escape hatch behind the curated `instance` commands. Static methods only: non-static methods operate on a loaded entity and are not supported; prefer a static *FromId/*ById variant. Powerful: it can reach destructive methods, use with care.
+Call any SOAP method on an Adobe Campaign instance (e.g. nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime).
 
 ```
 USAGE
-  $ acc instance soap -s <value> -m <value> [--json] [--alias <value>] [--path <value>] [--config <value>] [-a
-    <value>]
+  $ acc instance soap -s <value> -m <value> [--json] [-a <value>] [-p <value>] [-c <value>] [--args <value>]
 
 FLAGS
-  -a, --args=<value>    Method arguments as a JSON array, e.g. '[1234, "<params/>"]'. Omit for methods that take no
-                        argument.
-  -m, --method=<value>  (required) Method name (PascalCase or camelCase accepted), e.g. BuildPreviewFromId
-  -s, --schema=<value>  (required) Schema id, e.g. nms:delivery, xtk:session
-      --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+  -a, --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
                         acc.config.json.
-      --config=<value>  [default: ./acc.config.json] Path to the configuration file.
-      --path=<value>    [default: current working directory] Path where the command should run.
+  -c, --config=<value>  [default: ./acc.config.json] Path to the configuration file.
+  -m, --method=<value>  (required) Method name (PascalCase or camelCase accepted), e.g. BuildPreviewFromId
+  -p, --path=<value>    [default: current working directory] Path where the command should run.
+  -s, --schema=<value>  (required) Schema id, e.g. nms:delivery, xtk:session
+      --args=<value>    Method arguments as a JSON array, e.g. '[1234, "<params/>"]'. Omit for methods that take no
+                        argument.
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Call an arbitrary SOAP method on an Adobe Campaign instance via the acc-js-sdk NLWS proxy (e.g.
-  nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime). The generic escape hatch behind the curated `instance`
-  commands. Static methods only: non-static methods operate on a loaded entity and are not supported; prefer a static
-  *FromId/*ById variant. Powerful: it can reach destructive methods, use with care.
+  Call any SOAP method on an Adobe Campaign instance (e.g. nms:delivery#BuildPreviewFromId, xtk:session#GetServerTime).
+  Works with static methods only (non-static methods are not supported)
+  Powerful: it can reach all methods, use with care.
+
+  Adobe Campaign SOAP: https://experienceleague.adobe.com/en/docs/campaign-classic/using/configuring-campaign-classic/ap
+  i/soap-methods-in-javascript
 
 EXAMPLES
-  $ acc instance soap --schema xtk:session --method GetServerTime
+  Get the server time
 
-  $ acc instance soap --schema nms:delivery --method HtmlToText --args '["<p>Hi</p>"]'
+    $ acc instance soap --schema xtk:session --method GetServerTime
 
-  $ acc instance soap --schema nms:delivery --method BuildPreviewFromId --args '[1234, {"content": "html", "filter": "@id = 1000"}]' --json
+  Convert HTML to text-only with nms:delivery#HtmlToText method
+
+    $ acc instance soap --schema nms:delivery --method HtmlToText --args '["<p>Hello</p>"]'
+
+  Preview the delivery 1234 with the recipient 1000
+
+    $ acc instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, {"content": "html", "filter": "@id = \
+      1000"}]' --json
 ```
 
-_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/soap.js)_
+_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/soap.js)_
 
 ## `acc instance template`
 
@@ -737,7 +796,7 @@ EXAMPLES
     $ acc instance template > acc.config.json
 ```
 
-_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/template.js)_
+_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/template.js)_
 
 ## `acc instance watch`
 
@@ -745,15 +804,15 @@ Watch decomposed files and push changes to Adobe Campaign instance. Only files w
 
 ```
 USAGE
-  $ acc instance watch [--alias <value>] [--path <value>] [--config <value>] [--debounce <value>]
+  $ acc instance watch [-a <value>] [-p <value>] [-c <value>] [--debounce <value>]
 
 FLAGS
-  --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
-                      acc.config.json.
-  --config=<value>    [default: ./acc.config.json] Path to the configuration file.
-  --debounce=<value>  [default: 300] Debounce time in milliseconds to wait after file changes before pushing (default:
-                      300)
-  --path=<value>      [default: current working directory] Path where the command should run.
+  -a, --alias=<value>     Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
+                          acc.config.json.
+  -c, --config=<value>    [default: ./acc.config.json] Path to the configuration file.
+  -p, --path=<value>      [default: current working directory] Path where the command should run.
+      --debounce=<value>  [default: 300] Debounce time in milliseconds to wait after file changes before pushing
+                          (default: 300)
 
 DESCRIPTION
   Watch decomposed files and push changes to Adobe Campaign instance. Only files with 'decompose' configuration in
@@ -773,7 +832,7 @@ EXAMPLES
     $ acc instance watch --alias local --debounce 500
 ```
 
-_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/instance/watch.js)_
+_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/watch.js)_
 
 ## `acc monitor test`
 
@@ -791,7 +850,7 @@ DESCRIPTION
   Health-check an instance via the anonymous /r/test endpoint (Apache front, no login)
 ```
 
-_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/v1.6.3/src/commands/monitor/test.js)_
+_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/monitor/test.js)_
 
 ## `acc report`
 
@@ -885,7 +944,7 @@ acc instance soap --schema xtk:session --method GetServerTime
 # --args is a JSON array of the method parameters
 acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hi</p>"]'
 # --json switches input + output to JSON (best for methods taking/returning XML)
-acc instance soap -s nms:delivery -m BuildPreviewFromId -a '[1234, "<params/>"]' --json
+acc instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, "<params/>"]' --json
 ```
 
 ```bash

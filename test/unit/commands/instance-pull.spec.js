@@ -7,9 +7,7 @@ import InstancePull from "../../../src/commands/instance/pull.js";
 
 describe("InstancePull", () => {
   it("should have correct description", () => {
-    expect(InstancePull.description).to.equal(
-      "Pull data from Adobe Campaign instance",
-    );
+    expect(InstancePull.description).to.contain("Pull data with read-only");
   });
 
   it("should have an optional alias flag", () => {
@@ -20,6 +18,18 @@ describe("InstancePull", () => {
     expect(InstancePull.baseFlags.path).to.exist;
     expect(InstancePull.baseFlags.config).to.exist;
     expect(InstancePull.flags.metadata).to.exist;
+  });
+
+  it("should have a short -m flag for metadata", () => {
+    expect(InstancePull.flags.metadata.char).to.equal("m");
+  });
+
+  it("should have correct examples", () => {
+    expect(InstancePull.examples.length).to.be.at.least(1);
+    InstancePull.examples.forEach(({ command, description }) => {
+      expect(command).to.match(/^<%= config\.bin %> instance pull/);
+      expect(description).to.match(/^[A-Z].*\.$/);
+    });
   });
 
   it("should run", async () => {
