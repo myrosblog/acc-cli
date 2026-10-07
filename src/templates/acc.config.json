@@ -131,6 +131,7 @@
             }
           ]
         },
+        "orderBy": { "node": [{ "expr": "@name" }] },
         "lineCount": 10
       }
     },
@@ -178,7 +179,8 @@
               "expr": "@namespace NOT IN ('xtk', 'nl', 'ncm','nms', 'sfdc', 'crm', 'acx', 'adb')"
             }
           ]
-        }
+        },
+        "orderBy": { "node": [{ "expr": "@name" }] }
       }
     },
     {
@@ -208,6 +210,7 @@
             }
           ]
         },
+        "orderBy": { "node": [{ "expr": "@name" }] },
         "lineCount": 10
       }
     },
@@ -340,6 +343,7 @@
             { "expr": "@isModel = false", "boolOperator": "AND" }
           ]
         },
+        "orderBy": { "node": [{ "expr": "@internalName" }] },
         "lineCount": 10
       }
     },
@@ -358,6 +362,7 @@
             { "expr": "@isModel = true", "boolOperator": "AND" }
           ]
         },
+        "orderBy": { "node": [{ "expr": "@internalName" }] },
         "lineCount": 10
       }
     },
@@ -413,7 +418,8 @@
       "schemaId": "nms:webApp",
       "filename": "/Resources/Online/Web applications/{@internalName}.xml",
       "queryDef": {
-        "where": { "condition": [{ "expr": "@builtIn = false" }] }
+        "where": { "condition": [{ "expr": "@builtIn = false" }] },
+        "orderBy": { "node": [{ "expr": "@internalName" }] }
       }
     },
     {

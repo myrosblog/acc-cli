@@ -213,7 +213,7 @@ class CampaignInstance {
           `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed, ${writtenPaths.size} files (⚠️ ${overwrittenPaths.length} overwritten) ${errorMsg}`,
         );
         this.logger.warn(
-          `⚠️ ${schemaId}: ${overwrittenPaths.length} records were written to a file already written in this pull. The pagination order is not stable or the filename template is not unique. Add a unique queryDef.orderBy.node[].expr next to where.`,
+          `⚠️ ${schemaId}: ${overwrittenPaths.length} records were saved to a file already existing in this pull. The pagination order is not stable or the filename template is not unique. Add a unique queryDef.orderBy.node[].expr next to where. Open the logs for details. Run "acc instance template" for examples.`,
         );
         this.logger.verbose(`⚠️ Listing overwritten files for ${schemaId}:`);
         this.logger.verbose(overwrittenPaths.join("\n"));
