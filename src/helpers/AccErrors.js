@@ -216,7 +216,7 @@ E(
 );
 E(
   "INSTANCE_ALIAS_UNRESOLVED",
-  'No instance alias provided. Pass --alias <name> or set "alias" in acc.config.json.',
+  'No instance alias provided. List them with "acc auth list" then pass --alias <name> or set "alias" in acc.config.json.',
 );
 E(
   "INSTANCE_INFO_SDK_TESTCNX_FAILED",

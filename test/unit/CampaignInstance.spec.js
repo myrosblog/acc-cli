@@ -404,7 +404,7 @@ describe("CampaignInstance", () => {
       ]);
       expect(mockLogger.warn.calledOnce).to.be.true;
       expect(mockLogger.warn.firstCall.args[0]).to.include(
-        "xtk:olapCube: 2 records were written to a file already written",
+        "xtk:olapCube: 2 records were saved",
       );
       expect(
         mockLogger.verbose.calledWith(
