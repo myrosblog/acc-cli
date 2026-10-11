@@ -5,13 +5,13 @@ import { EXAMPLE_INSTANCE, DOC_IMS } from "../../helpers/helpText.js";
 
 export default class AuthInit extends BaseCommand {
   static description =
-    "Authenticate an Adobe Campaign instance, save credentials (in local .aio file), and calls `auth login`.\n\n" +
+    "Authenticate an Adobe Campaign instance, save credentials (in global aio config), and calls `auth login`.\n\n" +
     "The currently supported authentication methods are:\n\n" +
     "- OAuth Server-to-Server (preferred): a JSON file from the Adobe Developer Console, for instances with an IMS identity provider.\n" +
     "- OAuth Access Token: a JWT token pasted by hand, for instances with an IMS identity provider.\n" +
     "- Operator User/Password: the classic operator login, for local instances or instances without IMS.\n" +
     "\n" +
-    "The `auth init` command saves credentials in the local .aio file, and then logs in to the instance. " +
+    "The `auth init` command saves credentials in the global aio config, and then logs in to the instance. " +
     "The `auth login` command can be used later to re-login without re-entering credentials.\n" +
     "\n" +
     DOC_IMS;

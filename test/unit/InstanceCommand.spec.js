@@ -11,11 +11,11 @@ describe("InstanceCommand", () => {
 
   let initStub;
 
-  const makeCmd = (configAlias) => {
+  const makeCmd = (configAlias, currentAlias) => {
     const cmd = new InstanceCommand([], {});
     loginStub = sinon.stub().resolves({ NLWS: {} });
     initStub = sinon.stub();
-    cmd._auth = { login: loginStub };
+    cmd._auth = { login: loginStub, currentAlias };
     sinon.stub(cmd, "makeConfig").returns({
       init: initStub,
       alias: configAlias,
@@ -55,10 +55,31 @@ describe("InstanceCommand", () => {
     expect(initStub.calledOnceWith("acc.config.json", "fromFlag")).to.be.true;
   });
 
-  it("should not pass an alias to config init when no flag alias is given", async () => {
+  it("should not pass an alias to config init when no flag and no last auth init alias", async () => {
     cmd = makeCmd("fromConfig");
     await cmd.getInstance({ config: "acc.config.json" });
     expect(initStub.calledOnceWith("acc.config.json", undefined)).to.be.true;
+  });
+
+  it("should pass the last auth init alias to config init when no flag alias is given", async () => {
+    cmd = makeCmd("fromLastInit", "fromLastInit");
+    await cmd.getInstance({ config: "acc.config.json" });
+    expect(initStub.calledOnceWith("acc.config.json", "fromLastInit")).to.be
+      .true;
+    expect(loginStub.firstCall.args[0].alias).to.equal("fromLastInit");
+  });
+
+  it("should prefer the --alias flag over the last auth init alias", async () => {
+    cmd = makeCmd("fromFlag", "fromLastInit");
+    await cmd.getInstance({ config: "acc.config.json", alias: "fromFlag" });
+    expect(initStub.calledOnceWith("acc.config.json", "fromFlag")).to.be.true;
+  });
+
+  it("should keep the config alias over the last auth init alias", async () => {
+    // acc.config.json already exists: the seed is ignored by config.init
+    cmd = makeCmd("fromConfig", "fromLastInit");
+    await cmd.getInstance({ config: "acc.config.json" });
+    expect(loginStub.firstCall.args[0].alias).to.equal("fromConfig");
   });
 
   it("should throw INSTANCE_ALIAS_UNRESOLVED when neither is set", async () => {

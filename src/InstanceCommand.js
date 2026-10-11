@@ -46,7 +46,9 @@ export default class InstanceCommand extends BaseCommand {
    */
   async getInstance(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();
-    config.init(flags.config, flags.alias);
+    // Only used when acc.config.json is created: the alias of the last
+    // `auth init` is then written into it, which pins the project to it.
+    config.init(flags.config, flags.alias || this.auth.currentAlias);
     const alias = flags.alias || config.alias;
     if (!alias) {
       throw new INSTANCE_ALIAS_UNRESOLVED();

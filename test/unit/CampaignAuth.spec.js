@@ -7,7 +7,10 @@ import tmp from "tmp";
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
-import CampaignAuth from "../../src/CampaignAuth.js";
+import CampaignAuth, {
+  AUTH_CURRENT_ALIAS_KEY,
+  AUTH_INSTANCES_KEY,
+} from "../../src/CampaignAuth.js";
 import { codes } from "../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
@@ -138,8 +141,8 @@ describe("CampaignAuth", function () {
 
       await auth.init(authOptions, sdkOptions, cliOptions);
 
-      // check config.set()
-      expect(mockConfig.set.calledOnce).to.be.true;
+      // check config.set(): the instance, then the pointer to its alias
+      expect(mockConfig.set.calledTwice).to.be.true;
       expect(mockConfig.set.firstCall.args[0]).to.equal(
         `acc.auth.instances.instance1`,
       );
@@ -149,6 +152,10 @@ describe("CampaignAuth", function () {
         user: "testuser",
         password: "testpass",
       });
+      expect(mockConfig.set.secondCall.args).to.deep.equal([
+        AUTH_CURRENT_ALIAS_KEY,
+        "instance1",
+      ]);
       // check instances
       expect(auth.instances).to.deep.equal({
         instance1: {
@@ -180,6 +187,42 @@ describe("CampaignAuth", function () {
       await expect(auth.init(options)).to.be.rejectedWith(
         AUTH_INIT_EXISTING_ALIAS,
       );
+      // the pointer is left as it was
+      expect(mockConfig.set.called).to.be.false;
+    });
+  });
+
+  describe("currentAlias", function () {
+    const makeAuthWith = (pointer, instances) => {
+      mockConfig.get.withArgs(AUTH_CURRENT_ALIAS_KEY).returns(pointer);
+      mockConfig.get.withArgs(AUTH_INSTANCES_KEY).returns(instances);
+      return new CampaignAuth(
+        mockLogger,
+        mockSdk,
+        mockConfig,
+        mockPrompt,
+        mockMakeCache,
+      );
+    };
+
+    it("should return the alias of the last auth init", function () {
+      const auth = makeAuthWith("staging", { staging: {}, prod: {} });
+      expect(auth.currentAlias).to.equal("staging");
+    });
+
+    it("should return undefined when no alias was recorded", function () {
+      const auth = makeAuthWith(undefined, { staging: {} });
+      expect(auth.currentAlias).to.be.undefined;
+    });
+
+    it("should return undefined when the recorded alias no longer exists", function () {
+      const auth = makeAuthWith("gone", { staging: {} });
+      expect(auth.currentAlias).to.be.undefined;
+    });
+
+    it("should not take an inherited property name for an alias", function () {
+      const auth = makeAuthWith("toString", { staging: {} });
+      expect(auth.currentAlias).to.be.undefined;
     });
   });
 
