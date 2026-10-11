@@ -34,14 +34,20 @@ import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
 import soapLogObserver from "./helpers/soapLogObserver.js";
 
 /**
- * Config key (dot path) under which instances are stored in the aio config.
- * Single source of truth shared with the `acc auth list` command.
+ * Config key under which instances are stored.
+ * Displayed with the `acc auth list` command.
  * @type {string}
  */
 export const AUTH_INSTANCES_KEY = "acc.auth.instances";
 
 /**
- * Config key (dot path) under which generated IMS access tokens are cached,
+ * Config key holding the alias of the instance added by the last `acc auth init`
+ * @type {string}
+ */
+export const AUTH_CURRENT_ALIAS_KEY = "acc.auth.currentAlias";
+
+/**
+ * Config key under which generated IMS access tokens are cached,
  * separately from the credentials in AUTH_INSTANCES_KEY so that secrets and
  * volatile tokens never mix (and `acc auth list` never sees a token). Each
  * alias holds `{ accessToken, expiresAt }`, reused until close to expiry.
@@ -159,6 +165,21 @@ class CampaignAuth {
   }
 
   /**
+   * Alias of the instance added by the last `auth init`, used to seed a new
+   * acc.config.json. A pointer to an alias that no longer exists is ignored,
+   * otherwise it would seed an alias that cannot log in.
+   *
+   * @returns {string | undefined} the alias, or undefined when none is usable
+   */
+  get currentAlias() {
+    const alias = this.config.get(AUTH_CURRENT_ALIAS_KEY);
+    // hasOwn: "toString" in {} is true, and must not count as an alias
+    return typeof alias === "string" && Object.hasOwn(this.instances, alias)
+      ? alias
+      : undefined;
+  }
+
+  /**
    * Fetches the public IP address of the current machine via the Adobe SDK.
    *
    * @returns {Promise<string>} The public IP address (e.g., "192.0.2.1")
@@ -241,6 +262,7 @@ class CampaignAuth {
     const { alias } = authOptions;
     const storedInstance = this._buildStoredInstance(authOptions);
     this.config.set(`${AUTH_INSTANCES_KEY}.${alias}`, storedInstance);
+    this.config.set(AUTH_CURRENT_ALIAS_KEY, alias);
     this.instances[alias] = storedInstance;
     this.instanceIds = Object.keys(this.instances);
     this.logger.info(`✅ Instance ${alias} added successfully.`);
