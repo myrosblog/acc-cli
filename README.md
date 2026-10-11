@@ -69,7 +69,7 @@ acc auth list
 Once authenticated, download the instance configuration:
 
 ```bash
-acc instance pull --alias staging
+acc instance pull
 # Downloading
 # ✔ /Administration/Configuration/Form rendering: xtk:formRendering
 # ✔ /Administration/Configuration/Javascript codes: xtk:javascript
@@ -155,7 +155,7 @@ _See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/bl
 
 ## `acc auth init`
 
-Authenticate an Adobe Campaign instance, save credentials (in local .aio file), and calls `auth login`.
+Authenticate an Adobe Campaign instance, save credentials (in global aio config), and calls `auth login`.
 
 ```
 USAGE
@@ -181,7 +181,7 @@ FLAGS
       --user=<value>       Operator username (UserPassword method)
 
 DESCRIPTION
-  Authenticate an Adobe Campaign instance, save credentials (in local .aio file), and calls `auth login`.
+  Authenticate an Adobe Campaign instance, save credentials (in global aio config), and calls `auth login`.
 
   The currently supported authentication methods are:
 
@@ -190,7 +190,7 @@ DESCRIPTION
   - OAuth Access Token: a JWT token pasted by hand, for instances with an IMS identity provider.
   - Operator User/Password: the classic operator login, for local instances or instances without IMS.
 
-  The `auth init` command saves credentials in the local .aio file, and then logs in to the instance. The `auth login`
+  The `auth init` command saves credentials in the global aio config, and then logs in to the instance. The `auth login`
   command can be used later to re-login without re-entering credentials.
 
   Adobe Campaign authentication:
@@ -241,7 +241,7 @@ _See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v
 
 ## `acc auth list`
 
-Read credentials (from local .aio file) and display configured Adobe Campaign instances.
+Read credentials (from global aio config) and display configured Adobe Campaign instances.
 
 ```
 USAGE
@@ -251,7 +251,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Read credentials (from local .aio file) and display configured Adobe Campaign instances.
+  Read credentials (from global aio config) and display configured Adobe Campaign instances.
 
   Must be ran after `auth init`.
 
@@ -269,7 +269,7 @@ _See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob
 
 ## `acc auth login`
 
-Read credentials (from local .aio file) and login to an Adobe Campaign instance.
+Read credentials (from global aio config) and login to an Adobe Campaign instance.
 
 ```
 USAGE
@@ -279,7 +279,7 @@ FLAGS
   -a, --alias=<value>  (required) Local alias for this instance, e.g. prod, staging, local
 
 DESCRIPTION
-  Read credentials (from local .aio file) and login to an Adobe Campaign instance.
+  Read credentials (from global aio config) and login to an Adobe Campaign instance.
 
   Must be ran after `auth init`.
 
