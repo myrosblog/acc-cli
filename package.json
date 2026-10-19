@@ -33,7 +33,11 @@
     "topicSeparator": " ",
     "topics": {
       "auth": {
-        "description": "Initialize and troubleshoot authentications to your instances. Also log the path to the credentials (global aio config)."
+        "description": "Initialize and troubleshoot authentications to your instances."
+      },
+      "config": {
+        "description": "Manage your authentication file (run `acc auth` for its path), not the project acc.config.json.",
+        "hidden": true
       },
       "instance": {
         "description": "Pull metadata, run SQL queries and SOAP requests in your instances"
