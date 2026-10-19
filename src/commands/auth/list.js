@@ -3,7 +3,7 @@ import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthList extends BaseCommand {
   static description =
-    "Read credentials (from global aio config) and display configured Adobe Campaign instances.\n" +
+    "Read credentials and display configured Adobe Campaign instances.\n" +
     "\n" +
     "Must be ran after `auth init`.";
 
