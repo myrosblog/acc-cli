@@ -71,7 +71,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "readme": "npx --yes oclif@6.0.10 readme && prettier --write README.md"
   },
   "type": "module",
   "dependencies": {
