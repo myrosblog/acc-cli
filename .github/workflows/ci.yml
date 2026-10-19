@@ -37,6 +37,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # The command reference in README.md is generated from the oclif commands.
+      # Regenerate it and fail if the committed copy differs (fix: npm run readme).
+      - name: Check README command reference is up to date
+        run: |
+          npm run readme
+          git diff --exit-code README.md
+
   test:
     name: Tests (node ${{ matrix.node-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
