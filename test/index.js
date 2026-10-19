@@ -23,6 +23,7 @@ import "./unit/helpers/jwt.spec.js";
 import "./unit/helpers/DomUtilAcc.spec.js";
 import "./unit/helpers/CampaignPullLog.spec.js";
 import "./unit/helpers/CampaignPushLog.spec.js";
+import "./unit/helpers/hideCommand.spec.js";
 import "./unit/validators/queryDef.spec.js";
 import "./unit/CampaignConfig.spec.js";
 import "./unit/CampaignAuth.spec.js";
@@ -36,6 +37,8 @@ import "./unit/commands/auth-login.spec.js";
 import "./unit/commands/auth-list.spec.js";
 import "./unit/commands/auth-ip.spec.js";
 import "./unit/commands/auth-decode.spec.js";
+import "./unit/commands/auth-index.spec.js";
+import "./unit/commands/config.spec.js";
 import "./unit/commands/instance-template.spec.js";
 import "./unit/commands/instance-check.spec.js";
 import "./unit/commands/instance-pull.spec.js";
@@ -49,3 +52,4 @@ import "./unit/commands/flag-chars.spec.js";
 
 // integration tests
 import "./integration/CampaignInstance.pull.spec.js";
+import "./integration/ConfigCommands.spec.js";

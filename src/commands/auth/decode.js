@@ -5,7 +5,7 @@ import { DOC_IMS } from "../../helpers/helpText.js";
 
 export default class AuthDecode extends BaseCommand {
   static description =
-    "Decode an access token. Use it to troubleshoot Adobe IMS authentication errors.\n" +
+    "Decode an access token. Use it to troubleshoot Adobe IMS errors.\n" +
     "\n" +
     DOC_IMS;
 

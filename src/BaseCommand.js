@@ -1,5 +1,5 @@
 // npm
-import { Command } from "@oclif/core";
+import { Command, loadHelpClass } from "@oclif/core";
 import path from "node:path";
 import ora from "ora";
 // sdk
@@ -89,6 +89,16 @@ export default class BaseCommand extends Command {
    */
   spinner(text) {
     return ora(text);
+  }
+
+  /**
+   * Prints the help of a topic (same output as `acc <topic> -h`).
+   * @param {string} topic the topic whose subcommands are listed, i.e. "auth"
+   * @returns {Promise<void>}
+   */
+  async showTopicHelp(topic) {
+    const HelpClass = await loadHelpClass(this.config);
+    await new HelpClass(this.config).showHelp([topic]);
   }
 
   /**

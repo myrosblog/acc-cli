@@ -57,6 +57,17 @@ export const AUTH_CURRENT_ALIAS_KEY = "acc.auth.currentAlias";
 export const AUTH_IMS_TOKENS_KEY = "acc.auth.imsTokens";
 
 /**
+ * Logs where the authentication file is: its location depends on the OS
+ * (i.e. C:\Users\jdoe\.config\aio) and is not obvious to non-developers.
+ * @param {AioLogger} logger - Logger instance for logging messages
+ * @param {string} [file] - Path of the authentication file
+ * @returns {void}
+ */
+export const logCredentialsFile = (logger, file) => {
+  logger.info(`🔑 Reading authentication from ${file}`);
+};
+
+/**
  * Supported authentication methods, stored per-instance under `authMethod`.
  * Legacy instances without `authMethod` are treated as `UserPassword`.
  * `ImsServerToServer` stores OAuth Server-to-Server credentials and generates an
@@ -136,9 +147,7 @@ class CampaignAuth {
         succeed() {},
         fail() {},
       }));
-    this.logger.info(
-      `🔑 Reading authentication from ${this.config.global()?.file}`,
-    );
+    logCredentialsFile(this.logger, this.config.global()?.file);
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
   }
@@ -265,7 +274,10 @@ class CampaignAuth {
     this.config.set(AUTH_CURRENT_ALIAS_KEY, alias);
     this.instances[alias] = storedInstance;
     this.instanceIds = Object.keys(this.instances);
-    this.logger.info(`✅ Instance ${alias} added successfully.`);
+    // Name the file: its location depends on the OS and is not obvious to non-developers
+    this.logger.info(
+      `✅ Instance ${alias} saved in ${this.config.global()?.file}`,
+    );
     return this.login(authOptions, sdkOptions, cliOptions);
   }
 

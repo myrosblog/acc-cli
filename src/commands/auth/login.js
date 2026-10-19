@@ -3,9 +3,9 @@ import BaseCommand from "../../BaseCommand.js";
 
 export default class AuthLogin extends BaseCommand {
   static description =
-    "Read credentials (from global aio config) and login to an Adobe Campaign instance.\n" +
+    "Read credentials and login to an Adobe Campaign instance. Use it to troubleshoot `acc auth init` issues.\n" +
     "\n" +
-    "Must be ran after `auth init`.";
+    "This command is automatically called by `acc instance pull`.";
 
   static examples = [
     {

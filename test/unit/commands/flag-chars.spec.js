@@ -4,6 +4,8 @@ import AuthInit from "../../../src/commands/auth/init.js";
 import AuthIp from "../../../src/commands/auth/ip.js";
 import AuthList from "../../../src/commands/auth/list.js";
 import AuthLogin from "../../../src/commands/auth/login.js";
+import Config from "../../../src/commands/config/index.js";
+import ConfigSet from "../../../src/commands/config/set.js";
 import InstanceCheck from "../../../src/commands/instance/check.js";
 import InstanceExec from "../../../src/commands/instance/exec.js";
 import InstanceInfo from "../../../src/commands/instance/info.js";
@@ -20,6 +22,8 @@ const COMMANDS = [
   AuthIp,
   AuthList,
   AuthLogin,
+  Config,
+  ConfigSet,
   InstanceCheck,
   InstanceExec,
   InstanceInfo,

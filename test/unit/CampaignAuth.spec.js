@@ -113,6 +113,12 @@ describe("CampaignAuth", function () {
       expect(auth.instanceIds).to.be.an("array");
     });
 
+    it("should log where the credentials file is", function () {
+      expect(mockLogger.info).to.have.been.calledWith(
+        "🔑 Reading authentication from test-config-path",
+      );
+    });
+
     it("should throw AUTH_CONSTR_SDK_MISSING when SDK is missing", function () {
       expect(() => new CampaignAuth(mockLogger, null, mockConfig)).to.throw(
         AUTH_CONSTR_SDK_MISSING,
@@ -121,6 +127,21 @@ describe("CampaignAuth", function () {
   });
 
   describe("init", function () {
+    it("should tell in which file the instance is saved", async function () {
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({
+        alias: "instance1",
+        host: "http://localhost",
+        user: "testuser",
+        pass: "testpass",
+      });
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        "✅ Instance instance1 saved in test-config-path",
+      );
+    });
+
     it("should add new instance when config.instances is null", async function () {
       const fakeInstances = null;
 
