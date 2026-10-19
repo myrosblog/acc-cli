@@ -140,6 +140,7 @@ npm test                       # unit + integration tests (XML samples), no netw
 npm run coverage               # unit tests with c8 coverage report
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
+npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
 ACC_E2E_ALIAS=local npm run test:e2e   # end-to-end against an instance
 ```
 
