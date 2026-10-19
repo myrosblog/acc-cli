@@ -1,9 +1,11 @@
 // npm
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import os from "os";
 import fs from "fs-extra";
 import sinon from "sinon";
 // acc
+import BaseCommand from "../src/BaseCommand.js";
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { newSchema } from "@adobe/acc-js-sdk/src/application.js";
 
@@ -53,6 +55,30 @@ const loadXml = (dir, file) =>
     DomUtil.parse(fs.readFileSync(join(__dirname, dir, file))),
   ); // DomUtil.parse returns Document, but all methods use Element, hence the conversion
 
+/**
+ * Points the aio config to a file that does not exist, so a test never reads the
+ * credentials of the developer running it. Undone by sinon.restore().
+ * @returns {string} the path of the credentials file
+ */
+const useMissingCredentialsFile = () => {
+  const credentialsFile = join(os.tmpdir(), "acc-test-no-such-dir", "aio");
+  sinon
+    .stub(process, "env")
+    .value({ ...process.env, AIO_CONFIG_FILE: credentialsFile });
+  return credentialsFile;
+};
+
+/**
+ * Replaces the logger of every command with a stub, to assert what is logged.
+ * Undone by sinon.restore().
+ * @returns {object} the stubbed logger
+ */
+const useCommandLogger = () => {
+  const logger = makeLogger();
+  sinon.stub(BaseCommand.prototype, "logger").get(() => logger);
+  return logger;
+};
+
 export {
   makeClient,
   makeLogger,
@@ -60,4 +86,6 @@ export {
   makeSchema,
   filterSchemas,
   loadXml,
+  useMissingCredentialsFile,
+  useCommandLogger,
 };
