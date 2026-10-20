@@ -100,15 +100,9 @@ Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-
 - [`acc auth list`](#acc-auth-list)
 - [`acc auth login`](#acc-auth-login)
 - [`acc config`](#acc-config)
-- [`acc config clear`](#acc-config-clear)
-- [`acc config del KEYS`](#acc-config-del-keys)
-- [`acc config delete KEYS`](#acc-config-delete-keys)
 - [`acc config edit`](#acc-config-edit)
 - [`acc config get KEY`](#acc-config-get-key)
-- [`acc config list`](#acc-config-list)
-- [`acc config ls`](#acc-config-ls)
-- [`acc config rm KEYS`](#acc-config-rm-keys)
-- [`acc config set key 'a value'       # set key to 'a value'`](#acc-config-set-key-a-value--------set-key-to-a-value)
+- [`acc config set KEY [VALUE|FILENAME]`](#acc-config-set-key-valuefilename)
 - [`acc info`](#acc-info)
 - [`acc instance check`](#acc-instance-check)
 - [`acc instance exec`](#acc-instance-exec)
@@ -123,7 +117,7 @@ Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-
 
 ## `acc auth decode TOKEN`
 
-Decode an access token. Use it to troubleshoot Adobe IMS authentication errors.
+Decode an access token. Use it to troubleshoot Adobe IMS errors.
 
 ```
 USAGE
@@ -136,7 +130,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Decode an access token. Use it to troubleshoot Adobe IMS authentication errors.
+  Decode an access token. Use it to troubleshoot Adobe IMS errors.
 
   Adobe Campaign authentication:
   https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration
@@ -151,11 +145,11 @@ EXAMPLES
     $ acc auth decode "eyJhbGci…" --json
 ```
 
-_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/decode.js)_
+_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/decode.js)_
 
 ## `acc auth init`
 
-Authenticate an Adobe Campaign instance, save credentials (in global aio config), and calls `auth login`.
+Authenticate an Adobe Campaign instance, save credentials, and calls `auth login`.
 
 ```
 USAGE
@@ -181,7 +175,7 @@ FLAGS
       --user=<value>       Operator username (UserPassword method)
 
 DESCRIPTION
-  Authenticate an Adobe Campaign instance, save credentials (in global aio config), and calls `auth login`.
+  Authenticate an Adobe Campaign instance, save credentials, and calls `auth login`.
 
   The currently supported authentication methods are:
 
@@ -190,8 +184,8 @@ DESCRIPTION
   - OAuth Access Token: a JWT token pasted by hand, for instances with an IMS identity provider.
   - Operator User/Password: the classic operator login, for local instances or instances without IMS.
 
-  The `auth init` command saves credentials in the global aio config, and then logs in to the instance. The `auth login`
-  command can be used later to re-login without re-entering credentials.
+  The `auth init` command saves credentials in your authentication file (run `acc auth` for its path), and then logs in
+  to the instance. The `auth login` command can be used later to re-login without re-entering credentials.
 
   Adobe Campaign authentication:
   https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration
@@ -215,7 +209,7 @@ EXAMPLES
     $ acc auth init --alias local --host https://instance1.campaign.adobe.com --method UserPassword --user admin
 ```
 
-_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/init.js)_
+_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/init.js)_
 
 ## `acc auth ip`
 
@@ -237,11 +231,11 @@ EXAMPLES
     $ acc auth ip
 ```
 
-_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/ip.js)_
+_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/ip.js)_
 
 ## `acc auth list`
 
-Read credentials (from global aio config) and display configured Adobe Campaign instances.
+Read credentials and display configured Adobe Campaign instances.
 
 ```
 USAGE
@@ -251,7 +245,7 @@ GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Read credentials (from global aio config) and display configured Adobe Campaign instances.
+  Read credentials and display configured Adobe Campaign instances.
 
   Must be ran after `auth init`.
 
@@ -265,11 +259,11 @@ EXAMPLES
     $ acc auth list --json
 ```
 
-_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/list.js)_
+_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/list.js)_
 
 ## `acc auth login`
 
-Read credentials (from global aio config) and login to an Adobe Campaign instance.
+Read credentials and login to an Adobe Campaign instance. Use it to troubleshoot `acc auth init` issues.
 
 ```
 USAGE
@@ -279,9 +273,9 @@ FLAGS
   -a, --alias=<value>  (required) Local alias for this instance, e.g. prod, staging, local
 
 DESCRIPTION
-  Read credentials (from global aio config) and login to an Adobe Campaign instance.
+  Read credentials and login to an Adobe Campaign instance. Use it to troubleshoot `acc auth init` issues.
 
-  Must be ran after `auth init`.
+  This command is automatically called by `acc instance pull`.
 
 EXAMPLES
   Read credentials for the json key 'local', and login. Usually for a local Adobe Campaign VM.
@@ -293,108 +287,25 @@ EXAMPLES
     $ acc auth login --alias prod
 ```
 
-_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/auth/login.js)_
+_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/login.js)_
 
 ## `acc config`
 
-list, get, set, delete, and edit persistent configuration data
+Manage your authentication file (run `acc auth` for its path), not the project acc.config.json.
 
 ```
 USAGE
-  $ acc config [-l | -g] [-e] [--verbose |  | [-j | -y]]
-
-FLAGS
-  -e, --env      environment variables
-  -g, --global   global config
-  -j, --json     output in json
-  -l, --local    local config
-  -y, --yaml     output in yaml
-      --verbose  show all config values
+  $ acc config
 
 DESCRIPTION
-  list, get, set, delete, and edit persistent configuration data
-
-ALIASES
-  $ acc config ls
-
-EXAMPLES
-  $ aio config:list
-
-  $ aio config:get KEY
-
-  $ aio config:set KEY VALUE
-
-  $ aio config:delete KEY
-
-  $ aio config:clear
+  Manage your authentication file (run `acc auth` for its path), not the project acc.config.json.
 ```
 
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/index.js)_
-
-## `acc config clear`
-
-clears all persistent config values
-
-```
-USAGE
-  $ acc config clear [-l | -g] [-f]
-
-FLAGS
-  -f, --force   do not prompt for confirmation
-  -g, --global  global config
-  -l, --local   local config
-
-DESCRIPTION
-  clears all persistent config values
-```
-
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/clear.js)_
-
-## `acc config del KEYS`
-
-deletes persistent config values
-
-```
-USAGE
-  $ acc config del KEYS... [-l | -g]
-
-FLAGS
-  -g, --global  global config
-  -l, --local   local config
-
-DESCRIPTION
-  deletes persistent config values
-
-ALIASES
-  $ acc config del
-  $ acc config rm
-```
-
-## `acc config delete KEYS`
-
-deletes persistent config values
-
-```
-USAGE
-  $ acc config delete KEYS... [-l | -g]
-
-FLAGS
-  -g, --global  global config
-  -l, --local   local config
-
-DESCRIPTION
-  deletes persistent config values
-
-ALIASES
-  $ acc config del
-  $ acc config rm
-```
-
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/delete.js)_
+_See code: [src/commands/config/index.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/index.js)_
 
 ## `acc config edit`
 
-edit config file
+Edit the authentication file in your default editor
 
 ```
 USAGE
@@ -405,14 +316,14 @@ FLAGS
   -l, --local   local config
 
 DESCRIPTION
-  edit config file
+  Edit the authentication file in your default editor
 ```
 
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/edit.js)_
+_See code: [src/commands/config/edit.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/edit.js)_
 
 ## `acc config get KEY`
 
-gets a persistent config value
+Get a value from the authentication file
 
 ```
 USAGE
@@ -426,99 +337,18 @@ FLAGS
   -y, --yaml    output in yaml
 
 DESCRIPTION
-  gets a persistent config value
+  Get a value from the authentication file
 ```
 
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/get.js)_
+_See code: [src/commands/config/get.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/get.js)_
 
-## `acc config list`
+## `acc config set KEY [VALUE|FILENAME]`
 
-lists all persistent config values
-
-```
-USAGE
-  $ acc config list [-l | -g] [-e] [--verbose |  | [-j | -y]]
-
-FLAGS
-  -e, --env      environment variables
-  -g, --global   global config
-  -j, --json     output in json
-  -l, --local    local config
-  -y, --yaml     output in yaml
-      --verbose  show all config values
-
-DESCRIPTION
-  lists all persistent config values
-
-ALIASES
-  $ acc config ls
-```
-
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/list.js)_
-
-## `acc config ls`
-
-list, get, set, delete, and edit persistent configuration data
+Set a value in the authentication file
 
 ```
 USAGE
-  $ acc config ls [-l | -g] [-e] [--verbose |  | [-j | -y]]
-
-FLAGS
-  -e, --env      environment variables
-  -g, --global   global config
-  -j, --json     output in json
-  -l, --local    local config
-  -y, --yaml     output in yaml
-      --verbose  show all config values
-
-DESCRIPTION
-  list, get, set, delete, and edit persistent configuration data
-
-ALIASES
-  $ acc config ls
-
-EXAMPLES
-  $ aio config:list
-
-  $ aio config:get KEY
-
-  $ aio config:set KEY VALUE
-
-  $ aio config:delete KEY
-
-  $ aio config:clear
-```
-
-## `acc config rm KEYS`
-
-deletes persistent config values
-
-```
-USAGE
-  $ acc config rm KEYS... [-l | -g]
-
-FLAGS
-  -g, --global  global config
-  -l, --local   local config
-
-DESCRIPTION
-  deletes persistent config values
-
-ALIASES
-  $ acc config del
-  $ acc config rm
-```
-
-## `acc config set key 'a value'       # set key to 'a value'`
-
-sets a persistent config value
-
-```
-USAGE
-  $ acc config set key 'a value'       # set key to 'a value'
-  $ acc config set key -f value.json   # set key to the json found in the file value.json
-  $ acc config set -j key < value.json # set key to the json found in the file value.json
+  $ acc config set KEY [VALUE|FILENAME] [-l | -g] [-j] [-y] [-f | -i]
 
 FLAGS
   -f, --file         value is a path to a file
@@ -529,10 +359,10 @@ FLAGS
   -y, --yaml         value is yaml
 
 DESCRIPTION
-  sets a persistent config value
+  Set a value in the authentication file
 ```
 
-_See code: [@adobe/aio-cli-plugin-config](https://github.com/adobe/aio-cli-plugin-config/blob/5.1.0/src/commands/config/set.js)_
+_See code: [src/commands/config/set.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/set.js)_
 
 ## `acc info`
 
@@ -591,7 +421,7 @@ EXAMPLES
     $ acc instance check --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/check.js)_
+_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/check.js)_
 
 ## `acc instance exec`
 
@@ -619,7 +449,7 @@ EXAMPLES
   $ acc instance exec --alias staging --script "context.res = application.instanceName"
 ```
 
-_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/exec.js)_
+_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/exec.js)_
 
 ## `acc instance info`
 
@@ -643,7 +473,7 @@ EXAMPLES
   $ acc instance info --alias staging
 ```
 
-_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/info.js)_
+_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/info.js)_
 
 ## `acc instance pull`
 
@@ -684,7 +514,7 @@ EXAMPLES
     $ acc instance pull --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/pull.js)_
+_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/pull.js)_
 
 ## `acc instance queryDef`
 
@@ -727,7 +557,7 @@ EXAMPLES
     $ acc instance queryDef --file ./queries/recipients.json --json
 ```
 
-_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/queryDef.js)_
+_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/queryDef.js)_
 
 ## `acc instance soap`
 
@@ -773,7 +603,7 @@ EXAMPLES
       1000"}]' --json
 ```
 
-_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/soap.js)_
+_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/soap.js)_
 
 ## `acc instance template`
 
@@ -796,7 +626,7 @@ EXAMPLES
     $ acc instance template > acc.config.json
 ```
 
-_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/template.js)_
+_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/template.js)_
 
 ## `acc instance watch`
 
@@ -832,7 +662,7 @@ EXAMPLES
     $ acc instance watch --alias local --debounce 500
 ```
 
-_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/instance/watch.js)_
+_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/watch.js)_
 
 ## `acc monitor test`
 
@@ -850,7 +680,7 @@ DESCRIPTION
   Health-check an instance via the anonymous /r/test endpoint (Apache front, no login)
 ```
 
-_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/v1.8.0/src/commands/monitor/test.js)_
+_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/monitor/test.js)_
 
 ## `acc report`
 
