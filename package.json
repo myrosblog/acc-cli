@@ -1,6 +1,6 @@
 {
   "name": "campaign-cli",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Save time, reduce risk and improve code health in Adobe Campaign with acc CLI",
   "keywords": [
     "adobe",
@@ -31,6 +31,7 @@
     "commands": "./src/commands",
     "bin": "acc",
     "topicSeparator": " ",
+    "repositoryPrefix": "<%- repo %>/blob/main/<%- commandPath %>",
     "topics": {
       "auth": {
         "description": "Initialize and troubleshoot authentications to your instances."
@@ -71,7 +72,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "readme": "npx --yes oclif@6.0.10 readme && prettier --write README.md"
   },
   "type": "module",
   "dependencies": {
