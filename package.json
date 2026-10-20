@@ -31,6 +31,7 @@
     "commands": "./src/commands",
     "bin": "acc",
     "topicSeparator": " ",
+    "repositoryPrefix": "<%- repo %>/blob/main/<%- commandPath %>",
     "topics": {
       "auth": {
         "description": "Initialize and troubleshoot authentications to your instances."

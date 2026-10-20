@@ -145,7 +145,7 @@ EXAMPLES
     $ acc auth decode "eyJhbGci…" --json
 ```
 
-_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/decode.js)_
+_See code: [src/commands/auth/decode.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/auth/decode.js)_
 
 ## `acc auth init`
 
@@ -209,7 +209,7 @@ EXAMPLES
     $ acc auth init --alias local --host https://instance1.campaign.adobe.com --method UserPassword --user admin
 ```
 
-_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/init.js)_
+_See code: [src/commands/auth/init.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/auth/init.js)_
 
 ## `acc auth ip`
 
@@ -231,7 +231,7 @@ EXAMPLES
     $ acc auth ip
 ```
 
-_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/ip.js)_
+_See code: [src/commands/auth/ip.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/auth/ip.js)_
 
 ## `acc auth list`
 
@@ -259,7 +259,7 @@ EXAMPLES
     $ acc auth list --json
 ```
 
-_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/list.js)_
+_See code: [src/commands/auth/list.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/auth/list.js)_
 
 ## `acc auth login`
 
@@ -287,7 +287,7 @@ EXAMPLES
     $ acc auth login --alias prod
 ```
 
-_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/auth/login.js)_
+_See code: [src/commands/auth/login.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/auth/login.js)_
 
 ## `acc config`
 
@@ -301,7 +301,7 @@ DESCRIPTION
   Manage your authentication file (run `acc auth` for its path), not the project acc.config.json.
 ```
 
-_See code: [src/commands/config/index.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/index.js)_
+_See code: [src/commands/config/index.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/config/index.js)_
 
 ## `acc config edit`
 
@@ -319,7 +319,7 @@ DESCRIPTION
   Edit the authentication file in your default editor
 ```
 
-_See code: [src/commands/config/edit.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/edit.js)_
+_See code: [src/commands/config/edit.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/config/edit.js)_
 
 ## `acc config get KEY`
 
@@ -340,7 +340,7 @@ DESCRIPTION
   Get a value from the authentication file
 ```
 
-_See code: [src/commands/config/get.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/get.js)_
+_See code: [src/commands/config/get.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/config/get.js)_
 
 ## `acc config set KEY [VALUE|FILENAME]`
 
@@ -362,7 +362,7 @@ DESCRIPTION
   Set a value in the authentication file
 ```
 
-_See code: [src/commands/config/set.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/config/set.js)_
+_See code: [src/commands/config/set.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/config/set.js)_
 
 ## `acc info`
 
@@ -421,7 +421,7 @@ EXAMPLES
     $ acc instance check --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/check.js)_
+_See code: [src/commands/instance/check.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/check.js)_
 
 ## `acc instance exec`
 
@@ -449,7 +449,7 @@ EXAMPLES
   $ acc instance exec --alias staging --script "context.res = application.instanceName"
 ```
 
-_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/exec.js)_
+_See code: [src/commands/instance/exec.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/exec.js)_
 
 ## `acc instance info`
 
@@ -473,7 +473,7 @@ EXAMPLES
   $ acc instance info --alias staging
 ```
 
-_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/info.js)_
+_See code: [src/commands/instance/info.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/info.js)_
 
 ## `acc instance pull`
 
@@ -514,7 +514,7 @@ EXAMPLES
     $ acc instance pull --config acc.marketing.config.json
 ```
 
-_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/pull.js)_
+_See code: [src/commands/instance/pull.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/pull.js)_
 
 ## `acc instance queryDef`
 
@@ -557,7 +557,7 @@ EXAMPLES
     $ acc instance queryDef --file ./queries/recipients.json --json
 ```
 
-_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/queryDef.js)_
+_See code: [src/commands/instance/queryDef.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/queryDef.js)_
 
 ## `acc instance soap`
 
@@ -603,7 +603,7 @@ EXAMPLES
       1000"}]' --json
 ```
 
-_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/soap.js)_
+_See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/soap.js)_
 
 ## `acc instance template`
 
@@ -626,7 +626,7 @@ EXAMPLES
     $ acc instance template > acc.config.json
 ```
 
-_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/template.js)_
+_See code: [src/commands/instance/template.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/template.js)_
 
 ## `acc instance watch`
 
@@ -662,7 +662,7 @@ EXAMPLES
     $ acc instance watch --alias local --debounce 500
 ```
 
-_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/instance/watch.js)_
+_See code: [src/commands/instance/watch.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/watch.js)_
 
 ## `acc monitor test`
 
@@ -680,7 +680,7 @@ DESCRIPTION
   Health-check an instance via the anonymous /r/test endpoint (Apache front, no login)
 ```
 
-_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/v1.8.2/src/commands/monitor/test.js)_
+_See code: [src/commands/monitor/test.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/monitor/test.js)_
 
 ## `acc report`
 
