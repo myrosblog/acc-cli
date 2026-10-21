@@ -67,6 +67,7 @@ describe(`acc instance exec (e2e CLI, alias=${ALIAS})`, function () {
     );
     expect(err, "expected a non-zero exit").to.not.be.null;
     expect(err.code).to.not.equal(0);
-    expect(err.stderr).to.match(/mutually exclusive/i);
+    // rejected by the oclif `exactlyOne` flag validation, before any login
+    expect(err.stderr).to.match(/cannot also be provided/i);
   });
 });
