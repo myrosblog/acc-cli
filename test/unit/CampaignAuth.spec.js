@@ -7,10 +7,11 @@ import tmp from "tmp";
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
-import CampaignAuth, {
+import CampaignAuth from "../../src/CampaignAuth.js";
+import {
   AUTH_CURRENT_ALIAS_KEY,
   AUTH_INSTANCES_KEY,
-} from "../../src/CampaignAuth.js";
+} from "../../src/helpers/authConstants.js";
 import { codes } from "../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,

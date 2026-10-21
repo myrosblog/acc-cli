@@ -1,6 +1,6 @@
 import AioConfig from "@adobe/aio-lib-core-config/src/Config.js";
 import BaseCommand from "../../BaseCommand.js";
-import { logCredentialsFile } from "../../CampaignAuth.js";
+import { logCredentialsFile } from "../../helpers/authConstants.js";
 
 /**
  * Entry point of the `auth` topic: list its subcommands, then log where the authentication file is.
