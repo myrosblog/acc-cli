@@ -2,19 +2,24 @@
 import fs from "fs-extra";
 import path from "node:path";
 import chalk from "chalk";
-import { minimatch } from "minimatch";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPushLog from "./helpers/CampaignPushLog.js";
+import {
+  buildWatchTargets,
+  findMatchingTargets,
+  getDecomposedSchemas,
+  toPosixPath,
+} from "./helpers/watchTargets.js";
+import { formatKeyValues, getWriteKey } from "./helpers/writeKey.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
   INSTANCE_WATCH_FILE_NOT_IN_SCOPE,
   INSTANCE_WATCH_META_FILE_MISSING,
   INSTANCE_WATCH_SCHEMA_NOT_FOUND,
-  INSTANCE_WATCH_NO_WRITE_KEY,
   INSTANCE_WATCH_PUSH_FAILED,
   INSTANCE_WATCH_ALREADY_RUNNING,
 } = codes;
@@ -24,7 +29,7 @@ const {
  * Only files described by the "decompose" key in acc.config.json are watched.
  * When a file is edited, its content is wrapped in CDATA and pushed to the server.
  *
- * At start: _getDecomposedSchemas > _buildWatchList
+ * At start: getDecomposedSchemas > _buildWatchList
  * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
  * @class CampaignWatch
@@ -142,7 +147,7 @@ class CampaignWatch {
     );
 
     // Get schemas with decompose configuration
-    const decomposedSchemas = this._getDecomposedSchemas();
+    const decomposedSchemas = getDecomposedSchemas(this.accConfig.schemas);
     if (decomposedSchemas.length === 0) {
       throw new INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS();
     }
@@ -237,63 +242,22 @@ class CampaignWatch {
   }
 
   /**
-   * Filters schemas to only those with a decompose configuration.
-   *
-   * @returns {Array<object>} Array of schema configs with decompose
-   */
-  _getDecomposedSchemas() {
-    return this.accConfig.schemas.filter(
-      (schemaConfig) =>
-        schemaConfig.decompose &&
-        typeof schemaConfig.decompose === "object" &&
-        Object.keys(schemaConfig.decompose).length > 0,
-    );
-  }
-
-  /**
-   * Builds the watch targets, one per entry of every decomposed schema.
-   * Each target pairs the glob pattern of a decomposed file with the schema and
-   * xpath that produced it, so a changed file can be traced back to its origin.
+   * Builds the watch targets, one per entry of every decomposed schema, and
+   * logs each of them.
    *
    * @param {Array<object>} decomposedSchemas - Schemas with decompose config
    * @returns {Array<{pattern: string, schemaConfig: object, xpath: string}>} the watch targets
    */
   _buildWatchList(decomposedSchemas) {
-    const watchTargets = [];
+    const watchTargets = buildWatchTargets(decomposedSchemas);
 
-    for (const schemaConfig of decomposedSchemas) {
-      const { decompose, schemaId } = schemaConfig;
-
-      for (const [xpath, decomposedFilename] of Object.entries(decompose)) {
-        const pattern = this._convertTemplateToGlob(decomposedFilename);
-
-        watchTargets.push({ pattern, schemaConfig, xpath });
-
-        this.logger.verbose(
-          `  Schema ${schemaId}: watching ${pattern} (xpath: ${xpath})`,
-        );
-      }
+    for (const { pattern, schemaConfig, xpath } of watchTargets) {
+      this.logger.verbose(
+        `  Schema ${schemaConfig.schemaId}: watching ${pattern} (xpath: ${xpath})`,
+      );
     }
 
     return watchTargets;
-  }
-
-  /**
-   * Converts a filename template from acc.config.json into a glob pattern
-   * relative to the watch path.
-   *
-   * Each placeholder becomes a single "*": CampaignInstance sanitizes attribute
-   * values before substituting them, so a placeholder can never expand to more
-   * than one path segment.
-   *
-   * @param {string} template - Filename template with attribute placeholders
-   * @returns {string} Glob pattern relative to the watch path
-   * @see sanitizeFilenameValue in helpers/filenameTemplate.js
-   */
-  _convertTemplateToGlob(template) {
-    // Templates are rooted at the download directory, not at the filesystem root
-    const relativeTemplate = template.replace(/^\/+/, "");
-    return relativeTemplate.replace(/\{@?[^}]+\}/g, "*");
   }
 
   /**
@@ -303,10 +267,7 @@ class CampaignWatch {
    * @returns {{pattern: string, schemaConfig: object, xpath: string}|null} the matching target, or null
    */
   _findSchemaForFile(filePath) {
-    const posixPath = filePath.split(path.sep).join("/");
-    const matches = this.watchTargets.filter((target) =>
-      minimatch(posixPath, target.pattern),
-    );
+    const matches = findMatchingTargets(this.watchTargets, filePath);
 
     if (matches.length === 0) {
       return null;
@@ -315,7 +276,7 @@ class CampaignWatch {
       // Two decompose entries claiming the same file is a configuration problem,
       // so report it rather than silently picking one.
       this.logger.warn(
-        `${posixPath} matches ${matches.length} decompose patterns, using ${matches[0].schemaConfig.schemaId}`,
+        `${toPosixPath(filePath)} matches ${matches.length} decompose patterns, using ${matches[0].schemaConfig.schemaId}`,
       );
     }
     return matches[0];
@@ -547,9 +508,9 @@ class CampaignWatch {
       }
 
       // The reconciliation key comes from the schema, not from a guess
-      const { key, keyValues } = this._getWriteKey(schema, rootElement);
+      const { key, keyValues } = getWriteKey(schema, rootElement);
       pushLog.keyValues = keyValues;
-      this.spinnerKeys = this._formatKeyValues(keyValues);
+      this.spinnerKeys = formatKeyValues(keyValues);
 
       this.logger.verbose(
         `CampaignPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
@@ -619,94 +580,6 @@ class CampaignWatch {
   async _isElementOnly(schema, xpath) {
     const node = await schema.root.findNode(xpath);
     return !!node?.isElementOnly;
-  }
-
-  /**
-   * Picks the key to reconcile the entity on, and reads its values from the meta
-   * document. The key is the schema's first one, internal before external, as
-   * the SDK itself resolves it.
-   *
-   * @param {XtkSchema} schema - The schema of the entity, from the SDK
-   * @param {Element} rootElement - Root element of the meta document
-   * @returns {{key: XtkSchemaKey, keyValues: Array<{xpath: string, attributeName: string, value: string}>}} the key and its values
-   * @throws {INSTANCE_WATCH_NO_WRITE_KEY} If the meta file does not supply the key
-   * @see https://opensource.adobe.com/acc-js-sdk/application.html
-   */
-  _getWriteKey(schema, rootElement) {
-    const key = schema.root.firstKeyDef(); // internal key first, external otherwise
-    const keyValues = key && this._getKeyValues(key, rootElement);
-
-    if (!keyValues) {
-      throw new INSTANCE_WATCH_NO_WRITE_KEY({
-        messageValues: [schema.id, key ? `"${key.name}"` : "(none defined)"],
-      });
-    }
-
-    return { key, keyValues };
-  }
-
-  /**
-   * Reads the values of every field of a key from the meta document.
-   *
-   * @param {XtkSchemaKey} key - The key definition, from the SDK schema
-   * @param {Element} rootElement - Root element of the meta document
-   * @returns {Array<{xpath: string, attributeName: string, value: string}>|null} the values, or null if the key cannot be used
-   */
-  _getKeyValues(key, rootElement) {
-    const keyValues = [];
-
-    for (const field of key.fields) {
-      // nodePath is absolute ("/@name"), the keyfield xpath is relative to the root
-      const keyXpath = field.nodePath.replace(/^\//, "");
-      const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
-        rootElement,
-        keyXpath,
-      );
-
-      // A key on an element rather than an attribute cannot be written as an
-      // attribute of the payload, so the whole key is unusable
-      if (!node || attributeName === null) {
-        return null;
-      }
-
-      const value = node.getAttribute(attributeName);
-      if (!value) {
-        return null;
-      }
-
-      keyValues.push({ xpath: keyXpath, attributeName, value });
-    }
-
-    return keyValues.length > 0 ? keyValues : null;
-  }
-
-  /**
-   * Formats key values for display. The SDK has no equivalent: its toString()
-   * dumps the schema tree and ignores keys.
-   *
-   * To explore: sdk.XtkCaster.asString => "xtk:sql|4521" "xtk:javascript|New|cus"
-   *
-   * @param {Array<{attributeName: string, value: string}>} keyValues - The key values
-   * @returns {string} "DM123" for a single field, "cus:New" for name + namespace, "a, b" otherwise
-   */
-  _formatKeyValues(keyValues) {
-    const values = keyValues.map(({ value }) => value);
-
-    if (keyValues.length === 1) {
-      return values[0];
-    }
-
-    // "namespace:name" is how Adobe Campaign names these entities everywhere else
-    if (keyValues.length === 2) {
-      const byName = Object.fromEntries(
-        keyValues.map(({ attributeName, value }) => [attributeName, value]),
-      );
-      if (byName.name && byName.namespace) {
-        return `${byName.namespace}:${byName.name}`;
-      }
-    }
-
-    return values.join(", ");
   }
 
   /**

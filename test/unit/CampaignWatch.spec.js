@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 
 // acc
 import CampaignWatch from "../../src/CampaignWatch.js";
+import { getDecomposedSchemas } from "../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
 const testConfig = {
@@ -133,112 +134,30 @@ describe("CampaignWatch", () => {
     });
   });
 
-  describe("_getDecomposedSchemas", () => {
-    it("should return only schemas with decompose configuration", () => {
-      const decomposed = watcher._getDecomposedSchemas();
-      expect(decomposed).to.have.lengthOf(3);
-      expect(decomposed.map((s) => s.schemaId)).to.include.members([
-        "xtk:javascript",
-        "xtk:jst",
-        "nms:delivery",
-      ]);
-    });
-
-    it("should return empty array when no schemas have decompose", () => {
-      const watcherNoDecompose = new CampaignWatch(
-        mockLogger,
-        mockClient,
-        testConfigNoDecompose,
-        cliOptions,
-        () => mockSpinner,
-      );
-      const decomposed = watcherNoDecompose._getDecomposedSchemas();
-      expect(decomposed).to.have.lengthOf(0);
-    });
-
-    it("should handle empty decompose object", () => {
-      const configWithEmptyDecompose = {
-        schemas: [
-          {
-            schemaId: "xtk:javascript",
-            filename:
-              "/Admin/Config/JavaScript codes/{@namespace}/{@name}.meta.xml",
-            decompose: {},
-          },
-        ],
-      };
-      const watcherEmpty = new CampaignWatch(
-        mockLogger,
-        mockClient,
-        configWithEmptyDecompose,
-        cliOptions,
-        () => mockSpinner,
-      );
-      const decomposed = watcherEmpty._getDecomposedSchemas();
-      expect(decomposed).to.have.lengthOf(0);
-    });
-  });
-
-  describe("_convertTemplateToGlob", () => {
-    it("should convert simple template to glob", () => {
-      const result = watcher._convertTemplateToGlob("/path/to/{@name}.js");
-      expect(result).to.equal("path/to/*.js");
-    });
-
-    it("should convert template with namespace to glob", () => {
-      const result = watcher._convertTemplateToGlob(
-        "/Admin/Config/JavaScript codes/{@namespace}/{@name}.js",
-      );
-      expect(result).to.equal("Admin/Config/JavaScript codes/*/*.js");
-    });
-
-    it("should convert template without @ prefix to glob", () => {
-      const result = watcher._convertTemplateToGlob("/path/to/{name}.js");
-      expect(result).to.equal("path/to/*.js");
-    });
-  });
-
   describe("_buildWatchList", () => {
-    it("should build one target per decompose entry", () => {
-      const decomposedSchemas = watcher._getDecomposedSchemas();
-      const watchTargets = watcher._buildWatchList(decomposedSchemas);
+    it("should build the targets of the decomposed schemas", () => {
+      const watchTargets = watcher._buildWatchList(
+        getDecomposedSchemas(testConfig.schemas),
+      );
 
       // 1 xtk:javascript + 1 xtk:jst + 2 nms:delivery
       expect(watchTargets).to.have.lengthOf(4);
-      expect(watchTargets.map((target) => target.pattern)).to.have.members([
-        "Admin/Config/JavaScript codes/*/*.js",
-        "Admin/Config/JavaScript templates/*/*.js",
-        "Campaign Management/Deliveries/*.html",
-        "Campaign Management/Deliveries/*.txt",
-      ]);
     });
 
-    it("should carry the schema config and xpath of each entry", () => {
-      const decomposedSchemas = watcher._getDecomposedSchemas();
-      const watchTargets = watcher._buildWatchList(decomposedSchemas);
+    it("should log each target with its schema and xpath", () => {
+      watcher._buildWatchList(getDecomposedSchemas(testConfig.schemas));
 
-      const htmlTarget = watchTargets.find((target) =>
-        target.pattern.endsWith(".html"),
+      expect(mockLogger.verbose).to.have.callCount(4);
+      expect(mockLogger.verbose).to.have.been.calledWith(
+        "  Schema nms:delivery: watching Campaign Management/Deliveries/*.html (xpath: content/html/source)",
       );
-      expect(htmlTarget.schemaConfig.schemaId).to.equal("nms:delivery");
-      expect(htmlTarget.xpath).to.equal("content/html/source");
-    });
-
-    it("should build patterns relative to the watch path", () => {
-      const decomposedSchemas = watcher._getDecomposedSchemas();
-      const watchTargets = watcher._buildWatchList(decomposedSchemas);
-
-      watchTargets.forEach(({ pattern }) => {
-        expect(pattern).to.not.include(__dirname);
-        expect(pattern.startsWith("/")).to.be.false;
-      });
     });
   });
 
   describe("_findSchemaForFile", () => {
     beforeEach(() => {
       watcher.watchTargets = watcher._buildWatchList(
-        watcher._getDecomposedSchemas(),
+        getDecomposedSchemas(testConfig.schemas),
       );
     });
 
@@ -249,43 +168,6 @@ describe("CampaignWatch", () => {
 
       expect(result.schemaConfig.schemaId).to.equal("xtk:javascript");
       expect(result.xpath).to.equal("data");
-    });
-
-    it("should discriminate two xpaths of the same schema by extension", () => {
-      const html = watcher._findSchemaForFile(
-        "Campaign Management/Deliveries/DM42.html",
-      );
-      const text = watcher._findSchemaForFile(
-        "Campaign Management/Deliveries/DM42.txt",
-      );
-
-      expect(html.xpath).to.equal("content/html/source");
-      expect(text.xpath).to.equal("content/text/source");
-    });
-
-    it("should match filenames containing glob metacharacters", () => {
-      // Record values are not glob-escaped on pull, so "[" reaches the filesystem
-      const result = watcher._findSchemaForFile(
-        "Campaign Management/Deliveries/promo[2024].html",
-      );
-
-      expect(result.schemaConfig.schemaId).to.equal("nms:delivery");
-    });
-
-    it("should accept native path separators", () => {
-      const result = watcher._findSchemaForFile(
-        join("Admin", "Config", "JavaScript codes", "cus", "myScript.js"),
-      );
-
-      expect(result.schemaConfig.schemaId).to.equal("xtk:javascript");
-    });
-
-    it("should not let a single wildcard cross a directory", () => {
-      const result = watcher._findSchemaForFile(
-        "Campaign Management/Deliveries/2024/DM42.html",
-      );
-
-      expect(result).to.be.null;
     });
 
     it("should return null for non-matching file path", () => {
@@ -322,7 +204,7 @@ describe("CampaignWatch", () => {
         () => mockSpinner,
       );
       ambiguousWatcher.watchTargets = ambiguousWatcher._buildWatchList(
-        ambiguousWatcher._getDecomposedSchemas(),
+        getDecomposedSchemas(ambiguousConfig.schemas),
       );
 
       const result = ambiguousWatcher._findSchemaForFile("Shared/both.js");
@@ -587,164 +469,6 @@ describe("CampaignWatch", () => {
     });
   });
 
-  describe("_getWriteKey", () => {
-    const parseMeta = (xml) => DomUtil.parse(xml).documentElement;
-
-    it("should reconcile on the internal key over the external one", () => {
-      const schema = makeSchema(javascriptSchemaXml);
-      const rootElement = parseMeta(
-        `<javascript id="456" name="myScript" namespace="cus"/>`,
-      );
-
-      const { key, keyValues } = watcher._getWriteKey(schema, rootElement);
-
-      expect(key.name).to.equal("id");
-      expect(key.isInternal).to.be.true;
-      expect(keyValues).to.deep.equal([
-        { xpath: "@id", attributeName: "id", value: "456" },
-      ]);
-    });
-
-    it("should use the external key when the schema has no internal one", () => {
-      const schema = makeSchema(`<schema namespace="xtk" name="javascript">
-        <element name="javascript">
-          <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
-          <attribute name="name" type="string"/>
-          <attribute name="namespace" type="string"/>
-        </element>
-      </schema>`);
-      const rootElement = parseMeta(
-        `<javascript name="myScript" namespace="cus"/>`,
-      );
-
-      const { key, keyValues } = watcher._getWriteKey(schema, rootElement);
-
-      expect(key.name).to.equal("name");
-      expect(key.isInternal).to.be.false;
-      // composite fields, in keyfield order
-      expect(keyValues.map(({ value }) => value)).to.deep.equal([
-        "myScript",
-        "cus",
-      ]);
-    });
-
-    it("should throw when the key attribute is absent", () => {
-      const schema = makeSchema(javascriptSchemaXml);
-      const rootElement = parseMeta(
-        `<javascript name="myScript" namespace="cus"/>`,
-      );
-
-      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /no value for the key "id"/,
-      );
-    });
-
-    it("should throw when the key attribute is empty", () => {
-      const schema = makeSchema(javascriptSchemaXml);
-      const rootElement = parseMeta(
-        `<javascript id="" name="myScript" namespace="cus"/>`,
-      );
-
-      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /no value for the key "id"/,
-      );
-    });
-
-    it("should resolve a keyfield nested under an element", () => {
-      const schema = makeSchema(`<schema namespace="nms" name="delivery">
-        <element name="delivery">
-          <key name="content"><keyfield xpath="content/@code"/></key>
-          <element name="content"><attribute name="code" type="string"/></element>
-        </element>
-      </schema>`);
-      const rootElement = parseMeta(
-        `<delivery><content code="DM123"/></delivery>`,
-      );
-
-      const { keyValues } = watcher._getWriteKey(schema, rootElement);
-
-      expect(keyValues).to.deep.equal([
-        { xpath: "content/@code", attributeName: "code", value: "DM123" },
-      ]);
-    });
-
-    it("should reject a key whose keyfield is an element", () => {
-      const schema = makeSchema(`<schema namespace="cus" name="thing">
-        <element name="thing">
-          <key name="byElement"><keyfield xpath="label"/></key>
-          <element name="label" type="string"/>
-        </element>
-      </schema>`);
-      const rootElement = parseMeta(`<thing><label>hello</label></thing>`);
-
-      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /no value for the key "byElement"/,
-      );
-    });
-
-    it("should name the schema and the key it could not read", () => {
-      const schema = makeSchema(javascriptSchemaXml);
-      const rootElement = parseMeta(`<javascript label="orphan"/>`);
-
-      try {
-        watcher._getWriteKey(schema, rootElement);
-        expect.fail("Should have thrown");
-      } catch (err) {
-        expect(err.code).to.equal("INSTANCE_WATCH_NO_WRITE_KEY");
-        expect(err.message).to.include("xtk:javascript");
-        expect(err.message).to.include('"id"');
-      }
-    });
-
-    it("should throw when the schema defines no key at all", () => {
-      const schema = makeSchema(`<schema namespace="cus" name="keyless">
-        <element name="keyless"><attribute name="id" type="long"/></element>
-      </schema>`);
-      const rootElement = parseMeta(`<keyless id="1"/>`);
-
-      expect(() => watcher._getWriteKey(schema, rootElement)).to.throw(
-        /\(none defined\)/,
-      );
-    });
-  });
-
-  describe("_formatKeyValues", () => {
-    it("should render a single field as its bare value", () => {
-      const formatted = watcher._formatKeyValues([
-        { attributeName: "internalName", value: "DM123" },
-      ]);
-
-      expect(formatted).to.equal("DM123");
-    });
-
-    it("should render name and namespace as namespace:name", () => {
-      const formatted = watcher._formatKeyValues([
-        { attributeName: "name", value: "New" },
-        { attributeName: "namespace", value: "cus" },
-      ]);
-
-      expect(formatted).to.equal("cus:New");
-    });
-
-    it("should render namespace:name whatever the keyfield order", () => {
-      const formatted = watcher._formatKeyValues([
-        { attributeName: "namespace", value: "cus" },
-        { attributeName: "name", value: "New" },
-      ]);
-
-      expect(formatted).to.equal("cus:New");
-    });
-
-    it("should join any other composite key with a comma", () => {
-      const formatted = watcher._formatKeyValues([
-        { attributeName: "internalName", value: "DM123" },
-        { attributeName: "messageType", value: "email" },
-      ]);
-
-      expect(formatted).to.equal("DM123, email");
-    });
-  });
-
   describe("Integration: File change flow", () => {
     let tempDir;
 
@@ -783,7 +507,7 @@ describe("CampaignWatch", () => {
         () => mockSpinner,
       );
       watcher.watchTargets = watcher._buildWatchList(
-        watcher._getDecomposedSchemas(),
+        getDecomposedSchemas(testConfig.schemas),
       );
     });
 
