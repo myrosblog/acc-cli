@@ -998,6 +998,56 @@ describe("CampaignInstance", () => {
       expect(serialized).to.match(/<data\s*\/>/); // self-closing = empty textContent
       expect(serialized).to.not.contain("CREATE DATABASE");
     });
+
+    describe("excludeXPaths", () => {
+      const parseExcluding = (xml, excludeXPaths) => {
+        instance = new CampaignInstance(
+          mockLogger,
+          mockClient,
+          configDefaultFull,
+          optionsFull,
+        );
+        const record = DomUtil.getFirstChildElement(DomUtil.parse(xml));
+        const schemaConfig = {
+          schemaId: "nms:delivery",
+          filename: "{@name}.xml",
+          excludeXPaths,
+        };
+        instance.parse(record, schemaConfig, true); // preview: no disk write
+        return DomUtil.toXMLString(record);
+      };
+
+      it("should blank an attribute of the record", () => {
+        const xml = parseExcluding(`<delivery name="DM1" secret="s3cr3t"/>`, [
+          "@secret",
+        ]);
+        expect(xml).to.contain(`secret=""`);
+        expect(xml).to.contain(`name="DM1"`);
+      });
+
+      it("should blank an attribute of a child element", () => {
+        const xml = parseExcluding(
+          `<delivery name="DM1"><target secret="s3cr3t"/></delivery>`,
+          ["target/@secret"],
+        );
+        expect(xml).to.contain(`<target secret=""/>`);
+      });
+
+      it("should skip an attribute xpath whose parent element is absent", () => {
+        const xml = parseExcluding(`<delivery name="DM1"/>`, [
+          "absent/@secret",
+        ]);
+        expect(xml).to.equal(`<delivery name="DM1"/>`);
+      });
+
+      it("should skip an empty xpath instead of blanking the whole record", () => {
+        const xml = parseExcluding(
+          `<delivery name="DM1"><a>text</a></delivery>`,
+          [""],
+        );
+        expect(xml).to.contain("<a>text</a>");
+      });
+    });
   });
 
   describe("parse all mocks", () => {});

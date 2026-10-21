@@ -6,7 +6,6 @@ import { minimatch } from "minimatch";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPushLog from "./helpers/CampaignPushLog.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
@@ -659,25 +658,18 @@ class CampaignWatch {
     for (const field of key.fields) {
       // nodePath is absolute ("/@name"), the keyfield xpath is relative to the root
       const keyXpath = field.nodePath.replace(/^\//, "");
-      const xpathElements = new XPath(keyXpath).getElements();
-      const lastXpathElement = xpathElements[xpathElements.length - 1];
+      const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
+        rootElement,
+        keyXpath,
+      );
 
       // A key on an element rather than an attribute cannot be written as an
       // attribute of the payload, so the whole key is unusable
-      if (
-        !lastXpathElement ||
-        !DomUtilAcc.xpathElementIsAttribute(lastXpathElement)
-      ) {
+      if (!node || attributeName === null) {
         return null;
       }
 
-      const lastNode = DomUtilAcc.findLastElement(rootElement, keyXpath);
-      if (!lastNode) {
-        return null;
-      }
-
-      const attributeName = DomUtilAcc.getXpathAttributeName(lastXpathElement);
-      const value = lastNode.getAttribute(attributeName);
+      const value = node.getAttribute(attributeName);
       if (!value) {
         return null;
       }

@@ -87,6 +87,39 @@ class DomUtilAcc extends DomUtil {
   }
 
   /**
+   * Resolves what an xpath points at: the element holding it and, when it ends
+   * with an attribute, that attribute's name. Callers need both to read or blank
+   * a value, whether it is an attribute or the text of an element.
+   * Examples with <service mode="0"><social category="1"/></service>:
+   * - xpath: "@mode" => { node: <service>, attributeName: "mode" }
+   * - xpath: "social/@category" => { node: <social>, attributeName: "category" }
+   * - xpath: "social" => { node: <social>, attributeName: null }
+   * - xpath: "absent/@mode" => { node: null, attributeName: "mode" }
+   * - xpath: "" => { node: null, attributeName: null }: nothing to point at
+   * Same limits as findLastElement for absolute xpaths.
+   *
+   * @param {Element} startElement the starting element to traverse from
+   * @param {string} xpathStr the xpath string to traverse
+   * @returns {{node: Element|null, attributeName: string|null}} the element the
+   *   xpath leads to (null if an element on the way is missing) and the
+   *   attribute name (null if the xpath does not end with an attribute)
+   */
+  static resolveXPathTarget(startElement, xpathStr) {
+    const xpathElements = new XPath(xpathStr).getElements();
+    const lastXpathElement = xpathElements[xpathElements.length - 1];
+    if (!lastXpathElement) {
+      return { node: null, attributeName: null };
+    }
+
+    return {
+      node: DomUtilAcc.findLastElement(startElement, xpathStr),
+      attributeName: DomUtilAcc.xpathElementIsAttribute(lastXpathElement)
+        ? DomUtilAcc.getXpathAttributeName(lastXpathElement)
+        : null,
+    };
+  }
+
+  /**
    * Builds an XML document with the content as CDATA, nesting one element per
    * xpath chunk under a root named after the schema.
    * This is the write-side mirror of findLastElement, which walks an existing

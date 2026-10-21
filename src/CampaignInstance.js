@@ -7,7 +7,6 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
@@ -707,24 +706,23 @@ class CampaignInstance {
     // prepare XML by removing excluded attributes
     if (excludeXPaths) {
       for (const xpathString of excludeXPaths) {
-        const xpath = new XPath(xpathString);
-        const xpathElements = xpath.getElements();
-        const lastXpathElement = xpathElements[xpathElements.length - 1];
-        const lastNode = DomUtilAcc.findLastElement(childElement, xpathString);
+        const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
+          childElement,
+          xpathString,
+        );
+        if (!node) {
+          continue; // not found in this record, nothing to blank
+        }
 
         // if attribute, set it to blank
-        if (DomUtilAcc.xpathElementIsAttribute(lastXpathElement)) {
-          const attributeName =
-            DomUtilAcc.getXpathAttributeName(lastXpathElement);
-          if (lastNode.hasAttribute(attributeName)) {
-            lastNode.setAttribute(attributeName, "");
+        if (attributeName !== null) {
+          if (node.hasAttribute(attributeName)) {
+            node.setAttribute(attributeName, "");
           }
         }
         // if element, empty its textContent
         else {
-          if (lastNode) {
-            lastNode.textContent = "";
-          }
+          node.textContent = "";
         }
       }
     }
