@@ -29,6 +29,7 @@ const {
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPullLog from "./helpers/CampaignPullLog.js";
+import { withSpinner } from "./helpers/withSpinner.js";
 import {
   computeFilename,
   getTemplateAttributes,
@@ -340,23 +341,18 @@ class CampaignInstance {
     }
     const name = cliOptions.name || (file ? path.basename(file) : "acc-cli");
 
-    const spinner = this.createSpinner(
-      `Executing ${chalk.bgCyan(name)} on the server`,
-    ).start();
     // EvaluateJavaScript requires a `context` XML param (in/out)
     const contextXml = DomUtil.fromJSON("context", {}, "SimpleJson");
-    let resultContext;
-    try {
-      resultContext = await this.adapterEvaluateJavaScript(
-        name,
-        script,
-        contextXml,
-      );
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan(name)} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan(name)} executed`);
+    const highlightedName = chalk.bgCyan(name);
+    const resultContext = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Executing ${highlightedName} on the server`,
+        succeed: `${highlightedName} executed`,
+        fail: `${highlightedName} failed`,
+      },
+      () => this.adapterEvaluateJavaScript(name, script, contextXml),
+    );
 
     const resultXml = DomUtil.toXMLString(resultContext);
     this.logger.verbose(resultXml);
@@ -413,17 +409,16 @@ class CampaignInstance {
       raw = fs.readFileSync(file, "utf8");
     }
 
-    const spinner = this.createSpinner(
-      `Executing ${chalk.bgCyan("queryDef")} on the server`,
-    ).start();
-    let result;
-    try {
-      result = await this.adapterExecuteQueryDef(raw, cliOptions.json);
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan("queryDef")} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan("queryDef")} executed`);
+    const highlightedName = chalk.bgCyan("queryDef");
+    const result = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Executing ${highlightedName} on the server`,
+        succeed: `${highlightedName} executed`,
+        fail: `${highlightedName} failed`,
+      },
+      () => this.adapterExecuteQueryDef(raw, cliOptions.json),
+    );
 
     // Always trace the raw XML; return XML or SimpleJson depending on --json.
     // const resultXml = DomUtil.toXMLString(resultElement);
@@ -505,23 +500,16 @@ class CampaignInstance {
     }
 
     const schemaKey = this._toSchemaKey(schema);
-    const label = `${schema}#${method}`;
-    const spinner = this.createSpinner(
-      `Calling ${chalk.bgCyan(label)} on the server`,
-    ).start();
-    let result;
-    try {
-      result = await this.adapterCallSoap(
-        schemaKey,
-        method,
-        args,
-        cliOptions.json,
-      );
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan(label)} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan(label)} succeeded`);
+    const highlightedLabel = chalk.bgCyan(`${schema}#${method}`);
+    const result = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Calling ${highlightedLabel} on the server`,
+        succeed: `${highlightedLabel} succeeded`,
+        fail: `${highlightedLabel} failed`,
+      },
+      () => this.adapterCallSoap(schemaKey, method, args, cliOptions.json),
+    );
 
     this.logger.verbose(result);
     return cliOptions.json ? result : this._serializeSoapResult(result);
@@ -624,13 +612,14 @@ class CampaignInstance {
     const sections = [];
     const errors = [];
     for (const probe of probes) {
-      const spinner = this.createSpinner(probe.title).start();
       try {
-        const body = probe.render(await probe.run());
-        spinner.succeed(probe.title);
+        const body = await withSpinner(
+          this.createSpinner,
+          { text: probe.title },
+          async () => probe.render(await probe.run()),
+        );
         sections.push(`== ${probe.title} ==\n${body}`);
       } catch (err) {
-        spinner.fail(probe.title);
         errors.push(err);
         sections.push(`== ${probe.title} ==\n⚠️ ${err.message}`);
       }

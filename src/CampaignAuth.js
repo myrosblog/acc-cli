@@ -32,6 +32,7 @@ import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
 import PromptAdapter from "./adapters/PromptAdapter.js";
 import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
 import soapLogObserver from "./helpers/soapLogObserver.js";
+import { createNoopSpinner, withSpinner } from "./helpers/withSpinner.js";
 
 /**
  * Config key under which instances are stored.
@@ -137,40 +138,10 @@ class CampaignAuth {
     this.prompt = prompt || new PromptAdapter();
     this.makeCache = makeCache;
     this.imsAuth = imsAuth || new ImsAuthAdapter();
-    // No-op default with the ora shape, so _stage() needs no null checks.
-    this.createSpinner =
-      createSpinner ||
-      (() => ({
-        start() {
-          return this;
-        },
-        succeed() {},
-        fail() {},
-      }));
+    this.createSpinner = createSpinner || createNoopSpinner;
     logCredentialsFile(this.logger, this.config.global()?.file);
     this.instances = this.config.get(AUTH_INSTANCES_KEY) || {};
     this.instanceIds = Object.keys(this.instances);
-  }
-
-  /**
-   * Runs one login stage under a spinner so a failure is marked on the stage
-   * that broke, instead of being reported only at the end. Same pattern as the
-   * SOAP calls in CampaignInstance.
-   *
-   * @param {string} label - stage name, shown while running and once settled
-   * @param {Function} fn - stage body
-   * @returns {Promise<*>} whatever fn resolves to
-   */
-  async _stage(label, fn) {
-    const spinner = this.createSpinner(label).start();
-    try {
-      const result = await fn();
-      spinner.succeed(label);
-      return result;
-    } catch (error) {
-      spinner.fail(label);
-      throw error;
-    }
   }
 
   /**
@@ -326,8 +297,10 @@ class CampaignAuth {
         throw new AUTH_LOGIN_IMS_CREDENTIALS_MISSING();
       }
       this.logger.info(`↔️ Connecting to ${host} via IMS server-to-server...`);
-      bearerToken = await this._stage("IMS access token", () =>
-        this._resolveImsToken(cliOptions.alias, auth),
+      bearerToken = await withSpinner(
+        this.createSpinner,
+        { text: "IMS access token" },
+        () => this._resolveImsToken(cliOptions.alias, auth),
       );
     } else {
       throw new AUTH_LOGIN_INVALID_METHOD();
@@ -365,7 +338,9 @@ class CampaignAuth {
     // Trace SOAP calls into the logger (secret hidden and length-capped)
     client.registerObserver(soapLogObserver(this.logger));
     try {
-      await this._stage(`Logon to ${host}`, () => client.logon());
+      await withSpinner(this.createSpinner, { text: `Logon to ${host}` }, () =>
+        client.logon(),
+      );
     } catch (error) {
       throw wrapSdkError(error, AUTH_LOGIN_SDK_LOGON_FAILED);
     }
