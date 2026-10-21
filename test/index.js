@@ -21,6 +21,7 @@ import "./unit/helpers/soapLogObserver.spec.js";
 import "./unit/helpers/cacheStatsLogger.spec.js";
 import "./unit/helpers/jwt.spec.js";
 import "./unit/helpers/DomUtilAcc.spec.js";
+import "./unit/helpers/filenameTemplate.spec.js";
 import "./unit/helpers/CampaignPullLog.spec.js";
 import "./unit/helpers/CampaignPushLog.spec.js";
 import "./unit/helpers/hideCommand.spec.js";

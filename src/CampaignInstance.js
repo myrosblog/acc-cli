@@ -29,6 +29,10 @@ const {
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPullLog from "./helpers/CampaignPullLog.js";
+import {
+  computeFilename,
+  getTemplateAttributes,
+} from "./helpers/filenameTemplate.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -46,18 +50,6 @@ import CampaignPullLog from "./helpers/CampaignPullLog.js";
  * @classdesc Class for managing data operations with ACC instances
  */
 class CampaignInstance {
-  /**
-   * Regular expression to extract config attributes from filename patterns
-   * @type {RegExp}
-   */
-  REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
-
-  /**
-   * XPath attribute prefix character
-   * @type {string}
-   */
-  CONFIG_XPATH_ATTR = "@";
-
   /**
    * Default SQL LIMIT to fetch schemas (querydef lineCount)
    * @type {number}
@@ -714,9 +706,9 @@ class CampaignInstance {
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
-    const configAttributes = this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
+    const configAttributes = getTemplateAttributes(filename); // [ '@name', '@namespace' ]
 
-    const computedFilename = this._computeFilename(
+    const computedFilename = computeFilename(
       filename,
       configAttributes,
       childElement,
@@ -761,7 +753,7 @@ class CampaignInstance {
       for (const [xpathString, filenameTemplate] of Object.entries(decompose)) {
         try {
           // compute filename
-          const decomposedFilename = this._computeFilename(
+          const decomposedFilename = computeFilename(
             filenameTemplate,
             configAttributes,
             childElement,
@@ -794,62 +786,6 @@ class CampaignInstance {
     }
 
     return computedFilename;
-  }
-
-  /**
-   * Extracts attribute names from the schema config filename template.
-   * @param {object} schemaConfig - schema download config
-   * @returns {Array<string>} Array of attribute names (e.g., ['@name', '@namespace'])
-   */
-  _getAttributesFromSchemaConfig(schemaConfig) {
-    const configAttributesRe = schemaConfig.filename.matchAll(
-      this.REGEX_CONFIG_ATTRIBUTE,
-    ); // [object RegExp String Iterator]
-    const configAttributesArr = Array.from(configAttributesRe); // [ [ '@name', '@name' ], ... ]
-    return configAttributesArr.map((attr) => attr[1]); // [ '@name', '@namespace' ]
-  }
-
-  /**
-   * Computes the final filename by substituting schema config attributes with values from the record.
-   * @param {string} configFilename - filename template with placeholders like {name}
-   * @param {Array<string>} configAttributes - attribute names to extract from the record
-   * @param {Element} record - the record element
-   * @returns {string} The computed filename with placeholders replaced
-   */
-  _computeFilename(configFilename, configAttributes, record) {
-    let filename = configFilename;
-    for (const configAttribute of configAttributes) {
-      const value = DomUtil.getAttributeAsString(
-        record,
-        configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
-      );
-      // The template (configFilename) is trusted and may contain "/" for
-      // subdirectories. The attribute value comes from the server record and is
-      // untrusted, so it must never inject path separators, parent-dir refs or
-      // control chars (path traversal). A function replacer is used so "$"
-      // patterns in the value are not interpreted by String.replaceAll.
-      const safeValue = this._sanitizeFilenameValue(value);
-      filename = filename.replaceAll(`{${configAttribute}}`, () => safeValue);
-    }
-    return filename;
-  }
-
-  /**
-   * Sanitizes a single attribute value before it is substituted into a filename
-   * template, so untrusted record data cannot escape the download directory.
-   * Only the value is sanitized, never the template (which legitimately carries
-   * "/" for subfolders).
-   * @param {string} value raw attribute value from the record
-   * @returns {string} a value safe to use as a filename component
-   */
-  _sanitizeFilenameValue(value) {
-    return (
-      String(value)
-        .replace(/[/\\]/g, "_") // POSIX + Windows path separators
-        // eslint-disable-next-line no-control-regex -- stripping control chars is the purpose here
-        .replace(/[\x00-\x1f]/g, "") // NUL + control characters
-        .replace(/^\.+$/, (dots) => "_".repeat(dots.length))
-    ); // "." / ".." -> "_" / "__"
   }
 }
 

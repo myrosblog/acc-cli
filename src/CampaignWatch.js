@@ -289,7 +289,7 @@ class CampaignWatch {
    *
    * @param {string} template - Filename template with attribute placeholders
    * @returns {string} Glob pattern relative to the watch path
-   * @see CampaignInstance._sanitizeFilenameValue
+   * @see sanitizeFilenameValue in helpers/filenameTemplate.js
    */
   _convertTemplateToGlob(template) {
     // Templates are rooted at the download directory, not at the filesystem root
