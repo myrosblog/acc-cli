@@ -23,6 +23,7 @@ import "./unit/helpers/jwt.spec.js";
 import "./unit/helpers/DomUtilAcc.spec.js";
 import "./unit/helpers/filenameTemplate.spec.js";
 import "./unit/helpers/withSpinner.spec.js";
+import "./unit/helpers/s2sCredentials.spec.js";
 import "./unit/helpers/CampaignPullLog.spec.js";
 import "./unit/helpers/CampaignPushLog.spec.js";
 import "./unit/helpers/hideCommand.spec.js";

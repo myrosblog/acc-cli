@@ -1,5 +1,3 @@
-// npm
-import fs from "fs-extra";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { ConnectionParameters } = accSdk;
@@ -22,9 +20,6 @@ const {
   AUTH_LOGIN_IMS_TOKEN_GENERATION_FAILED,
   AUTH_LOGIN_INVALID_METHOD,
   AUTH_INIT_INVALID_METHOD,
-  AUTH_INIT_JSON_FILE_NOT_FOUND,
-  AUTH_INIT_JSON_FILE_INVALID,
-  AUTH_INIT_JSON_FILE_SHAPE,
   AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
 import SdkAdapter from "./adapters/SdkAdapter.js";
@@ -33,6 +28,7 @@ import PromptAdapter from "./adapters/PromptAdapter.js";
 import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
 import soapLogObserver from "./helpers/soapLogObserver.js";
 import { createNoopSpinner, withSpinner } from "./helpers/withSpinner.js";
+import { isBlank, loadS2SJsonFile } from "./helpers/s2sCredentials.js";
 
 /**
  * Config key under which instances are stored.
@@ -453,56 +449,9 @@ class CampaignAuth {
         messageValues: [opts.method],
       });
     }
-    opts.json = this._loadS2SJsonFile(opts.jsonFile);
+    opts.json = loadS2SJsonFile(opts.jsonFile);
     opts.method = AUTH_METHODS.IMS_SERVER_TO_SERVER;
     return opts;
-  }
-
-  /**
-   * Reads and validates an OAuth Server-to-Server credential downloaded from the
-   * Adobe Developer Console (Credentials → OAuth Server-to-Server → Download
-   * JSON). Only the four keys {@link _resolveImsToken} actually consumes are
-   * required; TECHNICAL_ACCOUNT_ID / TECHNICAL_ACCOUNT_EMAIL are informational,
-   * and the file is stored as-is.
-   *
-   * Validating here means a typo fails at init naming the missing key, instead
-   * of failing as an IMS 400 on the next login.
-   *
-   * @param {string} filePath - path to the downloaded JSON file
-   * @returns {object} the parsed credential
-   * @throws {AUTH_INIT_JSON_FILE_NOT_FOUND|AUTH_INIT_JSON_FILE_INVALID|AUTH_INIT_JSON_FILE_SHAPE}
-   * @since 1.7.0
-   */
-  _loadS2SJsonFile(filePath) {
-    if (!fs.existsSync(filePath)) {
-      throw new AUTH_INIT_JSON_FILE_NOT_FOUND({ messageValues: [filePath] });
-    }
-    let parsed;
-    try {
-      parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    } catch (error) {
-      throw new AUTH_INIT_JSON_FILE_INVALID({
-        messageValues: [filePath, error.message],
-      });
-    }
-    const present = (value) =>
-      Array.isArray(value)
-        ? value.length > 0
-        : value !== undefined && value !== null && value !== "";
-    const missingKeys = [
-      ["ORG_ID", parsed?.ORG_ID],
-      ["CLIENT_ID", parsed?.CLIENT_ID],
-      ["CLIENT_SECRETS", parsed?.CLIENT_SECRETS?.[0]],
-      ["SCOPES", parsed?.SCOPES],
-    ]
-      .filter(([, value]) => !present(value))
-      .map(([key]) => key);
-    if (missingKeys.length > 0) {
-      throw new AUTH_INIT_JSON_FILE_SHAPE({
-        messageValues: [filePath, missingKeys.join(", ")],
-      });
-    }
-    return parsed;
   }
 
   /**
@@ -517,16 +466,15 @@ class CampaignAuth {
     if (!this.prompt.isInteractive()) {
       return opts;
     }
-    const missing = (v) => v === undefined || v === null || v === "";
     // Prompt order follows the natural "where → how → who → secret → local
     // label" flow: connection target first, then the auth method, then the
     // method-specific identity/secret, and finally the local alias.
-    if (missing(opts.host)) {
+    if (isBlank(opts.host)) {
       opts.host = await this.prompt.input(
         `Adobe Campaign instance (e.g. ${EXAMPLE_INSTANCE})`,
       );
     }
-    if (missing(opts.method)) {
+    if (isBlank(opts.method)) {
       opts.method = await this.prompt.select("Authentication method", [
         {
           name: `IMS OAuth Server-to-Server (Client Id, Secret)`,
@@ -543,13 +491,13 @@ class CampaignAuth {
       ]);
     }
     if (opts.method === AUTH_METHODS.IMS_BEARER_TOKEN) {
-      if (missing(opts.token)) {
+      if (isBlank(opts.token)) {
         opts.token = await this.prompt.password(
           "IMS access token (JWT, starts with 'eyJ…')",
         );
       }
     } else if (opts.method === AUTH_METHODS.IMS_SERVER_TO_SERVER) {
-      if (missing(opts.json)) {
+      if (isBlank(opts.json)) {
         // Two ways in: point at the file downloaded from the Developer Console
         // (the common case, and the only one --json-file supports), or paste
         // the JSON. An empty answer picks the paste flow.
@@ -560,7 +508,7 @@ class CampaignAuth {
           const filePath = await this.prompt.input(
             "Path to the OAuth Server-to-Server JSON downloaded from the Developer Console (leave empty to paste it instead)",
           );
-          if (missing(filePath)) {
+          if (isBlank(filePath)) {
             const jsonString = await this.prompt.input(
               `IMS OAuth Server-to-Server JSON (starts with {"ORG_ID":...})`,
             );
@@ -571,7 +519,7 @@ class CampaignAuth {
             }
           } else {
             try {
-              jsonParsed = this._loadS2SJsonFile(filePath.trim());
+              jsonParsed = loadS2SJsonFile(filePath.trim());
             } catch (e) {
               this.logger.error(e.message);
             }
@@ -581,14 +529,14 @@ class CampaignAuth {
         opts.json = jsonParsed;
       }
     } else {
-      if (missing(opts.user)) {
+      if (isBlank(opts.user)) {
         opts.user = await this.prompt.input("Operator username");
       }
-      if (missing(opts.pass)) {
+      if (isBlank(opts.pass)) {
         opts.pass = await this.prompt.password("Operator password");
       }
     }
-    if (missing(opts.alias)) {
+    if (isBlank(opts.alias)) {
       opts.alias = await this.prompt.input(
         "Local alias for this instance (e.g. prod, staging, local)",
       );
