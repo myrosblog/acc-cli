@@ -137,7 +137,8 @@ Adhere to the following guidelines in your code:
 
 ```bash
 npm test                       # unit + integration tests (XML samples), no network
-npm run coverage               # unit tests with c8 coverage report
+npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds and below 100% per file in src/helpers/
+npm run coverage:helpers       # only the 100% per-file check of src/helpers/, on the data of the last coverage run
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
 npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
@@ -145,6 +146,11 @@ ACC_E2E_ALIAS=local npm run test:e2e   # end-to-end against an instance
 ```
 
 Unit/integration tests must never touch the network or the filesystem, inject stubs (see Dependency injection). Only `test:e2e` hits a live instance.
+
+Quality gates:
+
+- ESLint limits `complexity` to 15, `max-depth` to 4 and `max-lines-per-function` to 60 (code lines) in `src/helpers`, `src/commands` and `src/adapters`. The glob in `eslint.config.js` grows as the top-level classes are split.
+- `src/helpers` stays at 100% of statements, branches, functions and lines, file by file. A `/* c8 ignore */` there needs a comment saying why.
 
 ### Commits & pull requests
 

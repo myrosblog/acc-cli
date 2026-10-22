@@ -68,7 +68,8 @@
   "scripts": {
     "test": "mocha test/index.js",
     "test:e2e": "mocha test/e2e/index.js",
-    "coverage": "c8 --reporter=lcov --reporter=text npm test",
+    "coverage": "c8 --reporter=lcov --reporter=text npm test && npm run coverage:helpers",
+    "coverage:helpers": "c8 report --all --src=src --include=\"src/helpers/**\" --reporter=text --skip-full --check-coverage --100 --per-file",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",

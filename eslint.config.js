@@ -89,6 +89,27 @@ export default [
     },
   },
 
+  // Size limits, so a function that grows too complex is flagged before review.
+  // `warn` like the JSDoc rules: `npm run lint` fails on any warning.
+  // Scoped to the directories that already comply. CampaignInstance, CampaignWatch
+  // and CampaignAuth still have functions over the limits: add them (and the
+  // other top-level classes) here once they have been split.
+  {
+    files: [
+      "src/helpers/**/*.js",
+      "src/commands/**/*.js",
+      "src/adapters/**/*.js",
+    ],
+    rules: {
+      complexity: ["warn", 15],
+      "max-depth": ["warn", 4],
+      "max-lines-per-function": [
+        "warn",
+        { max: 60, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+
   {
     // Mocha injects describe/it/before, and test/index.js sets a global expect.
     files: ["test/**/*.js"],
