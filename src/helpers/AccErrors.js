@@ -24,6 +24,25 @@ const E = ErrorWrapper(
 );
 
 /**
+ * Reads the CampaignException fields of an SDK error.
+ * @param {Error} [error] the original SDK error, any of its fields may be missing
+ * @returns {object} the fields found, undefined for the missing ones
+ */
+function sdkDetailsOf(error) {
+  return {
+    statusCode: error?.statusCode,
+    faultCode: error?.faultCode,
+    errorCode: error?.errorCode,
+    faultString: error?.faultString,
+    // `detail` holds the actionable part (e.g. "WDB-200011 ... record does
+    // not exist" + the SQL); faultString is often just a generic wrapper.
+    detail: error?.detail,
+    method: error?.methodCall?.methodName,
+    urn: error?.methodCall?.urn,
+  };
+}
+
+/**
  * Wraps an SDK error with additional context.
  * @param {Error} error the original SDK error
  * @param {Function} ErrorClass the custom error class to wrap the SDK error with
@@ -41,20 +60,7 @@ function wrapSdkError(error, ErrorClass, context = {}) {
     error?.faultString || error?.errorCode || error?.message || undefined;
   return new ErrorClass({
     messageValues: detail ? [detail] : [],
-    sdkDetails: {
-      ...context,
-
-      // extraction CampaignException
-      statusCode: error?.statusCode,
-      faultCode: error?.faultCode,
-      errorCode: error?.errorCode,
-      faultString: error?.faultString,
-      // `detail` holds the actionable part (e.g. "WDB-200011 ... record does
-      // not exist" + the SQL); faultString is often just a generic wrapper.
-      detail: error?.detail,
-      method: error?.methodCall?.methodName,
-      urn: error?.methodCall?.urn,
-    },
+    sdkDetails: { ...context, ...sdkDetailsOf(error) },
     cause: error,
   });
 }
