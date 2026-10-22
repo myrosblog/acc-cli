@@ -478,9 +478,9 @@ class CampaignInstance {
    * @param {string} [cliOptions.args] - method arguments as a JSON array string,
    *   e.g. '[1234, "<params/>"]'. Omitted/empty means no argument.
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string | object>} the method result: the return values as
-   *   the server sent them (one per line) in human mode, or the SimpleJson value
-   *   when `json`
+   * @param {boolean} [cliOptions.raw] - when true, return the SOAP response as received
+   * @returns {Promise<string | object>} the return values as sent by the server
+   *   (one per line), the SOAP response when `raw`, or SimpleJson when `json`
    * @throws {INSTANCE_SOAP_BAD_ARGS|INSTANCE_SOAP_ARGS_NOT_ARRAY|INSTANCE_SOAP_SDK_CALL_FAILED}
    */
   async soap(cliOptions) {
@@ -509,7 +509,14 @@ class CampaignInstance {
         succeed: `${highlightedLabel} succeeded`,
         fail: `${highlightedLabel} failed`,
       },
-      () => this.adapterCallSoap(schemaKey, method, args, cliOptions.json),
+      () =>
+        this.adapterCallSoap(
+          schemaKey,
+          method,
+          args,
+          cliOptions.json,
+          cliOptions.raw,
+        ),
     );
 
     this.logger.verbose(result);
@@ -517,25 +524,22 @@ class CampaignInstance {
   }
 
   /**
-   * Adapter of the NLWS proxy dispatch for `soap()`:
-   * - easier mocking in unit tests
-   * - SDK error wrapping
-   * The representation (xml vs json) drives how the SDK marshals the input
-   * parameters, and in json mode the return value. The schema key is the
-   * camelCase namespace the proxy expects (e.g. "nmsDelivery" for "nms:delivery").
+   * Adapter of the NLWS proxy dispatch for `soap()`: easier mocking and SDK
+   * error wrapping. The representation (xml vs json) drives how the SDK
+   * marshals the input parameters.
    *
-   * In xml mode the SDK result is dropped: the SDK casts scalars (xsd:dateTime
-   * to Date, ...), so the return values are read from the raw response instead.
-   * Internal calls (schema loading) are ignored: only the user's call is kept.
+   * The SDK casts scalars (xsd:dateTime to Date, ...), so in xml mode its result
+   * is dropped and the raw response is read through an observer. Internal calls
+   * (schema loading) are skipped.
    * @param {string} schemaKey camelCase schema key, e.g. "nmsDelivery"
    * @param {string} method method name (the SDK resolves either casing)
    * @param {Array} args positional arguments
    * @param {boolean} jsonEnabled when true use the SimpleJson representation
-   * @returns {Promise<string | object>} the return values as the server sent
-   *   them (xml), or SimpleJson (json)
+   * @param {boolean} [rawEnabled] when true (xml mode) return the whole SOAP response
+   * @returns {Promise<string | object>} the return values or the SOAP response (xml), or SimpleJson (json)
    * @throws {CampaignException}
    */
-  async adapterCallSoap(schemaKey, method, args, jsonEnabled) {
+  async adapterCallSoap(schemaKey, method, args, jsonEnabled, rawEnabled) {
     if (jsonEnabled) {
       try {
         return await this.client.NLWS.json[schemaKey][method](...args);
@@ -544,11 +548,14 @@ class CampaignInstance {
       }
     }
 
-    let returnValues = "";
+    let output = "";
     const rawResponseObserver = {
-      onSOAPCallSuccess: (call, safeResponse) => {
+      // `call.response`, not the 2nd argument: it has session tokens masked.
+      onSOAPCallSuccess: (call) => {
         if (!call.internal) {
-          returnValues = extractSoapReturnValues(safeResponse, call.methodName);
+          output = rawEnabled
+            ? call.response
+            : extractSoapReturnValues(call.response, call.methodName);
         }
       },
     };
@@ -560,7 +567,7 @@ class CampaignInstance {
     } finally {
       this.client.unregisterObserver(rawResponseObserver);
     }
-    return returnValues;
+    return output;
   }
 
   /**

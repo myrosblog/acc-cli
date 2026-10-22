@@ -41,10 +41,14 @@ export default class InstanceSoap extends InstanceCommand {
       command: `<%= config.bin %> instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, {"content": "html", "filter": "@id = 1000"}]' --json`,
       description: `Preview a delivery with a recipient (nms:delivery#BuildPreviewFromId)`,
     },
+    {
+      command: `<%= config.bin %> instance soap -s xtk:session -m GetOption --args '["WdbcTimeZone"]' --raw`,
+      description: `Print the SOAP response as received (<?xml version='1.0'?><SOAP-ENV:Envelope ...)`,
+    },
   ];
 
   // Enables the built-in oclif `--json` flag: when set, the SimpleJson result is
-  // returned (oclif serialises it) instead of the raw XML printed below.
+  // returned (oclif serialises it) instead of the XML printed below.
   static enableJsonFlag = true;
 
   static flags = {
@@ -62,6 +66,11 @@ export default class InstanceSoap extends InstanceCommand {
     args: Flags.string({
       description:
         "Method arguments as a JSON array, e.g. '[1234, \"<params/>\"]'. Omit for methods that take no argument.",
+    }),
+    raw: Flags.boolean({
+      description:
+        "Print the SOAP response (XML) as received, instead of the return values.",
+      exclusive: ["json"],
     }),
   };
 
