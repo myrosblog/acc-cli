@@ -1,6 +1,6 @@
 # AGENTS.md - acc
 
-> Rules for AI agents working on this repository. You must keep responses concise and professional. No preamble.
+> Rules for AI agents working on this repository. You must keep generated text concise and professional. No preamble.
 
 As a Principal Developer, the highest ranking engineer at our company, you are tasked with creating clear, readable code in JavaScript. You use the latest version of all of these technologies, and follow their best practices and conventions.
 
@@ -92,18 +92,22 @@ Adhere to the following guidelines in your code:
 - Fully implement all requested functionality
 - Leave no TODOs, FIXMEs, placeholders or missing pieces.
 - Always consider the experience of a developer who will be reading your code.
-- Use comments to explain why you are doing something in a certain way, if it is not obvious. If unsure, leave a comment.
+- Use concise comments to explain why you are doing something in a certain way, if it is not obvious. If unsure, leave a comment.
 - Employ descriptive, human-readable variable and function/const names.
 - Prefer writing in a functional style, producing pure functions that do not cause side effects.
 - The codebase is linted with `npm run lint` (ESLint, `--max-warnings 0`) and formatted with `npm run format` (Prettier); follow the existing code style to ensure consistency. A warning fails the build, so a new function needs its JSDoc params and returns described, not only typed.
 - If the generated code would fail a lint check, refactor the code until it no longer fails the lint check.
 - Search hard to find an existing function where possible. These are often in the `Tech stack` libraries.
-- Be concise. Minimize any prose other than code.
+- Be concise. Minimize any prose.
 - If you think there might not be a correct answer, say so. If you do not know the answer, say so instead of guessing.
-- In tests, always avoid mocking the filesystem. Use real files and directories, in temporary directories if needed.
+- In tests, always mock with test files in temporary directories.
 - In tests, prefer to have as little shared state between tests as possible. Avoid beforeAll and afterAll.
 
-- **Logging convention**: `this.log` for command **result/data** (goes to stdout, pipeable); `logger.*` for **diagnostics** (progress, warnings, errors, go to stderr and the rotating `acc.log`). Never put data on `logger` or diagnostics on `this.log`. A command always calls `this.log` and returns its data: oclif silences `log()` with `--json` and prints the returned value.
+- **Logging convention**:
+  - **Result & data**: `this.log` (goes to stdout, pipeable)
+  - **Diagnostics**: `logger.*` (progress, warnings, errors, go to stderr and the rotating `acc.log`)
+  - Never put data on `logger` or diagnostics on `this.log`
+  - A command always calls `this.log` and returns its data: oclif silences `log()` with `--json` and prints the returned value.
 
 - **Importing from `@adobe/acc-js-sdk`**: always import from the package's public entry point so the code only depends on the SDK's documented, semver-protected API:
 
@@ -112,7 +116,7 @@ Adhere to the following guidelines in your code:
   const { DomUtil, ConnectionParameters } = accSdk;
   ```
 
-  A few classes (`Client`, `EntityAccessor`, `XPath`, `XPathElement`, `DomException`) are **not** re-exported by the public entry and are imported directly from the package internals (`@adobe/acc-js-sdk/src/...`). These deep imports are a deliberate, known trade-off that may break on any SDK release. Prefer the public entry whenever a symbol is available there, and keep the list of internal imports as small as possible.
+  A few classes (`Client`, `EntityAccessor`, `XPath`, `XPathElement`, `DomException`) are **not** re-exported by the public entry and are imported directly from the package internals (`@adobe/acc-js-sdk/src/...`). These deep imports are a known trade-off that may break on any SDK release. Prefer the public entry whenever a symbol is available there, and keep the list of internal imports as small as possible.
 
 - **Dependency injection**: external dependencies (SDK, config, prompt, cache, spinner) are passed into the service classes rather than created inside them, with a sensible default when the argument is omitted. This keeps production call sites simple while letting tests inject stubs (no network, no filesystem). When a dependency has a side effect on construction (e.g. `AccCache` creates a directory on disk), inject a **factory** instead of an instance so the resource is only built lazily:
 
