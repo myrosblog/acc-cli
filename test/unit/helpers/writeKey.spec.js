@@ -125,6 +125,17 @@ describe("helpers/writeKey", () => {
       }
     });
 
+    it("should throw when the key has no keyfield", () => {
+      const schema = makeSchema(`<schema namespace="cus" name="empty">
+        <element name="empty"><key name="k"/></element>
+      </schema>`);
+      const rootElement = parseMeta(`<empty/>`);
+
+      expect(() => getWriteKey(schema, rootElement)).to.throw(
+        /no value for the key "k"/,
+      );
+    });
+
     it("should throw when the schema defines no key at all", () => {
       const schema = makeSchema(`<schema namespace="cus" name="keyless">
         <element name="keyless"><attribute name="id" type="long"/></element>

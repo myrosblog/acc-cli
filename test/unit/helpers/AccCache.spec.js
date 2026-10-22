@@ -116,5 +116,17 @@ describe("AccCache", function () {
       const cache = new AccCache(dir);
       await expect(cache.removeItem("absent")).to.be.fulfilled;
     });
+
+    it("should not throw when the removal itself fails", async () => {
+      const cache = new AccCache(dir);
+      // The cache is best effort for the SDK. With a file where the cache
+      // directory used to be, removing an entry fails (ENOTDIR on POSIX).
+      fs.removeSync(dir);
+      fs.writeFileSync(dir, "not a directory");
+
+      await expect(cache.removeItem("foo")).to.be.fulfilled;
+
+      fs.removeSync(dir);
+    });
   });
 });

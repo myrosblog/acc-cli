@@ -1,9 +1,75 @@
 import { expect } from "chai";
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
+import { DomException, XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import DomUtilAcc from "../../../src/helpers/DomUtilAcc.js";
 
+// A fresh document per call, as some helpers edit the tree
+const service = () =>
+  DomUtil.parse(`<service mode="0"><social category="1"/></service>`)
+    .documentElement;
+
+// The XPathElement of an xpath that has a single step
+const xpathElement = (xpath) => new XPath(xpath).getElements()[0];
+
 describe("helpers/DomUtilAcc", () => {
+  describe("xpathElementIsAttribute", () => {
+    it("should tell an attribute step from an element step", () => {
+      expect(DomUtilAcc.xpathElementIsAttribute(xpathElement("@mode"))).to.be
+        .true;
+      expect(DomUtilAcc.xpathElementIsAttribute(xpathElement("social"))).to.be
+        .false;
+    });
+
+    it("should throw a DomException for something that is not an XPathElement", () => {
+      expect(() => DomUtilAcc.xpathElementIsAttribute("@mode")).to.throw(
+        DomException,
+      );
+    });
+  });
+
+  describe("getXpathAttributeName", () => {
+    it("should return the attribute name without the @", () => {
+      expect(DomUtilAcc.getXpathAttributeName(xpathElement("@mode"))).to.equal(
+        "mode",
+      );
+    });
+
+    it("should throw a DomException for an element step", () => {
+      expect(() =>
+        DomUtilAcc.getXpathAttributeName(xpathElement("social")),
+      ).to.throw(DomException);
+    });
+  });
+
+  describe("findLastElement", () => {
+    it("should return the start element for an empty, absolute or self xpath", () => {
+      for (const xpath of ["", "/service", "."]) {
+        const root = service();
+        expect(DomUtilAcc.findLastElement(root, xpath), xpath).to.equal(root);
+      }
+    });
+
+    it("should return the element holding a trailing attribute", () => {
+      const node = DomUtilAcc.findLastElement(service(), "social/@category");
+      expect(node.nodeName).to.equal("social");
+    });
+
+    it("should skip a . step and follow a .. step to the parent", () => {
+      const root = service();
+      expect(
+        DomUtilAcc.findLastElement(root, "./social/@category").nodeName,
+      ).to.equal("social");
+      expect(DomUtilAcc.findLastElement(root, "social/../@mode")).to.equal(
+        root,
+      );
+    });
+
+    it("should return null when an element on the way is missing", () => {
+      expect(DomUtilAcc.findLastElement(service(), "absent/@mode")).to.be.null;
+    });
+  });
+
   describe("buildXmlFromPath", () => {
     it("should nest the xpath elements and wrap the content in CDATA", () => {
       const doc = DomUtilAcc.buildXmlFromPath(
@@ -32,10 +98,6 @@ describe("helpers/DomUtilAcc", () => {
   });
 
   describe("resolveXPathTarget", () => {
-    const service = () =>
-      DomUtil.parse(`<service mode="0"><social category="1"/></service>`)
-        .documentElement;
-
     it("should resolve an attribute of the start element", () => {
       const root = service();
       const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
