@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import InstanceCommand from "../../src/InstanceCommand.js";
+import AccInstance from "../../src/services/instance/AccInstance.js";
 import { codes } from "../../src/helpers/AccErrors.js";
 
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
@@ -88,5 +89,56 @@ describe("InstanceCommand", () => {
       cmd.getInstance({ config: "acc.config.json" }),
     ).to.be.rejectedWith(INSTANCE_ALIAS_UNRESOLVED);
     expect(loginStub.called).to.be.false;
+  });
+
+  it("connect should return the logged-in client, the config and the flags with the resolved alias", async () => {
+    cmd = makeCmd("fromConfig");
+    const { client, config, flags } = await cmd.connect({
+      config: "acc.config.json",
+      path: "/some/path",
+    });
+    expect(client).to.deep.equal({ NLWS: {} });
+    expect(config.alias).to.equal("fromConfig");
+    expect(flags).to.deep.equal({
+      config: "acc.config.json",
+      path: "/some/path",
+      alias: "fromConfig",
+    });
+  });
+
+  it("connect should merge the sdk options override over the config ones at login", async () => {
+    cmd = makeCmd("fromConfig");
+    cmd.makeConfig.returns({
+      init: initStub,
+      alias: "fromConfig",
+      accJsSdkOptions: { timeout: 5000, traceAPICalls: true },
+    });
+    await cmd.connect({ config: "acc.config.json" }, { timeout: 60000 });
+    expect(loginStub.firstCall.args[1]).to.deep.equal({
+      timeout: 60000,
+      traceAPICalls: true,
+    });
+  });
+
+  it("createSpinner should give the services a factory bound to the command", () => {
+    cmd = makeCmd("fromConfig");
+    cmd.spinner.returns("spinner");
+    expect(cmd.createSpinner("Pulling")).to.equal("spinner");
+    expect(cmd.spinner.calledOnceWith("Pulling")).to.be.true;
+  });
+
+  it("getInstance should build the AccInstance from the connection", async () => {
+    cmd = makeCmd("fromConfig");
+    const instance = await cmd.getInstance({
+      config: "acc.config.json",
+      path: "/some/path",
+    });
+    expect(instance).to.be.instanceOf(AccInstance);
+    expect(instance.client).to.deep.equal({ NLWS: {} });
+    expect(instance.accConfig.alias).to.equal("fromConfig");
+    expect(instance.downloadPath).to.equal("/some/path");
+    // the spinner factory is the command's
+    cmd.spinner.returns("spinner");
+    expect(instance.createSpinner("Pulling")).to.equal("spinner");
   });
 });
