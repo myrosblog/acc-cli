@@ -1287,8 +1287,9 @@ describe("CampaignInstance", () => {
         registerObserver: (observer) => observers.push(observer),
         unregisterObserver: (observer) =>
           observers.splice(observers.indexOf(observer), 1),
-        emit: (call, response) =>
-          observers.forEach((o) => o.onSOAPCallSuccess(call, response)),
+        // The SDK passes a token-masked copy as 2nd argument: unused by the code
+        emit: (call) =>
+          observers.forEach((o) => o.onSOAPCallSuccess(call, "<masked/>")),
       };
     };
     const soapEnvelope = (methodName, returnValues) =>
@@ -1323,6 +1324,22 @@ describe("CampaignInstance", () => {
       expect(json).to.not.be.ok;
       expect(result).to.equal("<preview/>");
       expect(mockLogger.verbose.calledWith("<preview/>")).to.be.true;
+    });
+
+    it("should forward raw to the adapter", async () => {
+      instance = newInstance();
+      const adapterStub = sinon
+        .stub(instance, "adapterCallSoap")
+        .resolves("<SOAP-ENV:Envelope/>");
+
+      const result = await instance.soap({
+        schema: "xtk:session",
+        method: "GetOption",
+        raw: true,
+      });
+
+      expect(adapterStub.firstCall.args[4]).to.equal(true);
+      expect(result).to.equal("<SOAP-ENV:Envelope/>");
     });
 
     it("should return the SimpleJson result as-is when json:true", async () => {
@@ -1412,20 +1429,22 @@ describe("CampaignInstance", () => {
       instance = newInstance();
       const getServerTime = sinon.stub().callsFake(() => {
         // the SDK loads the schema first (internal), then makes the user call
-        instance.client.emit(
-          { internal: true, methodName: "GetEntityIfMoreRecent" },
-          soapEnvelope(
+        instance.client.emit({
+          internal: true,
+          methodName: "GetEntityIfMoreRecent",
+          response: soapEnvelope(
             "GetEntityIfMoreRecent",
             "<other xsi:type='xsd:string'>ignored</other>",
           ),
-        );
-        instance.client.emit(
-          { internal: false, methodName: "GetServerTime" },
-          soapEnvelope(
+        });
+        instance.client.emit({
+          internal: false,
+          methodName: "GetServerTime",
+          response: soapEnvelope(
             "GetServerTime",
             "<ptmServerTime xsi:type='xsd:dateTime'>2026-10-22T20:58:12Z</ptmServerTime>",
           ),
-        );
+        });
         // the SDK result (cast to a Date) is dropped
         return Promise.resolve(new Date("2026-10-22T20:58:12.000Z"));
       });
@@ -1442,6 +1461,36 @@ describe("CampaignInstance", () => {
 
       expect(getServerTime.calledOnceWithExactly(1234, "<params/>")).to.be.true;
       expect(result).to.equal("2026-10-22T20:58:12Z");
+      expect(instance.client.observers).to.be.empty;
+    });
+
+    it("adapterCallSoap returns the whole SOAP response as received when rawEnabled", async () => {
+      instance = newInstance();
+      const envelope = soapEnvelope(
+        "GetOption",
+        "<pstrValue xsi:type='xsd:string'>nms:recipient</pstrValue><pbtType xsi:type='xsd:byte'>6</pbtType>",
+      );
+      const getOption = sinon.stub().callsFake(() => {
+        instance.client.emit({
+          internal: false,
+          methodName: "GetOption",
+          response: envelope,
+        });
+        return Promise.resolve(["nms:recipient", 6]);
+      });
+      instance.client = observableClient({
+        xml: { xtkSession: { getOption } },
+      });
+
+      const result = await instance.adapterCallSoap(
+        "xtkSession",
+        "getOption",
+        ["Nms_DefaultRcpSchema"],
+        false,
+        true,
+      );
+
+      expect(result).to.equal(envelope);
       expect(instance.client.observers).to.be.empty;
     });
   });

@@ -44,6 +44,24 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     expect(stdout).to.not.contain("Logged in");
   });
 
+  it("prints the SOAP response as received with --raw", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "--alias",
+      ALIAS,
+      "--schema",
+      "xtk:session",
+      "--method",
+      "GetServerTime",
+      "--raw",
+    );
+
+    // the envelope keeps the name and the xsi:type of the return value
+    expect(stdout).to.contain("GetServerTimeResponse");
+    expect(stdout).to.contain("ptmServerTime");
+  });
+
   it("fails fast when the required --method flag is missing", async () => {
     const err = await acc(
       "instance",
