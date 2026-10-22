@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // acc
-import AccWatch from "../../../../src/services/instance/AccWatch.js";
+import AccInstanceWatch from "../../../../src/services/instance/AccInstanceWatch.js";
 import { getDecomposedSchemas } from "../../../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
@@ -80,7 +80,7 @@ const javascriptSchemaXml = `<schema namespace="xtk" name="javascript">
   </element>
 </schema>`;
 
-describe("AccWatch", () => {
+describe("AccInstanceWatch", () => {
   let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
 
   beforeEach(() => {
@@ -106,7 +106,7 @@ describe("AccWatch", () => {
     };
 
     // create watcher instance
-    watcher = new AccWatch(
+    watcher = new AccInstanceWatch(
       mockLogger,
       mockClient,
       testConfig,
@@ -128,7 +128,7 @@ describe("AccWatch", () => {
     });
 
     it("should use process.cwd() when no path provided", () => {
-      const watcherNoPath = new AccWatch(
+      const watcherNoPath = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -201,7 +201,7 @@ describe("AccWatch", () => {
           },
         ],
       };
-      const ambiguousWatcher = new AccWatch(
+      const ambiguousWatcher = new AccInstanceWatch(
         mockLogger,
         mockClient,
         ambiguousConfig,
@@ -275,7 +275,7 @@ describe("AccWatch", () => {
     });
 
     it("should throw if no decomposed schemas found", async () => {
-      const watcherNoDecompose = new AccWatch(
+      const watcherNoDecompose = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfigNoDecompose,
@@ -504,7 +504,7 @@ describe("AccWatch", () => {
 
       // Create watcher rooted on the temp dir
       cliOptions = { path: tempDir };
-      watcher = new AccWatch(
+      watcher = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfig,

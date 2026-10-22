@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccWatch from "../../../src/services/instance/AccWatch.js";
+import AccInstanceWatch from "../../../src/services/instance/AccInstanceWatch.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
 import { makeLogger } from "../../helpers.js";
 
@@ -79,8 +79,8 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock AccWatch
-    sinon.stub(AccWatch.prototype, "startWatching").resolves();
+    // Mock AccInstanceWatch
+    sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
     // Mock getInstance to return instance with client and config
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
@@ -92,7 +92,7 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(AccWatch.prototype.startWatching);
+    sinon.assert.calledOnce(AccInstanceWatch.prototype.startWatching);
   });
 
   it("should run with custom debounce value", async () => {
@@ -128,7 +128,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(AccWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -138,10 +138,10 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(AccWatch.prototype.startWatching);
+    sinon.assert.calledOnce(AccInstanceWatch.prototype.startWatching);
 
     // Check that custom debounce was passed
-    sinon.assert.calledWith(AccWatch.prototype.startWatching, 500);
+    sinon.assert.calledWith(AccInstanceWatch.prototype.startWatching, 500);
   });
 
   it("should exit with error when startWatching throws", async () => {
@@ -168,9 +168,9 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock AccWatch to throw error
+    // Mock AccInstanceWatch to throw error
     const error = new Error("No schemas with 'decompose' configuration found");
-    sinon.stub(AccWatch.prototype, "startWatching").rejects(error);
+    sinon.stub(AccInstanceWatch.prototype, "startWatching").rejects(error);
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -228,7 +228,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(AccWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -250,9 +250,9 @@ describe("InstanceWatch", () => {
       client: {},
       accConfig: {},
     });
-    sinon.stub(AccWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
     const stopWatching = sinon
-      .stub(AccWatch.prototype, "stopWatching")
+      .stub(AccInstanceWatch.prototype, "stopWatching")
       .resolves();
     // Capture the handlers instead of registering them on the test process.
     const onStub = sinon.stub(process, "on");

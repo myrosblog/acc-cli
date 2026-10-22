@@ -32,9 +32,9 @@ const {
  * At start: getDecomposedSchemas > _buildWatchList
  * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
- * @class AccWatch
+ * @class AccInstanceWatch
  */
-class AccWatch {
+class AccInstanceWatch {
   /**
    * Default debounce time in milliseconds
    * @type {number}
@@ -107,7 +107,7 @@ class AccWatch {
   isRunning = false;
 
   /**
-   * Creates a new AccWatch.
+   * Creates a new AccInstanceWatch.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated SDK client
@@ -115,7 +115,7 @@ class AccWatch {
    * @param {object} cliOptions - Command-line options including path
    * @param {Function} createSpinner - Ora spinner instance for displaying progress
    * @example
-   * const watcher = new AccWatch(logger, client, accConfig, cliOptions, createSpinner);
+   * const watcher = new AccInstanceWatch(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -600,4 +600,4 @@ class AccWatch {
   }
 }
 
-export default AccWatch;
+export default AccInstanceWatch;
