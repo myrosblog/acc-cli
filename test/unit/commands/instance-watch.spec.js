@@ -244,4 +244,28 @@ describe("InstanceWatch", () => {
     // Check that SIGINT handler was set up
     expect(onStub.calledWith("SIGINT")).to.be.true;
   });
+
+  it("should stop the watcher once and exit 0 on a signal", async () => {
+    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+      client: {},
+      accConfig: {},
+    });
+    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
+    const stopWatching = sinon
+      .stub(CampaignWatch.prototype, "stopWatching")
+      .resolves();
+    // Capture the handlers instead of registering them on the test process.
+    const onStub = sinon.stub(process, "on");
+    const exitStub = sinon.stub(process, "exit");
+
+    await InstanceWatch.run(["--alias", "test"]);
+    const shutdown = onStub.withArgs("SIGTERM").firstCall.args[1];
+    await shutdown();
+    // A second signal arrives after the watcher is already released.
+    await shutdown();
+
+    expect(stopWatching).to.have.been.calledOnce;
+    expect(exitStub).to.have.been.calledTwice;
+    expect(exitStub).to.always.have.been.calledWith(0);
+  });
 });

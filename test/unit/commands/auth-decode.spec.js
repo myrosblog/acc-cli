@@ -63,6 +63,21 @@ describe("AuthDecode", () => {
     expect(result.expiry.expiresAt).to.be.a("string");
   });
 
+  it("should return null expiry fields in --json mode when the token has no time claims", async () => {
+    sinon.stub(AuthDecode.prototype, "log");
+    sinon.stub(AuthDecode.prototype, "logJson");
+    const tokenWithoutClaims = `${b64url(HEADER)}.${b64url({ user_id: "abc@AdobeID" })}.sig`;
+
+    const result = await AuthDecode.run([tokenWithoutClaims, "--json"]);
+
+    expect(result.expiry).to.deep.equal({
+      issuedAt: null,
+      expiresAt: null,
+      isExpired: null,
+      expiresInMs: null,
+    });
+  });
+
   it("should reject a malformed token with AUTH_DECODE_INVALID", async () => {
     sinon.stub(AuthDecode.prototype, "log");
     await expect(AuthDecode.run(["not-a-jwt"])).to.be.rejectedWith(

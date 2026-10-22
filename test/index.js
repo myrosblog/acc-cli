@@ -36,6 +36,7 @@ import "./unit/CampaignInstance.spec.js";
 import "./unit/CampaignMonitor.spec.js";
 import "./unit/CampaignWatch.spec.js";
 import "./unit/InstanceCommand.spec.js";
+import "./unit/adapters/ImsAuthAdapter.spec.js";
 import "./unit/adapters/PromptAdapter.spec.js";
 import "./unit/commands/auth-init.spec.js";
 import "./unit/commands/auth-login.spec.js";
