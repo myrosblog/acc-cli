@@ -3,8 +3,8 @@ import { Flags } from "@oclif/core";
 import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
-import AccInstance from "./AccInstance.js";
-import { CONFIG_FILENAME } from "./AccConfig.js";
+import AccInstance from "./services/instance/AccInstance.js";
+import { CONFIG_FILENAME } from "./services/config/AccConfig.js";
 import { codes } from "./helpers/AccErrors.js";
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 

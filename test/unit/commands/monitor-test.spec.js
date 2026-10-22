@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import MonitorTest from "../../../src/commands/monitor/test.js";
-import AccMonitor from "../../../src/AccMonitor.js";
+import AccMonitor from "../../../src/services/monitor/AccMonitor.js";
 
 describe("MonitorTest", () => {
   afterEach(() => sinon.restore());

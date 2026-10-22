@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import AccAuth from "../../../src/AccAuth.js";
-import AccConfig from "../../../src/AccConfig.js";
-import AccWatch from "../../../src/AccWatch.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccWatch from "../../../src/services/instance/AccWatch.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
 import { makeLogger } from "../../helpers.js";
 

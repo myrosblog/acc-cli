@@ -7,7 +7,7 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
 const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
   INSTANCE_PULL_SDK_SELECTALL_FAILED,
@@ -26,14 +26,14 @@ const {
   INSTANCE_SOAP_SDK_CALL_FAILED,
 } = codes;
 // acc
-import DomUtilAcc from "./helpers/DomUtilAcc.js";
-import AccPullLog from "./helpers/AccPullLog.js";
-import { withSpinner } from "./helpers/withSpinner.js";
-import { extractSoapReturnValues } from "./helpers/soapResponse.js";
+import DomUtilAcc from "../../helpers/DomUtilAcc.js";
+import AccPullLog from "../../helpers/AccPullLog.js";
+import { withSpinner } from "../../helpers/withSpinner.js";
+import { extractSoapReturnValues } from "../../helpers/soapResponse.js";
 import {
   computeFilename,
   getTemplateAttributes,
-} from "./helpers/filenameTemplate.js";
+} from "../../helpers/filenameTemplate.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.

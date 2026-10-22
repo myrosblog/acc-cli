@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import AccMonitor from "../../src/AccMonitor.js";
+import AccMonitor from "../../../../src/services/monitor/AccMonitor.js";
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
-import { codes } from "../../src/helpers/AccErrors.js";
-import { makeLogger } from "../helpers.js";
+import { codes } from "../../../../src/helpers/AccErrors.js";
+import { makeLogger } from "../../../helpers.js";
 
 const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
   codes;

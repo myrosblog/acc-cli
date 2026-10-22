@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import AuthLogin from "../../../src/commands/auth/login.js";
-import AccAuth from "../../../src/AccAuth.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
 
 describe("AuthLogin", () => {
   it("should have correct description", () => {

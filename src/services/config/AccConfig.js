@@ -4,10 +4,14 @@ import path from "node:path";
 import Ajv from "ajv";
 import hjson from "hjson";
 import { fileURLToPath } from "url";
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// src/ folder, which holds templates/ and validators/
+const srcDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 // acc
-import { codes } from "./helpers/AccErrors.js";
-import { DOC_QUERYDEF } from "./helpers/helpText.js";
+import { codes } from "../../helpers/AccErrors.js";
+import { DOC_QUERYDEF } from "../../helpers/helpText.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
   CONFIG_INIT_CONFIG_PATH_MISSING,
@@ -48,7 +52,7 @@ class AccConfig {
   /**
    * @type {string}
    */
-  templateDir = path.join(__dirname, "templates");
+  templateDir = path.join(srcDir, "templates");
 
   /**
    * @type {AioLogger}
@@ -105,12 +109,12 @@ class AccConfig {
     this.defaultConfigPath = defaultConfigPath;
     this.ajv = new Ajv();
     this.ajvSchema = fs.readJsonSync(
-      path.join(__dirname, "validators", "accConfig.json"),
+      path.join(srcDir, "validators", "accConfig.json"),
     );
     this.ajvValidate = this.ajv.compile(this.ajvSchema);
     this.ajvQueryDef = new Ajv({ allErrors: true });
     this.ajvValidateQueryDef = this.ajvQueryDef.compile(
-      fs.readJsonSync(path.join(__dirname, "validators", "queryDef.json")),
+      fs.readJsonSync(path.join(srcDir, "validators", "queryDef.json")),
     );
   }
 

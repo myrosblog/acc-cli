@@ -5,16 +5,16 @@ import chalk from "chalk";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import DomUtilAcc from "./helpers/DomUtilAcc.js";
-import AccPushLog from "./helpers/AccPushLog.js";
+import DomUtilAcc from "../../helpers/DomUtilAcc.js";
+import AccPushLog from "../../helpers/AccPushLog.js";
 import {
   buildWatchTargets,
   findMatchingTargets,
   getDecomposedSchemas,
   toPosixPath,
-} from "./helpers/watchTargets.js";
-import { formatKeyValues, getWriteKey } from "./helpers/writeKey.js";
-import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+} from "../../helpers/watchTargets.js";
+import { formatKeyValues, getWriteKey } from "../../helpers/writeKey.js";
+import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
   INSTANCE_WATCH_FILE_NOT_IN_SCOPE,

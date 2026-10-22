@@ -1,6 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
-import AccWatch from "../../AccWatch.js";
+import AccWatch from "../../services/instance/AccWatch.js";
 
 /**
  * Command to watch decomposed files and push changes to Adobe Campaign instance.

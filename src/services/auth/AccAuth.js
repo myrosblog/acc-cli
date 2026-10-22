@@ -2,8 +2,8 @@
 import accSdk from "@adobe/acc-js-sdk";
 const { ConnectionParameters } = accSdk;
 // acc
-import { codes, wrapSdkError } from "./helpers/AccErrors.js";
-import { EXAMPLE_INSTANCE } from "./helpers/helpText.js";
+import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
+import { EXAMPLE_INSTANCE } from "../../helpers/helpText.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
@@ -22,20 +22,20 @@ const {
   AUTH_INIT_INVALID_METHOD,
   AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
-import SdkAdapter from "./adapters/SdkAdapter.js";
-import AioConfigAdapter from "./adapters/AioConfigAdapter.js";
-import PromptAdapter from "./adapters/PromptAdapter.js";
-import ImsAuthAdapter from "./adapters/ImsAuthAdapter.js";
-import soapLogObserver from "./helpers/soapLogObserver.js";
-import { createNoopSpinner, withSpinner } from "./helpers/withSpinner.js";
-import { isBlank, loadS2SJsonFile } from "./helpers/s2sCredentials.js";
+import SdkAdapter from "../../adapters/SdkAdapter.js";
+import AioConfigAdapter from "../../adapters/AioConfigAdapter.js";
+import PromptAdapter from "../../adapters/PromptAdapter.js";
+import ImsAuthAdapter from "../../adapters/ImsAuthAdapter.js";
+import soapLogObserver from "../../helpers/soapLogObserver.js";
+import { createNoopSpinner, withSpinner } from "../../helpers/withSpinner.js";
+import { isBlank, loadS2SJsonFile } from "../../helpers/s2sCredentials.js";
 import {
   AUTH_CURRENT_ALIAS_KEY,
   AUTH_IMS_TOKENS_KEY,
   AUTH_INSTANCES_KEY,
   AUTH_METHODS,
   logCredentialsFile,
-} from "./helpers/authConstants.js";
+} from "../../helpers/authConstants.js";
 
 /**
  * Campaign CLI class for managing ACC (Campaign Classic) instances.

@@ -18,7 +18,7 @@ const dir = "mocks/acc-js-sdk-xml/xtk/queryDef/executeQuery/";
 // mocks
 const configDefaultFull = loadJson("../../src/templates/acc.config.json");
 // acc
-import AccInstance from "../../src/AccInstance.js";
+import AccInstance from "../../src/services/instance/AccInstance.js";
 
 /** Shallow-clone config and keep only the given schemaIds */
 const filterSchemas = (config, schemaId, filename = "") => ({

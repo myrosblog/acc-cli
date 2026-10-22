@@ -7,12 +7,12 @@ import tmp from "tmp";
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
-import AccAuth from "../../src/AccAuth.js";
+import AccAuth from "../../../../src/services/auth/AccAuth.js";
 import {
   AUTH_CURRENT_ALIAS_KEY,
   AUTH_INSTANCES_KEY,
-} from "../../src/helpers/authConstants.js";
-import { codes } from "../../src/helpers/AccErrors.js";
+} from "../../../../src/helpers/authConstants.js";
+import { codes } from "../../../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
@@ -34,7 +34,7 @@ const {
   AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
 // helpers
-import { makeLogger } from "../helpers.js";
+import { makeLogger } from "../../../helpers.js";
 
 describe("AccAuth", function () {
   let mockSdk, mockConfig, mockLogger, mockPrompt, mockMakeCache;

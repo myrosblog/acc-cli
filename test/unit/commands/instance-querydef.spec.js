@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { ux } from "@oclif/core";
-import AccAuth from "../../../src/AccAuth.js";
-import AccConfig from "../../../src/AccConfig.js";
-import AccInstance from "../../../src/AccInstance.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstance from "../../../src/services/instance/AccInstance.js";
 import InstanceQueryDef from "../../../src/commands/instance/queryDef.js";
 
 describe("InstanceQueryDef", () => {

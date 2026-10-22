@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import AccAuth from "../../../src/AccAuth.js";
-import AccConfig from "../../../src/AccConfig.js";
-import AccInstance from "../../../src/AccInstance.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstance from "../../../src/services/instance/AccInstance.js";
 import InstanceExec from "../../../src/commands/instance/exec.js";
 
 describe("InstanceExec", () => {

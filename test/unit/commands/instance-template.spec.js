@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import AccConfig from "../../../src/AccConfig.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
 import InstanceTemplate from "../../../src/commands/instance/template.js";
 
 describe("InstanceTemplate", () => {

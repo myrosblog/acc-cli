@@ -2,8 +2,8 @@
 import accSdk from "@adobe/acc-js-sdk";
 const { ConnectionParameters, DomUtil } = accSdk;
 // acc
-import SdkAdapter from "./adapters/SdkAdapter.js";
-import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+import SdkAdapter from "../../adapters/SdkAdapter.js";
+import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
 const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
   codes;
 

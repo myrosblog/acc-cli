@@ -8,14 +8,19 @@ import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import { makeLogger, makeSpinner, makeClient, makeSchema } from "../helpers.js";
+import {
+  makeLogger,
+  makeSpinner,
+  makeClient,
+  makeSchema,
+} from "../../../helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // acc
-import AccWatch from "../../src/AccWatch.js";
-import { getDecomposedSchemas } from "../../src/helpers/watchTargets.js";
+import AccWatch from "../../../../src/services/instance/AccWatch.js";
+import { getDecomposedSchemas } from "../../../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
 const testConfig = {
@@ -391,7 +396,7 @@ describe("AccWatch", () => {
 
     beforeEach(async () => {
       // Create a temporary directory for test files
-      tempDir = join(__dirname, "../dist/campaignWatcherTest");
+      tempDir = join(__dirname, "../../../dist/campaignWatcherTest");
       await fs.ensureDir(tempDir);
 
       // Create a meta file
@@ -473,7 +478,7 @@ describe("AccWatch", () => {
     let tempDir;
 
     beforeEach(async () => {
-      tempDir = join(__dirname, "../dist/campaignWatcherIntegration");
+      tempDir = join(__dirname, "../../../dist/campaignWatcherIntegration");
       await fs.ensureDir(tempDir);
 
       // Pull writes the decomposed files under the template directory

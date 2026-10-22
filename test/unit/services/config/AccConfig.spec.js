@@ -7,10 +7,10 @@ import { expect } from "chai";
 import hjson from "hjson";
 import tmp from "tmp";
 // sdk
-import { makeLogger } from "../helpers.js";
+import { makeLogger } from "../../../helpers.js";
 // acc
-import AccConfig from "../../src/AccConfig.js";
-import { codes } from "../../src/helpers/AccErrors.js";
+import AccConfig from "../../../../src/services/config/AccConfig.js";
+import { codes } from "../../../../src/helpers/AccErrors.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
   CONFIG_INIT_CONFIG_PATH_MISSING,
@@ -19,7 +19,7 @@ const {
 } = codes;
 const templatePath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../src/templates/acc.config.json",
+  "../../../../src/templates/acc.config.json",
 );
 
 describe("AccAuth", function () {

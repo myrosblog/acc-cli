@@ -14,19 +14,19 @@ import {
   makeLogger,
   makeSpinner,
   filterSchemas,
-} from "../helpers.js";
+} from "../../../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // hjson, as the template contains comments
 const loadJson = (file) =>
   hjson.parse(fs.readFileSync(join(__dirname, file), "utf8"));
-const configPathXml = join(__dirname, "../mocks/acc-js-sdk-xml/");
+const configPathXml = join(__dirname, "../../../mocks/acc-js-sdk-xml/");
 const loadXml = (file) =>
   DomUtil.getFirstChildElement(
     DomUtil.parse(fs.readFileSync(configPathXml + file)),
   ); // DomUtil.parse returns Document, but all methods use Element, hence the conversion
 // mocks
-const configDefaultFull = loadJson("../../src/templates/acc.config.json");
+const configDefaultFull = loadJson("../../../../src/templates/acc.config.json");
 const xtkSqlCreatedb = loadXml("xtk/sql/createdb.sql.xml");
 const xtkSchemaDelivery = loadXml("xtk/srcSchema/nms-delivery.xml");
 const xtkOlapCubes1 = loadXml("xtk/olapCube/olapCubes.1.xml");
@@ -43,7 +43,7 @@ const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
   "nms/deliveryMapping/recipientAndSubscribe.xml",
 );
 // acc
-import AccInstance from "../../src/AccInstance.js";
+import AccInstance from "../../../../src/services/instance/AccInstance.js";
 
 describe("AccInstance", () => {
   let mockClient,
@@ -59,7 +59,7 @@ describe("AccInstance", () => {
     mockClient = makeClient();
 
     // options template
-    pathFull = join(__dirname, "../dist/configFull/");
+    pathFull = join(__dirname, "../../../dist/configFull/");
 
     // mock options
     optionsFull = {

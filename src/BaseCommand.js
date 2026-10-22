@@ -8,9 +8,9 @@ import Config from "@adobe/aio-lib-core-config/src/Config.js";
 // acc
 import makeLogger from "./helpers/makeLogger.js";
 import AccCache from "./helpers/AccCache.js";
-import AccAuth from "./AccAuth.js";
-import AccConfig, { CONFIG_FILENAME } from "./AccConfig.js";
-import AccMonitor from "./AccMonitor.js";
+import AccAuth from "./services/auth/AccAuth.js";
+import AccConfig, { CONFIG_FILENAME } from "./services/config/AccConfig.js";
+import AccMonitor from "./services/monitor/AccMonitor.js";
 import logCacheStats from "./helpers/cacheStatsLogger.js";
 
 /**
