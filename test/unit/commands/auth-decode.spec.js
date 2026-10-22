@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import sinon from "sinon";
+import { ux } from "@oclif/core";
 import AuthDecode from "../../../src/commands/auth/decode.js";
 
 // Transparent, unsigned fixture token (header.payload.sig).
@@ -30,7 +31,7 @@ describe("AuthDecode", () => {
 
     const result = await AuthDecode.run([TOKEN]);
 
-    expect(result).to.be.undefined;
+    expect(result.header).to.deep.equal(HEADER);
     const output = logStub
       .getCalls()
       .map((c) => c.args[0])
@@ -46,11 +47,12 @@ describe("AuthDecode", () => {
   });
 
   it("should return { header, payload, expiry } in --json mode", async () => {
-    sinon.stub(AuthDecode.prototype, "log");
+    const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(AuthDecode.prototype, "logJson");
 
     const result = await AuthDecode.run([TOKEN, "--json"]);
 
+    expect(stdoutStub.called).to.be.false; // oclif silences log() in json mode
     expect(result.header).to.deep.equal(HEADER);
     expect(result.payload).to.deep.equal(PAYLOAD);
     expect(result.expiry).to.have.all.keys(

@@ -37,27 +37,23 @@ export default class AuthDecode extends BaseCommand {
     const { header, payload } = decodeJwt(args.token);
     const expiry = summarizeExpiry(payload);
 
-    if (this.jsonEnabled()) {
-      return {
-        header,
-        payload,
-        expiry: {
-          // Dates as ISO strings so the JSON stays portable and pipeable.
-          issuedAt: expiry.issuedAt ? expiry.issuedAt.toISOString() : null,
-          expiresAt: expiry.expiresAt ? expiry.expiresAt.toISOString() : null,
-          isExpired: expiry.isExpired,
-          expiresInMs: expiry.expiresInMs,
-        },
-      };
-    }
-
-    // Human mode: the decoded claims are the command's data → stdout (this.log).
-    // The raw token is never echoed back; only its decoded contents.
     this.log("Header:");
     this.log(JSON.stringify(header, null, 2));
     this.log("\nPayload:");
     this.log(JSON.stringify(payload, null, 2));
     this.log("\nExpiry:");
     this.log(formatExpiry(expiry));
+
+    return {
+      header,
+      payload,
+      expiry: {
+        // Dates as ISO strings so the JSON stays portable and pipeable.
+        issuedAt: expiry.issuedAt ? expiry.issuedAt.toISOString() : null,
+        expiresAt: expiry.expiresAt ? expiry.expiresAt.toISOString() : null,
+        isExpired: expiry.isExpired,
+        expiresInMs: expiry.expiresInMs,
+      },
+    };
   }
 }

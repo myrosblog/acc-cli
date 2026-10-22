@@ -103,7 +103,7 @@ Adhere to the following guidelines in your code:
 - In tests, always avoid mocking the filesystem. Use real files and directories, in temporary directories if needed.
 - In tests, prefer to have as little shared state between tests as possible. Avoid beforeAll and afterAll.
 
-- **Logging convention**: `this.log` for command **result/data** (goes to stdout, pipeable); `logger.*` for **diagnostics** (progress, warnings, errors, go to stderr and the rotating `acc.log`). Never put data on `logger` or diagnostics on `this.log`.
+- **Logging convention**: `this.log` for command **result/data** (goes to stdout, pipeable); `logger.*` for **diagnostics** (progress, warnings, errors, go to stderr and the rotating `acc.log`). Never put data on `logger` or diagnostics on `this.log`. A command always calls `this.log` and returns its data: oclif silences `log()` with `--json` and prints the returned value.
 
 - **Importing from `@adobe/acc-js-sdk`**: always import from the package's public entry point so the code only depends on the SDK's documented, semver-protected API:
 
@@ -149,8 +149,9 @@ Unit/integration tests must never touch the network or the filesystem, inject st
 
 Quality gates:
 
-- ESLint limits `complexity`, `max-depth` and `max-lines-per-function` (code lines only) in `src/helpers`, `src/commands` and `src/adapters`, at ESLint's default thresholds. The glob in `eslint.config.js` grows as the top-level classes are split.
-- `src/helpers`, `src/commands` and `src/adapters` stay at 100% of statements, branches, functions and lines, file by file. A `/* c8 ignore */` there needs a comment saying why.
+- ESLint default limits and Airbnb's extra rules.
+- Code coverage: 100% statements, branches, functions and lines, file by file.
+- Target: all `src/*`. Starting with `src/helpers`, `src/commands` and `src/adapters`.
 
 ### Commits & pull requests
 
