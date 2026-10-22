@@ -50,6 +50,18 @@ describe("AuthList", () => {
     expect(output).to.not.include("password");
   });
 
+  it("should render an empty cell for a missing host or user", async () => {
+    // CampaignAuth.list() coerces missing values to null.
+    stubAuth([{ alias: "bare", host: null, user: null, method: "Unknown" }]);
+    const logStub = sinon.stub(AuthList.prototype, "log");
+
+    await AuthList.run([]);
+
+    const output = logStub.getCall(0).args[0];
+    expect(output).to.include("bare");
+    expect(output).to.not.include("null");
+  });
+
   it("should return redacted rows in --json mode", async () => {
     stubAuth();
     sinon.stub(AuthList.prototype, "log");

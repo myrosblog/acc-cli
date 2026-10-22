@@ -103,7 +103,7 @@ Adhere to the following guidelines in your code:
 - In tests, always avoid mocking the filesystem. Use real files and directories, in temporary directories if needed.
 - In tests, prefer to have as little shared state between tests as possible. Avoid beforeAll and afterAll.
 
-- **Logging convention**: `this.log` for command **result/data** (goes to stdout, pipeable); `logger.*` for **diagnostics** (progress, warnings, errors, go to stderr and the rotating `acc.log`). Never put data on `logger` or diagnostics on `this.log`.
+- **Logging convention**: `this.log` for command **result/data** (goes to stdout, pipeable); `logger.*` for **diagnostics** (progress, warnings, errors, go to stderr and the rotating `acc.log`). Never put data on `logger` or diagnostics on `this.log`. A command always calls `this.log` and returns its data: oclif silences `log()` with `--json` and prints the returned value.
 
 - **Importing from `@adobe/acc-js-sdk`**: always import from the package's public entry point so the code only depends on the SDK's documented, semver-protected API:
 
@@ -137,7 +137,8 @@ Adhere to the following guidelines in your code:
 
 ```bash
 npm test                       # unit + integration tests (XML samples), no network
-npm run coverage               # unit tests with c8 coverage report
+npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds and below 100% per file in src/helpers/, src/commands/ and src/adapters/
+npm run coverage:strict        # only the 100% per-file check of src/helpers/, src/commands/ and src/adapters/, on the data of the last coverage run
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
 npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
@@ -145,6 +146,12 @@ ACC_E2E_ALIAS=local npm run test:e2e   # end-to-end against an instance
 ```
 
 Unit/integration tests must never touch the network or the filesystem, inject stubs (see Dependency injection). Only `test:e2e` hits a live instance.
+
+Quality gates:
+
+- ESLint default limits and Airbnb's extra rules.
+- Code coverage: 100% statements, branches, functions and lines, file by file.
+- Target: all `src/*`. Starting with `src/helpers`, `src/commands` and `src/adapters`.
 
 ### Commits & pull requests
 

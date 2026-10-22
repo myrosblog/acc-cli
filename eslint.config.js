@@ -89,6 +89,39 @@ export default [
     },
   },
 
+  // Strict rules, starting with helpers, then will be extended to src/
+  {
+    files: [
+      "src/helpers/**/*.js",
+      "src/commands/**/*.js",
+      "src/adapters/**/*.js",
+    ],
+    rules: {
+      // ESLint's default thresholds.
+      complexity: "warn",
+      "max-depth": "warn",
+      "max-lines-per-function": [
+        "warn",
+        { skipBlankLines: true, skipComments: true },
+      ],
+      // Airbnb additional rules
+      "consistent-return": "warn",
+      "default-param-last": "warn",
+      "no-await-in-loop": "warn",
+      "no-else-return": ["warn", { allowElseIf: false }],
+      "no-lonely-if": "warn",
+      "no-multi-assign": "warn",
+      "no-nested-ternary": "warn",
+      // Without Airbnb's exemptions for req, res, ctx...
+      "no-param-reassign": ["warn", { props: true }],
+      "no-promise-executor-return": "warn",
+      "no-template-curly-in-string": "warn",
+      "no-unneeded-ternary": ["warn", { defaultAssignment: false }],
+      "no-useless-return": "warn",
+      "prefer-object-spread": "warn",
+    },
+  },
+
   {
     // Mocha injects describe/it/before, and test/index.js sets a global expect.
     files: ["test/**/*.js"],

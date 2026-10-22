@@ -85,7 +85,7 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
     // Whether or not the database reorders pages on this instance, each
     // missing file must be reported as overwritten.
     const match = stderr.match(
-      /(\d+) records were written to a file already written/,
+      /(\d+) records were saved to a file already existing in this pull/,
     );
     const overwrittenCount = match ? Number(match[1]) : 0;
     expect(countFiles() + overwrittenCount).to.equal(expectedCount);
@@ -101,6 +101,6 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
     const { stderr } = await acc("instance", "pull", "--metadata", "xtk:form");
 
     expect(countFiles()).to.equal(expectedCount);
-    expect(stderr).to.not.contain("already written");
+    expect(stderr).to.not.contain("already existing in this pull");
   });
 });

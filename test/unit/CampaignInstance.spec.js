@@ -163,99 +163,6 @@ describe("CampaignInstance", () => {
       );
       expect(result).to.deep.equal(base);
     });
-
-    describe("_sanitizeFilenameValue", () => {
-      beforeEach(() => {
-        instance = new CampaignInstance(
-          mockLogger,
-          mockClient,
-          configDefaultFull,
-          optionsFull,
-        );
-      });
-
-      it("leaves a clean value untouched", () => {
-        expect(instance._sanitizeFilenameValue("myDelivery")).to.equal(
-          "myDelivery",
-        );
-      });
-
-      it("replaces POSIX and Windows path separators", () => {
-        expect(instance._sanitizeFilenameValue("a/b\\c")).to.equal("a_b_c");
-      });
-
-      it("neutralizes parent-dir refs so they cannot traverse", () => {
-        expect(instance._sanitizeFilenameValue("..")).to.equal("__");
-        expect(instance._sanitizeFilenameValue(".")).to.equal("_");
-        // separators become "_", so "../" can no longer escape the directory
-        expect(instance._sanitizeFilenameValue("../../etc")).to.equal(
-          ".._.._etc",
-        );
-      });
-
-      it("strips NUL and control characters", () => {
-        expect(instance._sanitizeFilenameValue("a\x00b\x1fc")).to.equal("abc");
-      });
-    });
-
-    describe("_computeFilename", () => {
-      beforeEach(() => {
-        instance = new CampaignInstance(
-          mockLogger,
-          mockClient,
-          configDefaultFull,
-          optionsFull,
-        );
-      });
-
-      const record = (name) =>
-        DomUtil.getFirstChildElement(
-          DomUtil.parse(`<delivery name="${name}"/>`),
-        );
-
-      it("substitutes a clean attribute value", () => {
-        expect(
-          instance._computeFilename(
-            "{@name}.meta.xml",
-            ["@name"],
-            record("DM42"),
-          ),
-        ).to.equal("DM42.meta.xml");
-      });
-
-      it("keeps subdirectories that come from the template", () => {
-        expect(
-          instance._computeFilename(
-            "/Explorer/{@name}.meta.xml",
-            ["@name"],
-            record("foo"),
-          ),
-        ).to.equal("/Explorer/foo.meta.xml");
-      });
-
-      it("prevents path traversal injected through the attribute value", () => {
-        // a malicious @name must not escape the download directory: every
-        // separator becomes "_", so the result stays a single component
-        expect(
-          instance._computeFilename(
-            "{@name}.meta.xml",
-            ["@name"],
-            record("../../etc/passwd"),
-          ),
-        ).to.equal(".._.._etc_passwd.meta.xml");
-      });
-
-      it("does not interpret $ patterns from the value", () => {
-        // record name is XML-escaped; the parsed attribute value is "a$&b"
-        expect(
-          instance._computeFilename(
-            "{@name}.xml",
-            ["@name"],
-            record("a$&amp;b"),
-          ),
-        ).to.equal("a$&b.xml");
-      });
-    });
   });
 
   describe("check", () => {
@@ -1090,6 +997,56 @@ describe("CampaignInstance", () => {
       const serialized = DomUtil.toXMLString(freshXml);
       expect(serialized).to.match(/<data\s*\/>/); // self-closing = empty textContent
       expect(serialized).to.not.contain("CREATE DATABASE");
+    });
+
+    describe("excludeXPaths", () => {
+      const parseExcluding = (xml, excludeXPaths) => {
+        instance = new CampaignInstance(
+          mockLogger,
+          mockClient,
+          configDefaultFull,
+          optionsFull,
+        );
+        const record = DomUtil.getFirstChildElement(DomUtil.parse(xml));
+        const schemaConfig = {
+          schemaId: "nms:delivery",
+          filename: "{@name}.xml",
+          excludeXPaths,
+        };
+        instance.parse(record, schemaConfig, true); // preview: no disk write
+        return DomUtil.toXMLString(record);
+      };
+
+      it("should blank an attribute of the record", () => {
+        const xml = parseExcluding(`<delivery name="DM1" secret="s3cr3t"/>`, [
+          "@secret",
+        ]);
+        expect(xml).to.contain(`secret=""`);
+        expect(xml).to.contain(`name="DM1"`);
+      });
+
+      it("should blank an attribute of a child element", () => {
+        const xml = parseExcluding(
+          `<delivery name="DM1"><target secret="s3cr3t"/></delivery>`,
+          ["target/@secret"],
+        );
+        expect(xml).to.contain(`<target secret=""/>`);
+      });
+
+      it("should skip an attribute xpath whose parent element is absent", () => {
+        const xml = parseExcluding(`<delivery name="DM1"/>`, [
+          "absent/@secret",
+        ]);
+        expect(xml).to.equal(`<delivery name="DM1"/>`);
+      });
+
+      it("should skip an empty xpath instead of blanking the whole record", () => {
+        const xml = parseExcluding(
+          `<delivery name="DM1"><a>text</a></delivery>`,
+          [""],
+        );
+        expect(xml).to.contain("<a>text</a>");
+      });
     });
   });
 

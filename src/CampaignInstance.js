@@ -7,7 +7,6 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { EntityAccessor } from "@adobe/acc-js-sdk/src/entityAccessor.js";
-import { XPath } from "@adobe/acc-js-sdk/src/domUtil.js";
 import { codes, wrapSdkError } from "./helpers/AccErrors.js";
 const {
   INSTANCE_PULL_SDK_CREATEQUERY_FAILED,
@@ -29,6 +28,11 @@ const {
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPullLog from "./helpers/CampaignPullLog.js";
+import { withSpinner } from "./helpers/withSpinner.js";
+import {
+  computeFilename,
+  getTemplateAttributes,
+} from "./helpers/filenameTemplate.js";
 
 /**
  * Campaign Instance class for interacting with ACC instances.
@@ -46,18 +50,6 @@ import CampaignPullLog from "./helpers/CampaignPullLog.js";
  * @classdesc Class for managing data operations with ACC instances
  */
 class CampaignInstance {
-  /**
-   * Regular expression to extract config attributes from filename patterns
-   * @type {RegExp}
-   */
-  REGEX_CONFIG_ATTRIBUTE = /{(.+?)}/g;
-
-  /**
-   * XPath attribute prefix character
-   * @type {string}
-   */
-  CONFIG_XPATH_ATTR = "@";
-
   /**
    * Default SQL LIMIT to fetch schemas (querydef lineCount)
    * @type {number}
@@ -348,23 +340,18 @@ class CampaignInstance {
     }
     const name = cliOptions.name || (file ? path.basename(file) : "acc-cli");
 
-    const spinner = this.createSpinner(
-      `Executing ${chalk.bgCyan(name)} on the server`,
-    ).start();
     // EvaluateJavaScript requires a `context` XML param (in/out)
     const contextXml = DomUtil.fromJSON("context", {}, "SimpleJson");
-    let resultContext;
-    try {
-      resultContext = await this.adapterEvaluateJavaScript(
-        name,
-        script,
-        contextXml,
-      );
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan(name)} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan(name)} executed`);
+    const highlightedName = chalk.bgCyan(name);
+    const resultContext = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Executing ${highlightedName} on the server`,
+        succeed: `${highlightedName} executed`,
+        fail: `${highlightedName} failed`,
+      },
+      () => this.adapterEvaluateJavaScript(name, script, contextXml),
+    );
 
     const resultXml = DomUtil.toXMLString(resultContext);
     this.logger.verbose(resultXml);
@@ -421,17 +408,16 @@ class CampaignInstance {
       raw = fs.readFileSync(file, "utf8");
     }
 
-    const spinner = this.createSpinner(
-      `Executing ${chalk.bgCyan("queryDef")} on the server`,
-    ).start();
-    let result;
-    try {
-      result = await this.adapterExecuteQueryDef(raw, cliOptions.json);
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan("queryDef")} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan("queryDef")} executed`);
+    const highlightedName = chalk.bgCyan("queryDef");
+    const result = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Executing ${highlightedName} on the server`,
+        succeed: `${highlightedName} executed`,
+        fail: `${highlightedName} failed`,
+      },
+      () => this.adapterExecuteQueryDef(raw, cliOptions.json),
+    );
 
     // Always trace the raw XML; return XML or SimpleJson depending on --json.
     // const resultXml = DomUtil.toXMLString(resultElement);
@@ -513,23 +499,16 @@ class CampaignInstance {
     }
 
     const schemaKey = this._toSchemaKey(schema);
-    const label = `${schema}#${method}`;
-    const spinner = this.createSpinner(
-      `Calling ${chalk.bgCyan(label)} on the server`,
-    ).start();
-    let result;
-    try {
-      result = await this.adapterCallSoap(
-        schemaKey,
-        method,
-        args,
-        cliOptions.json,
-      );
-    } catch (err) {
-      spinner.fail(`${chalk.bgCyan(label)} failed`);
-      throw err;
-    }
-    spinner.succeed(`${chalk.bgCyan(label)} succeeded`);
+    const highlightedLabel = chalk.bgCyan(`${schema}#${method}`);
+    const result = await withSpinner(
+      this.createSpinner,
+      {
+        text: `Calling ${highlightedLabel} on the server`,
+        succeed: `${highlightedLabel} succeeded`,
+        fail: `${highlightedLabel} failed`,
+      },
+      () => this.adapterCallSoap(schemaKey, method, args, cliOptions.json),
+    );
 
     this.logger.verbose(result);
     return cliOptions.json ? result : this._serializeSoapResult(result);
@@ -632,13 +611,14 @@ class CampaignInstance {
     const sections = [];
     const errors = [];
     for (const probe of probes) {
-      const spinner = this.createSpinner(probe.title).start();
       try {
-        const body = probe.render(await probe.run());
-        spinner.succeed(probe.title);
+        const body = await withSpinner(
+          this.createSpinner,
+          { text: probe.title },
+          async () => probe.render(await probe.run()),
+        );
         sections.push(`== ${probe.title} ==\n${body}`);
       } catch (err) {
-        spinner.fail(probe.title);
         errors.push(err);
         sections.push(`== ${probe.title} ==\n⚠️ ${err.message}`);
       }
@@ -714,9 +694,9 @@ class CampaignInstance {
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
-    const configAttributes = this._getAttributesFromSchemaConfig(schemaConfig); // [ '@name', '@namespace' ]
+    const configAttributes = getTemplateAttributes(filename); // [ '@name', '@namespace' ]
 
-    const computedFilename = this._computeFilename(
+    const computedFilename = computeFilename(
       filename,
       configAttributes,
       childElement,
@@ -726,24 +706,23 @@ class CampaignInstance {
     // prepare XML by removing excluded attributes
     if (excludeXPaths) {
       for (const xpathString of excludeXPaths) {
-        const xpath = new XPath(xpathString);
-        const xpathElements = xpath.getElements();
-        const lastXpathElement = xpathElements[xpathElements.length - 1];
-        const lastNode = DomUtilAcc.findLastElement(childElement, xpathString);
+        const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
+          childElement,
+          xpathString,
+        );
+        if (!node) {
+          continue; // not found in this record, nothing to blank
+        }
 
         // if attribute, set it to blank
-        if (DomUtilAcc.xpathElementIsAttribute(lastXpathElement)) {
-          const attributeName =
-            DomUtilAcc.getXpathAttributeName(lastXpathElement);
-          if (lastNode.hasAttribute(attributeName)) {
-            lastNode.setAttribute(attributeName, "");
+        if (attributeName !== null) {
+          if (node.hasAttribute(attributeName)) {
+            node.setAttribute(attributeName, "");
           }
         }
         // if element, empty its textContent
         else {
-          if (lastNode) {
-            lastNode.textContent = "";
-          }
+          node.textContent = "";
         }
       }
     }
@@ -761,7 +740,7 @@ class CampaignInstance {
       for (const [xpathString, filenameTemplate] of Object.entries(decompose)) {
         try {
           // compute filename
-          const decomposedFilename = this._computeFilename(
+          const decomposedFilename = computeFilename(
             filenameTemplate,
             configAttributes,
             childElement,
@@ -794,62 +773,6 @@ class CampaignInstance {
     }
 
     return computedFilename;
-  }
-
-  /**
-   * Extracts attribute names from the schema config filename template.
-   * @param {object} schemaConfig - schema download config
-   * @returns {Array<string>} Array of attribute names (e.g., ['@name', '@namespace'])
-   */
-  _getAttributesFromSchemaConfig(schemaConfig) {
-    const configAttributesRe = schemaConfig.filename.matchAll(
-      this.REGEX_CONFIG_ATTRIBUTE,
-    ); // [object RegExp String Iterator]
-    const configAttributesArr = Array.from(configAttributesRe); // [ [ '@name', '@name' ], ... ]
-    return configAttributesArr.map((attr) => attr[1]); // [ '@name', '@namespace' ]
-  }
-
-  /**
-   * Computes the final filename by substituting schema config attributes with values from the record.
-   * @param {string} configFilename - filename template with placeholders like {name}
-   * @param {Array<string>} configAttributes - attribute names to extract from the record
-   * @param {Element} record - the record element
-   * @returns {string} The computed filename with placeholders replaced
-   */
-  _computeFilename(configFilename, configAttributes, record) {
-    let filename = configFilename;
-    for (const configAttribute of configAttributes) {
-      const value = DomUtil.getAttributeAsString(
-        record,
-        configAttribute.replace(this.CONFIG_XPATH_ATTR, ""),
-      );
-      // The template (configFilename) is trusted and may contain "/" for
-      // subdirectories. The attribute value comes from the server record and is
-      // untrusted, so it must never inject path separators, parent-dir refs or
-      // control chars (path traversal). A function replacer is used so "$"
-      // patterns in the value are not interpreted by String.replaceAll.
-      const safeValue = this._sanitizeFilenameValue(value);
-      filename = filename.replaceAll(`{${configAttribute}}`, () => safeValue);
-    }
-    return filename;
-  }
-
-  /**
-   * Sanitizes a single attribute value before it is substituted into a filename
-   * template, so untrusted record data cannot escape the download directory.
-   * Only the value is sanitized, never the template (which legitimately carries
-   * "/" for subfolders).
-   * @param {string} value raw attribute value from the record
-   * @returns {string} a value safe to use as a filename component
-   */
-  _sanitizeFilenameValue(value) {
-    return (
-      String(value)
-        .replace(/[/\\]/g, "_") // POSIX + Windows path separators
-        // eslint-disable-next-line no-control-regex -- stripping control chars is the purpose here
-        .replace(/[\x00-\x1f]/g, "") // NUL + control characters
-        .replace(/^\.+$/, (dots) => "_".repeat(dots.length))
-    ); // "." / ".." -> "_" / "__"
   }
 }
 

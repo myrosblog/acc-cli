@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import sinon from "sinon";
+import { ux } from "@oclif/core";
 import CampaignAuth from "../../../src/CampaignAuth.js";
 import CampaignConfig from "../../../src/CampaignConfig.js";
 import CampaignInstance from "../../../src/CampaignInstance.js";
@@ -52,7 +53,7 @@ describe("InstanceSoap", () => {
     ];
     const result = await InstanceSoap.run(argv);
 
-    expect(result).to.be.undefined; // nothing returned in human mode
+    expect(result).to.equal("<preview/>");
     expect(soapStub.calledOnce).to.be.true;
     // the instance is asked for XML (json:false) in human mode
     expect(soapStub.firstCall.args[0].json).to.equal(false);
@@ -68,7 +69,7 @@ describe("InstanceSoap", () => {
     const soapStub = sinon
       .stub(CampaignInstance.prototype, "soap")
       .resolves(jsonResult);
-    const logStub = sinon.stub(InstanceSoap.prototype, "log");
+    const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceSoap.prototype, "logJson"); // oclif prints it
 
     const argv = [
@@ -85,6 +86,6 @@ describe("InstanceSoap", () => {
     expect(result).to.deep.equal(jsonResult);
     // json:true is forwarded so the instance returns SimpleJson
     expect(soapStub.firstCall.args[0].json).to.equal(true);
-    expect(logStub.called).to.be.false; // raw XML is never written in json mode
+    expect(stdoutStub.called).to.be.false; // oclif silences log() in json mode
   });
 });

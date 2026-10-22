@@ -51,11 +51,8 @@ export default class InstanceQueryDef extends InstanceCommand {
       ...flags,
       json: this.jsonEnabled(),
     });
-    // In --json mode oclif serialises the returned object; otherwise the raw XML
-    // is the command's result and goes to stdout (this.log).
-    if (this.jsonEnabled()) {
-      return result;
-    }
-    this.log(result); // The result content is data: print it on stdout (this.log)
+
+    this.log(result);
+    return result;
   }
 }

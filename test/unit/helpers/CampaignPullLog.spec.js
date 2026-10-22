@@ -65,6 +65,13 @@ describe("helpers/CampaignPullLog", () => {
       expect(pullLog.errors[0]).to.equal(error);
     });
 
+    it("should render an error that is not an Error object as a string", () => {
+      const pullLog = new CampaignPullLog(schemaConfig);
+      pullLog.errors.push("plain failure", new Error("boom"));
+
+      expect(pullLog.toLog().errors).to.deep.equal(["plain failure", "boom"]);
+    });
+
     it("should omit endTime, durationMs and queryDefXml when not yet set", () => {
       const pullLog = new CampaignPullLog(schemaConfig);
 

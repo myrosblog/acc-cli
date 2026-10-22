@@ -68,6 +68,13 @@ describe("helpers/CampaignPushLog", () => {
       expect(summary.operation).to.be.undefined;
     });
 
+    it("should render an error that is not an Error object as a string", () => {
+      const pushLog = new CampaignPushLog(schemaConfig);
+      pushLog.error = "plain failure";
+
+      expect(pushLog.toLog().error).to.equal("plain failure");
+    });
+
     it("should omit endTime, durationMs and payloadXml when not yet set", () => {
       const pushLog = new CampaignPushLog(schemaConfig);
 

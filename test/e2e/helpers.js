@@ -16,6 +16,9 @@ export const ALIAS = process.env.ACC_E2E_ALIAS || "local";
  *
  * Diagnostics are forced to info level so the stdout(result)/stderr(diagnostics)
  * routing can be asserted; ACC_NO_FILE_LOG is inherited from the e2e entrypoint.
+ * OCLIF_COLUMNS is raised because oclif wraps errors at 80 columns when stderr
+ * is not a TTY, which would split a message such as "--args is not valid JSON"
+ * across two lines and break the assertions.
  * Rejects (like execFile) on a non-zero exit, exposing `code`, `stdout`,
  * `stderr` on the error.
  *
@@ -27,5 +30,10 @@ export const runAcc = (args, opts = {}) =>
   run(process.execPath, [BIN, ...args], {
     maxBuffer: 10 * 1024 * 1024,
     ...opts,
-    env: { ...process.env, AIO_LOG_LEVEL: "info", ...opts.env },
+    env: {
+      ...process.env,
+      AIO_LOG_LEVEL: "info",
+      OCLIF_COLUMNS: "1000",
+      ...opts.env,
+    },
   });

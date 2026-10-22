@@ -1,6 +1,6 @@
 import { Flags } from "@oclif/core";
 import BaseCommand from "../../BaseCommand.js";
-import { AUTH_METHODS } from "../../CampaignAuth.js";
+import { AUTH_METHODS } from "../../helpers/authConstants.js";
 import { EXAMPLE_INSTANCE, DOC_IMS } from "../../helpers/helpText.js";
 
 export default class AuthInit extends BaseCommand {

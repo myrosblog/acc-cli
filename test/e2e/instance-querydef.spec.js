@@ -76,7 +76,10 @@ describe(`acc instance queryDef (e2e CLI, alias=${ALIAS})`, function () {
     );
     expect(err, "expected a non-zero exit").to.not.be.null;
     expect(err.code).to.not.equal(0);
-    expect(err.stderr).to.match(/no query provided/i);
+    // rejected by the oclif `exactlyOne` flag validation, before any login
+    expect(err.stderr).to.match(
+      /exactly one of the following must be provided/i,
+    );
   });
 
   it("fails with a non-zero exit on a malformed queryDef", async () => {
