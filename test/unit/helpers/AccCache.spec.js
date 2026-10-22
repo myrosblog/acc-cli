@@ -119,8 +119,7 @@ describe("AccCache", function () {
 
     it("should not throw when the removal itself fails", async () => {
       const cache = new AccCache(dir);
-      // The cache is best effort for the SDK. With a file where the cache
-      // directory used to be, removing an entry fails (ENOTDIR on POSIX).
+      // A file in place of the cache directory makes the removal fail (ENOTDIR).
       fs.removeSync(dir);
       fs.writeFileSync(dir, "not a directory");
 

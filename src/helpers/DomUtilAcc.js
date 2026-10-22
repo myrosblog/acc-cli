@@ -87,16 +87,13 @@ class DomUtilAcc extends DomUtil {
   }
 
   /**
-   * Resolves what an xpath points at: the element holding it and, when it ends
-   * with an attribute, that attribute's name. Callers need both to read or blank
-   * a value, whether it is an attribute or the text of an element.
+   * Resolves the element an xpath leads to and, when it ends with an attribute,
+   * that attribute's name. Same limits as findLastElement for absolute xpaths.
    * Examples with <service mode="0"><social category="1"/></service>:
-   * - xpath: "@mode" => { node: <service>, attributeName: "mode" }
-   * - xpath: "social/@category" => { node: <social>, attributeName: "category" }
-   * - xpath: "social" => { node: <social>, attributeName: null }
-   * - xpath: "absent/@mode" => { node: null, attributeName: "mode" }
-   * - xpath: "" => { node: null, attributeName: null }: nothing to point at
-   * Same limits as findLastElement for absolute xpaths.
+   * - "social/@category" => { node: <social>, attributeName: "category" }
+   * - "social" => { node: <social>, attributeName: null }
+   * - "absent/@mode" => { node: null, attributeName: "mode" }
+   * - "" => { node: null, attributeName: null }
    *
    * @param {Element} startElement the starting element to traverse from
    * @param {string} xpathStr the xpath string to traverse
