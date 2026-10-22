@@ -538,7 +538,7 @@ describe("AccWatch", () => {
       expect(xml).to.include('id="456"');
       expect(xml).to.not.include("namespace=");
 
-      // The push is journaled for auditing, alongside AccPullLog for pull
+      // The push is journaled for auditing, alongside AccInstancePullLog for pull
       expect(mockLogger.debug).to.have.been.calledOnce;
       const pushLogSummary = mockLogger.debug.firstCall.args[0];
       expect(pushLogSummary.schemaId).to.equal("xtk:javascript");

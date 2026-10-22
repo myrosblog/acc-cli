@@ -6,7 +6,7 @@ import chalk from "chalk";
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import DomUtilAcc from "../../helpers/DomUtilAcc.js";
-import AccPushLog from "../../helpers/AccPushLog.js";
+import AccInstancePushLog from "../../helpers/AccInstancePushLog.js";
 import {
   buildWatchTargets,
   findMatchingTargets,
@@ -489,7 +489,7 @@ class AccWatch {
     filePath,
   ) {
     const { schemaId } = schemaConfig;
-    const pushLog = new AccPushLog(schemaConfig);
+    const pushLog = new AccInstancePushLog(schemaConfig);
     pushLog.filePath = filePath;
     pushLog.xpath = xpath;
 
@@ -513,7 +513,7 @@ class AccWatch {
       this.spinnerKeys = formatKeyValues(keyValues);
 
       this.logger.verbose(
-        `AccPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
+        `AccInstancePushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
       );
 
       // Only text values (e.g. delivery html source) can be pushed: an element

@@ -27,7 +27,7 @@ const {
 } = codes;
 // acc
 import DomUtilAcc from "../../helpers/DomUtilAcc.js";
-import AccPullLog from "../../helpers/AccPullLog.js";
+import AccInstancePullLog from "../../helpers/AccInstancePullLog.js";
 import { withSpinner } from "../../helpers/withSpinner.js";
 import { extractSoapReturnValues } from "../../helpers/soapResponse.js";
 import {
@@ -59,7 +59,7 @@ class AccInstance {
 
   /**
    * Logs of downloaded data
-   * @type {Array<AccPullLog>}
+   * @type {Array<AccInstancePullLog>}
    */
   pullLogs = [];
 
@@ -161,7 +161,7 @@ class AccInstance {
       // pagination loop, 1 per batch
       do {
         spinner.text = `${filename}: ${chalk.bgCyan(schemaId)} parsed ${recordsParsedTotal}. Downloading next ${lineCount}`;
-        const pullLog = new AccPullLog(schemaConfig);
+        const pullLog = new AccInstancePullLog(schemaConfig);
         this.pullLogs.push(pullLog);
         pullLogsForThisSchema.push(pullLog);
         this.logger.verbose(
@@ -195,7 +195,7 @@ class AccInstance {
         }
         // debug pullLog
         this.logger.debug(
-          `AccPullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
+          `AccInstancePullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
         );
         this.logger.debug(pullLog.toLog());
       } while (recordsLengthOfThisBatch >= lineCount);

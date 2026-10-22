@@ -5,10 +5,10 @@ const { DomUtil } = accSdk;
 /**
  * Log data for a single entity pushed by AccWatch._pushEntityToServer,
  * for troubleshooting and auditing.
- * 1 instance per push attempt (no batching, unlike AccPullLog).
- * @class AccPushLog
+ * 1 instance per push attempt (no batching, unlike AccInstancePullLog).
+ * @class AccInstancePushLog
  */
-class AccPushLog {
+class AccInstancePushLog {
   /**
    * @type {object}
    */
@@ -88,4 +88,4 @@ class AccPushLog {
   }
 }
 
-export default AccPushLog;
+export default AccInstancePushLog;

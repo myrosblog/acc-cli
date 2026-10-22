@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import AccPullLog from "../../../src/helpers/AccPullLog.js";
+import AccInstancePullLog from "../../../src/helpers/AccInstancePullLog.js";
 
-describe("helpers/AccPullLog", () => {
+describe("helpers/AccInstancePullLog", () => {
   const schemaConfig = {
     schemaId: "nms:localOrgUnit",
     filename:
@@ -12,7 +12,7 @@ describe("helpers/AccPullLog", () => {
 
   describe("constructor", () => {
     it("should initialize defaults from the schemaConfig", () => {
-      const pullLog = new AccPullLog(schemaConfig);
+      const pullLog = new AccInstancePullLog(schemaConfig);
 
       expect(pullLog.schemaConfig).to.equal(schemaConfig);
       expect(pullLog.startTime).to.be.instanceOf(Date);
@@ -26,7 +26,7 @@ describe("helpers/AccPullLog", () => {
 
   describe("toLog", () => {
     it("should return a readable summary without mutating elements/errors", () => {
-      const pullLog = new AccPullLog(schemaConfig);
+      const pullLog = new AccInstancePullLog(schemaConfig);
       pullLog.endTime = new Date(pullLog.startTime.getTime() + 10);
       pullLog.queryDef = { schema: "nms:localOrgUnit", operation: "select" };
       pullLog.queryDefXml = DomUtil.fromJSON(
@@ -66,14 +66,14 @@ describe("helpers/AccPullLog", () => {
     });
 
     it("should render an error that is not an Error object as a string", () => {
-      const pullLog = new AccPullLog(schemaConfig);
+      const pullLog = new AccInstancePullLog(schemaConfig);
       pullLog.errors.push("plain failure", new Error("boom"));
 
       expect(pullLog.toLog().errors).to.deep.equal(["plain failure", "boom"]);
     });
 
     it("should omit endTime, durationMs and queryDefXml when not yet set", () => {
-      const pullLog = new AccPullLog(schemaConfig);
+      const pullLog = new AccInstancePullLog(schemaConfig);
 
       const summary = pullLog.toLog();
 
