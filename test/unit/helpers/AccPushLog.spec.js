@@ -1,14 +1,14 @@
 import { expect } from "chai";
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import CampaignPushLog from "../../../src/helpers/CampaignPushLog.js";
+import AccPushLog from "../../../src/helpers/AccPushLog.js";
 
-describe("helpers/CampaignPushLog", () => {
+describe("helpers/AccPushLog", () => {
   const schemaConfig = { schemaId: "nms:delivery" };
 
   describe("constructor", () => {
     it("should initialize defaults from the schemaConfig", () => {
-      const pushLog = new CampaignPushLog(schemaConfig);
+      const pushLog = new AccPushLog(schemaConfig);
 
       expect(pushLog.schemaConfig).to.equal(schemaConfig);
       expect(pushLog.startTime).to.be.instanceOf(Date);
@@ -24,7 +24,7 @@ describe("helpers/CampaignPushLog", () => {
 
   describe("toLog", () => {
     it("should return a readable summary of a successful push", () => {
-      const pushLog = new CampaignPushLog(schemaConfig);
+      const pushLog = new AccPushLog(schemaConfig);
       pushLog.filePath = "/project/deliveries/welcome.body.html";
       pushLog.xpath = "content/htmlSource";
       pushLog.operation = "update";
@@ -56,7 +56,7 @@ describe("helpers/CampaignPushLog", () => {
     });
 
     it("should include the error message and omit the payload when the push failed", () => {
-      const pushLog = new CampaignPushLog(schemaConfig);
+      const pushLog = new AccPushLog(schemaConfig);
       pushLog.filePath = "/project/deliveries/welcome.body.html";
       pushLog.error = new Error("SOAP call failed");
       pushLog.endTime = new Date(pushLog.startTime.getTime() + 5);
@@ -69,14 +69,14 @@ describe("helpers/CampaignPushLog", () => {
     });
 
     it("should render an error that is not an Error object as a string", () => {
-      const pushLog = new CampaignPushLog(schemaConfig);
+      const pushLog = new AccPushLog(schemaConfig);
       pushLog.error = "plain failure";
 
       expect(pushLog.toLog().error).to.equal("plain failure");
     });
 
     it("should omit endTime, durationMs and payloadXml when not yet set", () => {
-      const pushLog = new CampaignPushLog(schemaConfig);
+      const pushLog = new AccPushLog(schemaConfig);
 
       const summary = pushLog.toLog();
 

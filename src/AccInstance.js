@@ -27,7 +27,7 @@ const {
 } = codes;
 // acc
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
-import CampaignPullLog from "./helpers/CampaignPullLog.js";
+import AccPullLog from "./helpers/AccPullLog.js";
 import { withSpinner } from "./helpers/withSpinner.js";
 import { extractSoapReturnValues } from "./helpers/soapResponse.js";
 import {
@@ -47,10 +47,10 @@ import {
  *     - for each XML record:
  *       - parse()
  *
- * @class CampaignInstance
+ * @class AccInstance
  * @classdesc Class for managing data operations with ACC instances
  */
-class CampaignInstance {
+class AccInstance {
   /**
    * Default SQL LIMIT to fetch schemas (querydef lineCount)
    * @type {number}
@@ -59,7 +59,7 @@ class CampaignInstance {
 
   /**
    * Logs of downloaded data
-   * @type {Array<CampaignPullLog>}
+   * @type {Array<AccPullLog>}
    */
   pullLogs = [];
 
@@ -74,15 +74,15 @@ class CampaignInstance {
   createSpinner;
 
   /**
-   * Creates a new CampaignInstance.
+   * Creates a new AccInstance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
-   * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
+   * @param {AccConfig} accConfig - Configuration object defining schemas and download options
    * @param {object} cliOptions - Command-line options including path, and metadata filters
    * @param {Function} createSpinner - Ora spinner instance for displaying progress
    * @example
-   * const instance = new CampaignInstance(logger, client, accConfig, cliOptions, createSpinner);
+   * const instance = new AccInstance(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -161,7 +161,7 @@ class CampaignInstance {
       // pagination loop, 1 per batch
       do {
         spinner.text = `${filename}: ${chalk.bgCyan(schemaId)} parsed ${recordsParsedTotal}. Downloading next ${lineCount}`;
-        const pullLog = new CampaignPullLog(schemaConfig);
+        const pullLog = new AccPullLog(schemaConfig);
         this.pullLogs.push(pullLog);
         pullLogsForThisSchema.push(pullLog);
         this.logger.verbose(
@@ -195,7 +195,7 @@ class CampaignInstance {
         }
         // debug pullLog
         this.logger.debug(
-          `CampaignPullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
+          `AccPullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
         );
         this.logger.debug(pullLog.toLog());
       } while (recordsLengthOfThisBatch >= lineCount);
@@ -790,4 +790,4 @@ class CampaignInstance {
   }
 }
 
-export default CampaignInstance;
+export default AccInstance;

@@ -3,8 +3,8 @@ import { Flags } from "@oclif/core";
 import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
-import CampaignInstance from "./CampaignInstance.js";
-import { CONFIG_FILENAME } from "./CampaignConfig.js";
+import AccInstance from "./AccInstance.js";
+import { CONFIG_FILENAME } from "./AccConfig.js";
 import { codes } from "./helpers/AccErrors.js";
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 
@@ -12,7 +12,7 @@ const { INSTANCE_ALIAS_UNRESOLVED } = codes;
  * Base command for `acc instance ...` subcommands that talk to an instance.
  *
  * Centralizes the shared flags (alias/path/config) via oclif `baseFlags` and
- * the login + CampaignInstance bootstrap used by pull/check/exec.
+ * the login + AccInstance bootstrap used by pull/check/exec.
  *
  * @class InstanceCommand
  */
@@ -38,11 +38,11 @@ export default class InstanceCommand extends BaseCommand {
   };
 
   /**
-   * Logs in to the aliased instance and builds a CampaignInstance.
+   * Logs in to the aliased instance and builds a AccInstance.
    * @param {object} flags - parsed CLI flags (alias, config, path, ...)
    * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
    *   over the config ones (e.g. a raised `timeout` for heavy calls)
-   * @returns {CampaignInstance} a new CampaignInstance, ready to call its methods (pull/check/exec)
+   * @returns {AccInstance} a new AccInstance, ready to call its methods (pull/check/exec)
    */
   async getInstance(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();
@@ -63,12 +63,8 @@ export default class InstanceCommand extends BaseCommand {
       ...config.accJsSdkOptions,
       ...sdkOptionsOverride,
     });
-    return new CampaignInstance(
-      this.logger,
-      client,
-      config,
-      resolvedFlags,
-      (text) => this.spinner(text),
+    return new AccInstance(this.logger, client, config, resolvedFlags, (text) =>
+      this.spinner(text),
     );
   }
 }

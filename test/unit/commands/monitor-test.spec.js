@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import MonitorTest from "../../../src/commands/monitor/test.js";
-import CampaignMonitor from "../../../src/CampaignMonitor.js";
+import AccMonitor from "../../../src/AccMonitor.js";
 
 describe("MonitorTest", () => {
   afterEach(() => sinon.restore());
@@ -23,7 +23,7 @@ describe("MonitorTest", () => {
   it("should run and print the raw xml", async () => {
     const logStub = sinon.stub(MonitorTest.prototype, "log");
     const testStub = sinon
-      .stub(CampaignMonitor.prototype, "test")
+      .stub(AccMonitor.prototype, "test")
       .resolves({ xml: '<redir status="OK"/>', status: "OK" });
     const result = await MonitorTest.run([
       "--host",
@@ -37,7 +37,7 @@ describe("MonitorTest", () => {
   it("should fail with non-zero exit when status is not OK", async () => {
     sinon.stub(MonitorTest.prototype, "log");
     sinon
-      .stub(CampaignMonitor.prototype, "test")
+      .stub(AccMonitor.prototype, "test")
       .resolves({ xml: '<redir status="KO"/>', status: "KO" });
     await expect(MonitorTest.run(["--host", "https://acme.example.com"])).to.be
       .rejected;

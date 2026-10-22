@@ -21,7 +21,7 @@ const {
  */
 export const CONFIG_FILENAME = "acc.config.json";
 
-class CampaignConfig {
+class AccConfig {
   /**
    * @type {Array<object>}
    */
@@ -91,7 +91,7 @@ class CampaignConfig {
   ajvValidateQueryDef;
 
   /**
-   * Creates a new CampaignConfig instance.
+   * Creates a new AccConfig instance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {string} defaultConfigPath - Default path to the acc.config.json file
@@ -247,4 +247,4 @@ class CampaignConfig {
   }
 }
 
-export default CampaignConfig;
+export default AccConfig;

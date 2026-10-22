@@ -3,12 +3,12 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 
 /**
- * Log data for a single entity pushed by CampaignWatch._pushEntityToServer,
+ * Log data for a single entity pushed by AccWatch._pushEntityToServer,
  * for troubleshooting and auditing.
- * 1 instance per push attempt (no batching, unlike CampaignPullLog).
- * @class CampaignPushLog
+ * 1 instance per push attempt (no batching, unlike AccPullLog).
+ * @class AccPushLog
  */
-class CampaignPushLog {
+class AccPushLog {
   /**
    * @type {object}
    */
@@ -88,4 +88,4 @@ class CampaignPushLog {
   }
 }
 
-export default CampaignPushLog;
+export default AccPushLog;

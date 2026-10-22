@@ -3,11 +3,11 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 
 /**
- * Log data retrieved by CampaignInstance.pull() for troubleshooting and auditing
- * 1 instance per batch, i.e. 15 records with lineCount=10 yields 2 CampaignPullLogs
- * @class CampaignPullLog
+ * Log data retrieved by AccInstance.pull() for troubleshooting and auditing
+ * 1 instance per batch, i.e. 15 records with lineCount=10 yields 2 AccPullLogs
+ * @class AccPullLog
  */
-class CampaignPullLog {
+class AccPullLog {
   /**
    * @type {object}
    */
@@ -91,4 +91,4 @@ class CampaignPullLog {
   }
 }
 
-export default CampaignPullLog;
+export default AccPullLog;

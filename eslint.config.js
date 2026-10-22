@@ -65,9 +65,9 @@ export default [
         "warn",
         {
           definedTypes: [
+            "AccAuth",
+            "AccConfig",
             "AioLogger",
-            "CampaignAuth",
-            "CampaignConfig",
             "CampaignException",
             "Client",
             "ConnectionParameters",
@@ -82,7 +82,7 @@ export default [
       ],
       // {Function} describes the injected factories (makeCache, createSpinner),
       // which are the dependency injection convention of AGENTS.md. The {*} of
-      // CampaignAuth._stage returns whatever the wrapped stage returns, so a
+      // AccAuth._stage returns whatever the wrapped stage returns, so a
       // narrower type would be wrong.
       "jsdoc/reject-any-type": "off",
       "jsdoc/reject-function-type": "off",

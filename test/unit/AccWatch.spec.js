@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // acc
-import CampaignWatch from "../../src/CampaignWatch.js";
+import AccWatch from "../../src/AccWatch.js";
 import { getDecomposedSchemas } from "../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
@@ -75,7 +75,7 @@ const javascriptSchemaXml = `<schema namespace="xtk" name="javascript">
   </element>
 </schema>`;
 
-describe("CampaignWatch", () => {
+describe("AccWatch", () => {
   let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
 
   beforeEach(() => {
@@ -101,7 +101,7 @@ describe("CampaignWatch", () => {
     };
 
     // create watcher instance
-    watcher = new CampaignWatch(
+    watcher = new AccWatch(
       mockLogger,
       mockClient,
       testConfig,
@@ -123,7 +123,7 @@ describe("CampaignWatch", () => {
     });
 
     it("should use process.cwd() when no path provided", () => {
-      const watcherNoPath = new CampaignWatch(
+      const watcherNoPath = new AccWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -196,7 +196,7 @@ describe("CampaignWatch", () => {
           },
         ],
       };
-      const ambiguousWatcher = new CampaignWatch(
+      const ambiguousWatcher = new AccWatch(
         mockLogger,
         mockClient,
         ambiguousConfig,
@@ -270,7 +270,7 @@ describe("CampaignWatch", () => {
     });
 
     it("should throw if no decomposed schemas found", async () => {
-      const watcherNoDecompose = new CampaignWatch(
+      const watcherNoDecompose = new AccWatch(
         mockLogger,
         mockClient,
         testConfigNoDecompose,
@@ -499,7 +499,7 @@ describe("CampaignWatch", () => {
 
       // Create watcher rooted on the temp dir
       cliOptions = { path: tempDir };
-      watcher = new CampaignWatch(
+      watcher = new AccWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -533,7 +533,7 @@ describe("CampaignWatch", () => {
       expect(xml).to.include('id="456"');
       expect(xml).to.not.include("namespace=");
 
-      // The push is journaled for auditing, alongside CampaignPullLog for pull
+      // The push is journaled for auditing, alongside AccPullLog for pull
       expect(mockLogger.debug).to.have.been.calledOnce;
       const pushLogSummary = mockLogger.debug.firstCall.args[0];
       expect(pushLogSummary.schemaId).to.equal("xtk:javascript");

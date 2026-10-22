@@ -43,9 +43,9 @@ const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
   "nms/deliveryMapping/recipientAndSubscribe.xml",
 );
 // acc
-import CampaignInstance from "../../src/CampaignInstance.js";
+import AccInstance from "../../src/AccInstance.js";
 
-describe("CampaignInstance", () => {
+describe("AccInstance", () => {
   let mockClient,
     mockLogger,
     mockSpinner,
@@ -79,7 +79,7 @@ describe("CampaignInstance", () => {
 
   describe("Private methods", () => {
     it("_getQueryDefForSchema: adds where.condition for nms:deliveryMapping", () => {
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -105,7 +105,7 @@ describe("CampaignInstance", () => {
     });
 
     it("_getQueryDefForSchema: adds where.condition for xtk:folder", () => {
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -142,7 +142,7 @@ describe("CampaignInstance", () => {
     });
 
     it("_getQueryDefForSchema: returns base unchanged when schema has no queryDef", () => {
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -169,7 +169,7 @@ describe("CampaignInstance", () => {
     it("should check with basic config (2 nms:deliveryMapping)", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
       // init
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -210,7 +210,7 @@ describe("CampaignInstance", () => {
       const config = filterSchemas(configDefaultFull, "xtk:olapCube");
       config.schemas[0].queryDef.lineCount = 2; // force lineCount to 2 to test batching on 5 elements
       // init
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -287,7 +287,7 @@ describe("CampaignInstance", () => {
       const spinner = makeSpinner();
       const spinnerWarnSpy = sinon.spy(spinner, "warn");
       const spinnerSucceedSpy = sinon.spy(spinner, "succeed");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -339,7 +339,7 @@ describe("CampaignInstance", () => {
       };
       const spinner = makeSpinner();
       const spinnerWarnSpy = sinon.spy(spinner, "warn");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -366,7 +366,7 @@ describe("CampaignInstance", () => {
 
     it("should record error in pullLog when adapterCreateAndExecuteQuery rejects", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -394,7 +394,7 @@ describe("CampaignInstance", () => {
 
     it("should record error in pullLog when adapterCreateAndExecuteQuery rejects", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -433,7 +433,7 @@ describe("CampaignInstance", () => {
       );
       if (olapCubeConfig.queryDef) olapCubeConfig.queryDef.lineCount = 2;
 
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -470,7 +470,7 @@ describe("CampaignInstance", () => {
         "nms:deliveryMapping",
         "xtk:olapCube",
       );
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -505,13 +505,13 @@ describe("CampaignInstance", () => {
           "nms:deliveryMapping",
           "xtk:olapCube",
         ),
-        // as built by CampaignConfig.init(), at the same index as schemas
+        // as built by AccConfig.init(), at the same index as schemas
         queryDefWarnings: [
           ["⚠️ deliveryMapping warning"],
           ["⚠️ olapCube warning"],
         ],
       };
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -532,7 +532,7 @@ describe("CampaignInstance", () => {
 
     it("should skip all schemas when --metadata lists an unknown schemaId", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(mockLogger, mockClient, config, {
+      instance = new AccInstance(mockLogger, mockClient, config, {
         ...optionsFull,
         metadata: "xtk:unknown",
       });
@@ -550,7 +550,7 @@ describe("CampaignInstance", () => {
     it("should stop after first batch when it returns fewer than lineCount records", async () => {
       const config = filterSchemas(configDefaultFull, "xtk:olapCube");
       config.schemas[0].queryDef.lineCount = 10;
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -574,7 +574,7 @@ describe("CampaignInstance", () => {
     it("should not journal the trailing empty batch when the total is an exact multiple of lineCount", async () => {
       const config = filterSchemas(configDefaultFull, "xtk:olapCube");
       config.schemas[0].queryDef.lineCount = 2;
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -604,7 +604,7 @@ describe("CampaignInstance", () => {
 
     it("should isolate parse errors: one failing element does not block others", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -633,7 +633,7 @@ describe("CampaignInstance", () => {
 
     it("should reset pullLogs on each pull() call", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -663,7 +663,7 @@ describe("CampaignInstance", () => {
   describe("pull", () => {
     it("should not throw when isPreview=false (write mode)", async () => {
       const config = filterSchemas(configDefaultFull, "nms:deliveryMapping");
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         config,
@@ -691,7 +691,7 @@ describe("CampaignInstance", () => {
   describe("parse", () => {
     describe("should parse with simple config", () => {
       it("xtk:sql", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -731,7 +731,7 @@ describe("CampaignInstance", () => {
       });
 
       it("nms:delivery", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -766,7 +766,7 @@ describe("CampaignInstance", () => {
       });
 
       it("xtk:srcSchema", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -794,7 +794,7 @@ describe("CampaignInstance", () => {
 
     describe("should parse with full config", () => {
       it("xtk:sql (meta)", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -833,7 +833,7 @@ describe("CampaignInstance", () => {
       });
 
       it("xtk:workflow (element with child elements)", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -872,7 +872,7 @@ describe("CampaignInstance", () => {
       });
 
       it("nms:delivery (meta)", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -923,7 +923,7 @@ describe("CampaignInstance", () => {
       });
 
       it("nms:includeView (meta)", async () => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -974,7 +974,7 @@ describe("CampaignInstance", () => {
     });
 
     it("should empty textContent when excludeXPath targets an element node", () => {
-      instance = new CampaignInstance(
+      instance = new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -1001,7 +1001,7 @@ describe("CampaignInstance", () => {
 
     describe("excludeXPaths", () => {
       const parseExcluding = (xml, excludeXPaths) => {
-        instance = new CampaignInstance(
+        instance = new AccInstance(
           mockLogger,
           mockClient,
           configDefaultFull,
@@ -1054,7 +1054,7 @@ describe("CampaignInstance", () => {
 
   describe("exec", () => {
     const newInstance = () =>
-      new CampaignInstance(
+      new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -1095,7 +1095,7 @@ describe("CampaignInstance", () => {
       await instance.exec({ file: __filename });
 
       const [name, script] = adapterStub.firstCall.args;
-      expect(name).to.equal("CampaignInstance.spec.js");
+      expect(name).to.equal("AccInstance.spec.js");
       expect(script).to.contain("describe");
     });
 
@@ -1154,7 +1154,7 @@ describe("CampaignInstance", () => {
         ),
       );
     const newInstance = () =>
-      new CampaignInstance(
+      new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -1270,7 +1270,7 @@ describe("CampaignInstance", () => {
 
   describe("soap", () => {
     const newInstance = () =>
-      new CampaignInstance(
+      new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,
@@ -1497,7 +1497,7 @@ describe("CampaignInstance", () => {
 
   describe("info", () => {
     const newInstance = () =>
-      new CampaignInstance(
+      new AccInstance(
         mockLogger,
         mockClient,
         configDefaultFull,

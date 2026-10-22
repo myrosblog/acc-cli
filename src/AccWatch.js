@@ -6,7 +6,7 @@ import chalk from "chalk";
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
-import CampaignPushLog from "./helpers/CampaignPushLog.js";
+import AccPushLog from "./helpers/AccPushLog.js";
 import {
   buildWatchTargets,
   findMatchingTargets,
@@ -32,9 +32,9 @@ const {
  * At start: getDecomposedSchemas > _buildWatchList
  * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
  *
- * @class CampaignWatch
+ * @class AccWatch
  */
-class CampaignWatch {
+class AccWatch {
   /**
    * Default debounce time in milliseconds
    * @type {number}
@@ -52,7 +52,7 @@ class CampaignWatch {
   client;
 
   /**
-   * @type {CampaignConfig}
+   * @type {AccConfig}
    */
   accConfig;
 
@@ -107,15 +107,15 @@ class CampaignWatch {
   isRunning = false;
 
   /**
-   * Creates a new CampaignWatch.
+   * Creates a new AccWatch.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated SDK client
-   * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
+   * @param {AccConfig} accConfig - Configuration object defining schemas and download options
    * @param {object} cliOptions - Command-line options including path
    * @param {Function} createSpinner - Ora spinner instance for displaying progress
    * @example
-   * const watcher = new CampaignWatch(logger, client, accConfig, cliOptions, createSpinner);
+   * const watcher = new AccWatch(logger, client, accConfig, cliOptions, createSpinner);
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -489,7 +489,7 @@ class CampaignWatch {
     filePath,
   ) {
     const { schemaId } = schemaConfig;
-    const pushLog = new CampaignPushLog(schemaConfig);
+    const pushLog = new AccPushLog(schemaConfig);
     pushLog.filePath = filePath;
     pushLog.xpath = xpath;
 
@@ -513,7 +513,7 @@ class CampaignWatch {
       this.spinnerKeys = formatKeyValues(keyValues);
 
       this.logger.verbose(
-        `CampaignPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
+        `AccPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
       );
 
       // Only text values (e.g. delivery html source) can be pushed: an element
@@ -600,4 +600,4 @@ class CampaignWatch {
   }
 }
 
-export default CampaignWatch;
+export default AccWatch;

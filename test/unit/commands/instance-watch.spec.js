@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignWatch from "../../../src/CampaignWatch.js";
+import AccAuth from "../../../src/AccAuth.js";
+import AccConfig from "../../../src/AccConfig.js";
+import AccWatch from "../../../src/AccWatch.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
 import { makeLogger } from "../../helpers.js";
 
@@ -39,11 +39,11 @@ describe("InstanceWatch", () => {
     const argv = ["--alias", "test"];
 
     // Mock dependencies
-    sinon.stub(CampaignAuth.prototype, "login").resolves({});
+    sinon.stub(AccAuth.prototype, "login").resolves({});
 
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
 
-    // Mock CampaignConfig to return a config with schemas
+    // Mock AccConfig to return a config with schemas
     const configInstance = {
       schemas: [
         {
@@ -79,8 +79,8 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock CampaignWatch
-    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
+    // Mock AccWatch
+    sinon.stub(AccWatch.prototype, "startWatching").resolves();
 
     // Mock getInstance to return instance with client and config
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
@@ -92,15 +92,15 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(CampaignWatch.prototype.startWatching);
+    sinon.assert.calledOnce(AccWatch.prototype.startWatching);
   });
 
   it("should run with custom debounce value", async () => {
     const argv = ["--alias", "test", "--debounce", "500"];
 
-    sinon.stub(CampaignAuth.prototype, "login").resolves({});
+    sinon.stub(AccAuth.prototype, "login").resolves({});
 
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
 
     const configInstance = {
       schemas: [
@@ -128,7 +128,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -138,18 +138,18 @@ describe("InstanceWatch", () => {
     const result = await InstanceWatch.run(argv);
 
     expect(result).to.be.undefined;
-    sinon.assert.calledOnce(CampaignWatch.prototype.startWatching);
+    sinon.assert.calledOnce(AccWatch.prototype.startWatching);
 
     // Check that custom debounce was passed
-    sinon.assert.calledWith(CampaignWatch.prototype.startWatching, 500);
+    sinon.assert.calledWith(AccWatch.prototype.startWatching, 500);
   });
 
   it("should exit with error when startWatching throws", async () => {
     const argv = ["--alias", "test"];
 
-    sinon.stub(CampaignAuth.prototype, "login").resolves({});
+    sinon.stub(AccAuth.prototype, "login").resolves({});
 
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
 
     const configInstance = {
       schemas: [], // No schemas with decompose
@@ -168,9 +168,9 @@ describe("InstanceWatch", () => {
       },
     };
 
-    // Mock CampaignWatch to throw error
+    // Mock AccWatch to throw error
     const error = new Error("No schemas with 'decompose' configuration found");
-    sinon.stub(CampaignWatch.prototype, "startWatching").rejects(error);
+    sinon.stub(AccWatch.prototype, "startWatching").rejects(error);
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -198,9 +198,9 @@ describe("InstanceWatch", () => {
   it("should handle SIGINT gracefully", async () => {
     const argv = ["--alias", "test"];
 
-    sinon.stub(CampaignAuth.prototype, "login").resolves({});
+    sinon.stub(AccAuth.prototype, "login").resolves({});
 
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
 
     const configInstance = {
       schemas: [
@@ -228,7 +228,7 @@ describe("InstanceWatch", () => {
       },
     };
 
-    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccWatch.prototype, "startWatching").resolves();
 
     sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
       client: mockClient,
@@ -250,9 +250,9 @@ describe("InstanceWatch", () => {
       client: {},
       accConfig: {},
     });
-    sinon.stub(CampaignWatch.prototype, "startWatching").resolves();
+    sinon.stub(AccWatch.prototype, "startWatching").resolves();
     const stopWatching = sinon
-      .stub(CampaignWatch.prototype, "stopWatching")
+      .stub(AccWatch.prototype, "stopWatching")
       .resolves();
     // Capture the handlers instead of registering them on the test process.
     const onStub = sinon.stub(process, "on");

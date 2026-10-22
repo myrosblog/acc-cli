@@ -46,11 +46,11 @@ import {
  * - IMS Access token (JWT, starts with 'eyJ...')
  * - Operator (User, password)
  *
- * @class CampaignAuth
+ * @class AccAuth
  * @classdesc Main class for interacting with ACC instances
  * @see Credentials in node_modules/@adobe/acc-js-sdk/src/client.js
  */
-class CampaignAuth {
+class AccAuth {
   /**
    * @type {ConnectionParameters}
    */
@@ -67,7 +67,7 @@ class CampaignAuth {
   config;
 
   /**
-   * Creates a new CampaignAuth instance.
+   * Creates a new AccAuth instance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {object} sdk - Raw ACC JS SDK instance
@@ -79,7 +79,7 @@ class CampaignAuth {
    *   each login stage. Defaults to a no-op for callers rendering no progress.
    * @throws {AUTH_CONSTR_SDK_MISSING} Throws if SDK or auth parameters are missing
    * @example
-   * const auth = new CampaignAuth(sdk, auth);
+   * const auth = new AccAuth(sdk, auth);
    */
   constructor(logger, sdk, config, prompt, makeCache, imsAuth, createSpinner) {
     if (!sdk) {
@@ -570,4 +570,4 @@ class CampaignAuth {
   }
 }
 
-export default CampaignAuth;
+export default AccAuth;

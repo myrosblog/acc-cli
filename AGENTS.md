@@ -77,7 +77,7 @@ acc monitor # handles monitoring: test
 
 - `commands/{auth,instance,monitor}/*.js`: oclif command classes (one file per command). Thin: parse flags, then delegate.
 - `BaseCommand.js`, `InstanceCommand.js`: shared oclif base classes.
-- `Campaign{Auth,Config,Instance,Monitor}.js`: service classes holding the business logic. Dependencies are injected (see Code guidelines).
+- `Acc{Auth,Config,Instance,Monitor}.js`: service classes holding the business logic. Dependencies are injected (see Code guidelines).
 - `adapters/`: wrappers around external concerns (prompt, cache, spinner, ...).
 - `helpers/`, `validators/`, `templates/`: pure utilities, ajv validators, and file templates.
 - `index.js`: package entry point (`main`).

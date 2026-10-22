@@ -9,7 +9,7 @@ import tmp from "tmp";
 // sdk
 import { makeLogger } from "../helpers.js";
 // acc
-import CampaignConfig from "../../src/CampaignConfig.js";
+import AccConfig from "../../src/AccConfig.js";
 import { codes } from "../../src/helpers/AccErrors.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
@@ -22,7 +22,7 @@ const templatePath = path.join(
   "../../src/templates/acc.config.json",
 );
 
-describe("CampaignAuth", function () {
+describe("AccAuth", function () {
   let tmpConfigPath, logger;
 
   beforeEach(() => {
@@ -37,16 +37,16 @@ describe("CampaignAuth", function () {
     }
   });
 
-  describe("CampaignConfig", () => {
+  describe("AccConfig", () => {
     describe("constructor", () => {
       it("should throw on empty config path", () => {
-        expect(() => new CampaignConfig(logger)).to.throw(
+        expect(() => new AccConfig(logger)).to.throw(
           CONFIG_CONSTR_DEFAULT_PATH_MISSING,
         );
-        expect(() => new CampaignConfig(logger, null)).to.throw(
+        expect(() => new AccConfig(logger, null)).to.throw(
           CONFIG_CONSTR_DEFAULT_PATH_MISSING,
         );
-        expect(() => new CampaignConfig(logger, {})).to.throw(
+        expect(() => new AccConfig(logger, {})).to.throw(
           CONFIG_CONSTR_DEFAULT_PATH_MISSING,
         );
       });
@@ -54,7 +54,7 @@ describe("CampaignAuth", function () {
 
     describe("init", () => {
       it("should throw on empty config path", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         expect(() => config.init()).to.throw(CONFIG_INIT_CONFIG_PATH_MISSING);
         expect(() => config.init(null)).to.throw(
           CONFIG_INIT_CONFIG_PATH_MISSING,
@@ -63,7 +63,7 @@ describe("CampaignAuth", function () {
       });
 
       it("should create template JSON config and validate it", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         const fileExists = fs.existsSync(tmpConfigPath);
@@ -84,7 +84,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.schemas).to.deep.equal(configJson.schemas);
@@ -108,7 +108,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.schemas).to.deep.equal(configJson.schemas);
@@ -140,7 +140,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.queryDefWarnings).to.deep.equal([[]]);
@@ -161,7 +161,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         const [warnings] = config.queryDefWarnings;
@@ -174,7 +174,7 @@ describe("CampaignAuth", function () {
       });
 
       it("should not warn on the template queryDefs", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath); // creates the file from the template
 
         expect(config.queryDefWarnings.flat()).to.deep.equal([]);
@@ -187,7 +187,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.alias).to.equal("prod");
@@ -199,14 +199,14 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.alias).to.be.undefined;
       });
 
       it("should generate the config as the template, byte for byte, without alias", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(fs.readFileSync(tmpConfigPath, "utf8")).to.equal(
@@ -215,14 +215,14 @@ describe("CampaignAuth", function () {
       });
 
       it("should leave the alias placeholder commented out without alias", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.alias).to.be.undefined;
       });
 
       it("should seed the alias by uncommenting the template placeholder", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath, "prod");
 
         expect(config.alias).to.equal("prod");
@@ -240,7 +240,7 @@ describe("CampaignAuth", function () {
       });
 
       it("should escape a seeded alias containing a quote", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath, 'my"alias');
 
         expect(config.alias).to.equal('my"alias');
@@ -250,7 +250,7 @@ describe("CampaignAuth", function () {
         const content = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" }]}`;
         fs.outputFileSync(tmpConfigPath, content);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath, "prod");
 
         expect(config.alias).to.be.undefined;
@@ -258,7 +258,7 @@ describe("CampaignAuth", function () {
       });
 
       it("should throw CONFIG_PARSE_ERROR when config file doesn't exist", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init("fakepath");
           throw new Error("should have failed");
@@ -280,7 +280,7 @@ describe("CampaignAuth", function () {
 }`;
         fs.outputFileSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.alias).to.equal("prod");
@@ -296,7 +296,7 @@ describe("CampaignAuth", function () {
   ]
 }`;
         fs.outputFileSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -309,7 +309,7 @@ describe("CampaignAuth", function () {
       it("should throw CONFIG_PARSE_ERROR when config file has unclosed array", () => {
         const configJson = `{"schemas": [{ "schemaId": "nms:delivery", "filename": "{@name}.meta.xml" }}`;
         fs.outputFileSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -332,7 +332,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.accJsSdkOptions).to.deep.equal(configJson["acc-js-sdk"]);
@@ -344,7 +344,7 @@ describe("CampaignAuth", function () {
           "acc-js-sdk": { timeout: "nope" },
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -366,7 +366,7 @@ describe("CampaignAuth", function () {
             "acc-js-sdk": { [forbidden]: {} },
           };
           fs.writeJsonSync(tmpConfigPath, configJson);
-          const config = new CampaignConfig(logger, tmpConfigPath);
+          const config = new AccConfig(logger, tmpConfigPath);
           try {
             config.init(tmpConfigPath);
             throw new Error("should have failed");
@@ -384,7 +384,7 @@ describe("CampaignAuth", function () {
           ],
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -404,7 +404,7 @@ describe("CampaignAuth", function () {
           },
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -421,7 +421,7 @@ describe("CampaignAuth", function () {
           ],
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -440,7 +440,7 @@ describe("CampaignAuth", function () {
           ],
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         try {
           config.init(tmpConfigPath);
           throw new Error("should have failed");
@@ -459,7 +459,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.accJsSdkOptions).to.deep.equal({ traceAPICalls: true });
@@ -472,7 +472,7 @@ describe("CampaignAuth", function () {
         };
         fs.writeJsonSync(tmpConfigPath, configJson);
 
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         config.init(tmpConfigPath);
 
         expect(config.accJsSdkOptions).to.deep.equal({});
@@ -481,7 +481,7 @@ describe("CampaignAuth", function () {
 
     describe("template", () => {
       it("should return the template config content", () => {
-        const config = new CampaignConfig(logger, tmpConfigPath);
+        const config = new AccConfig(logger, tmpConfigPath);
         const content = config.template();
         expect(content).to.be.a("string");
         expect(content).to.include("schemas");

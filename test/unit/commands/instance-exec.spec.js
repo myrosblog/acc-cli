@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import AccAuth from "../../../src/AccAuth.js";
+import AccConfig from "../../../src/AccConfig.js";
+import AccInstance from "../../../src/AccInstance.js";
 import InstanceExec from "../../../src/commands/instance/exec.js";
 
 describe("InstanceExec", () => {
@@ -25,14 +25,10 @@ describe("InstanceExec", () => {
 
   it("should run and print the result on stdout", async () => {
     const argv = ["--alias", "test", "--script", "logInfo('hi')"];
-    const authLoginStub = sinon
-      .stub(CampaignAuth.prototype, "login")
-      .resolves();
-    const configInitStub = sinon
-      .stub(CampaignConfig.prototype, "init")
-      .resolves();
+    const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
+    const configInitStub = sinon.stub(AccConfig.prototype, "init").resolves();
     const instanceExecStub = sinon
-      .stub(CampaignInstance.prototype, "exec")
+      .stub(AccInstance.prototype, "exec")
       .resolves("<context result='ok'/>");
     // this.log is oclif's stdout writer: the result must go there, raw.
     const logStub = sinon.stub(InstanceExec.prototype, "log");
@@ -51,7 +47,7 @@ describe("InstanceExec", () => {
     afterEach(() => sinon.restore());
 
     it("rejects with neither --file nor --script, without logging in", async () => {
-      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const authLoginStub = sinon.stub(AccAuth.prototype, "login");
       const argv = ["--alias", "test"];
 
       await expect(InstanceExec.run(argv)).to.be.rejectedWith(
@@ -61,7 +57,7 @@ describe("InstanceExec", () => {
     });
 
     it("rejects with both --file and --script, without logging in", async () => {
-      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const authLoginStub = sinon.stub(AccAuth.prototype, "login");
       const argv = [
         "--alias",
         "test",

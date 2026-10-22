@@ -10,17 +10,17 @@ const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
 /**
  * Monitoring/health-check operations for ACC instances.
  *
- * Unlike CampaignAuth/CampaignInstance, monitoring probes are non-mutating and
+ * Unlike AccAuth/AccInstance, monitoring probes are non-mutating and
  * may run without credentials: `test()` hits the anonymous /r/test endpoint on
  * the Apache front server and requires no logon.
  *
- * @class CampaignMonitor
+ * @class AccMonitor
  */
-class CampaignMonitor {
+class AccMonitor {
   /**
    * @param {AioLogger} logger - for logging progress and errors
    * @param {object} sdk - raw acc-js-sdk instance
-   * @param {CampaignAuth} auth - used to resolve a host from a stored alias
+   * @param {AccAuth} auth - used to resolve a host from a stored alias
    */
   constructor(logger, sdk, auth) {
     this.logger = logger;
@@ -76,4 +76,4 @@ class CampaignMonitor {
   }
 }
 
-export default CampaignMonitor;
+export default AccMonitor;

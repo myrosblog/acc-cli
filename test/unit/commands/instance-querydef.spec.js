@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { ux } from "@oclif/core";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import AccAuth from "../../../src/AccAuth.js";
+import AccConfig from "../../../src/AccConfig.js";
+import AccInstance from "../../../src/AccInstance.js";
 import InstanceQueryDef from "../../../src/commands/instance/queryDef.js";
 
 describe("InstanceQueryDef", () => {
@@ -33,14 +33,14 @@ describe("InstanceQueryDef", () => {
 
   // Keeps getInstance() off the network/disk: stubs login + config.init.
   function stubBootstrap() {
-    sinon.stub(CampaignAuth.prototype, "login").resolves();
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccAuth.prototype, "login").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
   }
 
   it("should print the raw XML result on stdout in human mode", async () => {
     stubBootstrap();
     const queryDefStub = sinon
-      .stub(CampaignInstance.prototype, "queryDef")
+      .stub(AccInstance.prototype, "queryDef")
       .resolves(
         "<recipient-collection><recipient id='1'/></recipient-collection>",
       );
@@ -67,7 +67,7 @@ describe("InstanceQueryDef", () => {
     stubBootstrap();
     const jsonResult = { recipient: [{ id: "1" }] };
     const queryDefStub = sinon
-      .stub(CampaignInstance.prototype, "queryDef")
+      .stub(AccInstance.prototype, "queryDef")
       .resolves(jsonResult);
     const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceQueryDef.prototype, "logJson"); // oclif prints it
@@ -85,7 +85,7 @@ describe("InstanceQueryDef", () => {
     // Flag validation must reject before login: a missing/conflicting flag
     // is a pure input mistake and shouldn't cost a network round trip.
     it("rejects with neither --query nor --file, without logging in", async () => {
-      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const authLoginStub = sinon.stub(AccAuth.prototype, "login");
       const argv = ["--alias", "test"];
 
       await expect(InstanceQueryDef.run(argv)).to.be.rejectedWith(
@@ -95,7 +95,7 @@ describe("InstanceQueryDef", () => {
     });
 
     it("rejects with both --query and --file, without logging in", async () => {
-      const authLoginStub = sinon.stub(CampaignAuth.prototype, "login");
+      const authLoginStub = sinon.stub(AccAuth.prototype, "login");
       const argv = [
         "--alias",
         "test",
