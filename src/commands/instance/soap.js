@@ -14,15 +14,32 @@ export default class InstanceSoap extends InstanceCommand {
     {
       command:
         "<%= config.bin %> instance soap --schema xtk:session --method GetServerTime",
-      description: `Get the server time`,
+      description: `Get the server time (xtk:session#GetServerTime)`,
     },
     {
-      command: `<%= config.bin %> instance soap --schema nms:delivery --method HtmlToText --args '["<p>Hello</p>"]'`,
-      description: `Convert HTML to text-only with nms:delivery#HtmlToText method`,
+      command:
+        "<%= config.bin %> instance soap -s xtk:builder -m GetDefaultNamespace",
+      description: `Get the default namespace (xtk:builder#GetDefaultNamespace)`,
+    },
+    {
+      command: `<%= config.bin %> instance soap -s xtk:session -m GetDefaultEntity --args '["nms:recipient"]'`,
+      description: `Get the default entity for the nms:recipient schema (xtk:session#GetDefaultEntity)`,
+    },
+    {
+      command: `<%= config.bin %> instance soap -s xtk:session -m GetNewIds --args '[5]'`,
+      description: `Get 5 new IDs (xtk:session#GetNewIds)`,
+    },
+    {
+      command: `<%= config.bin %> instance soap -s xtk:session -m GetOption --args '["Nms_DefaultRcpSchema"]'`,
+      description: `Get an option, such as Nms_DefaultRcpSchema (xtk:session#GetOption)`,
+    },
+    {
+      command: `<%= config.bin %> instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'`,
+      description: `Convert HTML to text-only (nms:delivery#HtmlToText)`,
     },
     {
       command: `<%= config.bin %> instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, {"content": "html", "filter": "@id = 1000"}]' --json`,
-      description: `Preview the delivery 1234 with the recipient 1000`,
+      description: `Preview a delivery with a recipient (nms:delivery#BuildPreviewFromId)`,
     },
   ];
 
