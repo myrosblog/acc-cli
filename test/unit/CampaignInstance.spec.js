@@ -1278,6 +1278,23 @@ describe("CampaignInstance", () => {
         mockSpinner,
       );
 
+    // Client stub recording the registered observers, so a test can emit SOAP responses
+    const observableClient = (nlws) => {
+      const observers = [];
+      return {
+        NLWS: nlws,
+        observers,
+        registerObserver: (observer) => observers.push(observer),
+        unregisterObserver: (observer) =>
+          observers.splice(observers.indexOf(observer), 1),
+        // The SDK passes a token-masked copy as 2nd argument: unused by the code
+        emit: (call) =>
+          observers.forEach((o) => o.onSOAPCallSuccess(call, "<masked/>")),
+      };
+    };
+    const soapEnvelope = (methodName, returnValues) =>
+      `<SOAP-ENV:Envelope xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:SOAP-ENV='http://schemas.xmlsoap.org/soap/envelope/'><SOAP-ENV:Body><${methodName}Response xmlns='urn:xtk:session'>${returnValues}</${methodName}Response></SOAP-ENV:Body></SOAP-ENV:Envelope>`;
+
     it("_toSchemaKey maps a schema id to the NLWS camelCase key", () => {
       instance = newInstance();
       expect(instance._toSchemaKey("nms:delivery")).to.equal("nmsDelivery");
@@ -1287,26 +1304,11 @@ describe("CampaignInstance", () => {
       expect(instance._toSchemaKey("nmsDelivery")).to.equal("nmsDelivery");
     });
 
-    it("_serializeSoapResult handles null, scalars, DOM nodes and arrays", () => {
+    it("should call the method via the adapter and return its raw values (human mode)", async () => {
       instance = newInstance();
-      const el = DomUtil.getFirstChildElement(DomUtil.parse("<preview/>"));
-      expect(instance._serializeSoapResult(null)).to.equal("");
-      expect(instance._serializeSoapResult(undefined)).to.equal("");
-      expect(instance._serializeSoapResult("plain text")).to.equal(
-        "plain text",
-      );
-      expect(instance._serializeSoapResult(42)).to.equal("42");
-      expect(instance._serializeSoapResult(el)).to.contain("<preview");
-      // multi-output methods (e.g. BuildPreviewFromId) return an array
-      const joined = instance._serializeSoapResult([el, "tail"]);
-      expect(joined).to.contain("<preview");
-      expect(joined).to.contain("tail");
-    });
-
-    it("should call the method via the adapter and serialize XML (human mode)", async () => {
-      instance = newInstance();
-      const el = DomUtil.getFirstChildElement(DomUtil.parse("<preview/>"));
-      const adapterStub = sinon.stub(instance, "adapterCallSoap").resolves(el);
+      const adapterStub = sinon
+        .stub(instance, "adapterCallSoap")
+        .resolves("<preview/>");
 
       const result = await instance.soap({
         schema: "nms:delivery",
@@ -1320,8 +1322,24 @@ describe("CampaignInstance", () => {
       expect(method).to.equal("BuildPreviewFromId");
       expect(args).to.deep.equal([1234]); // parsed from the JSON array string
       expect(json).to.not.be.ok;
-      expect(result).to.contain("<preview");
-      expect(mockLogger.verbose.calledWith(el)).to.be.true;
+      expect(result).to.equal("<preview/>");
+      expect(mockLogger.verbose.calledWith("<preview/>")).to.be.true;
+    });
+
+    it("should forward raw to the adapter", async () => {
+      instance = newInstance();
+      const adapterStub = sinon
+        .stub(instance, "adapterCallSoap")
+        .resolves("<SOAP-ENV:Envelope/>");
+
+      const result = await instance.soap({
+        schema: "xtk:session",
+        method: "GetOption",
+        raw: true,
+      });
+
+      expect(adapterStub.firstCall.args[4]).to.equal(true);
+      expect(result).to.equal("<SOAP-ENV:Envelope/>");
     });
 
     it("should return the SimpleJson result as-is when json:true", async () => {
@@ -1391,9 +1409,9 @@ describe("CampaignInstance", () => {
         errorCode: "XSV-350013",
       });
       const buildPreviewFromId = sinon.stub().rejects(sdkErr);
-      instance.client = {
-        NLWS: { xml: { nmsDelivery: { buildPreviewFromId } } },
-      };
+      instance.client = observableClient({
+        xml: { nmsDelivery: { buildPreviewFromId } },
+      });
 
       await expect(
         instance.adapterCallSoap(
@@ -1403,25 +1421,77 @@ describe("CampaignInstance", () => {
           false,
         ),
       ).to.be.rejectedWith(/deliveryId/);
+      // the raw response observer must not leak on the shared client
+      expect(instance.client.observers).to.be.empty;
     });
 
-    it("adapterCallSoap spreads args and returns the value (xml representation)", async () => {
+    it("adapterCallSoap spreads args and returns the raw values of the user call (xml representation)", async () => {
       instance = newInstance();
-      const buildPreviewFromId = sinon.stub().resolves("<preview/>");
-      instance.client = {
-        NLWS: { xml: { nmsDelivery: { buildPreviewFromId } } },
-      };
+      const getServerTime = sinon.stub().callsFake(() => {
+        // the SDK loads the schema first (internal), then makes the user call
+        instance.client.emit({
+          internal: true,
+          methodName: "GetEntityIfMoreRecent",
+          response: soapEnvelope(
+            "GetEntityIfMoreRecent",
+            "<other xsi:type='xsd:string'>ignored</other>",
+          ),
+        });
+        instance.client.emit({
+          internal: false,
+          methodName: "GetServerTime",
+          response: soapEnvelope(
+            "GetServerTime",
+            "<ptmServerTime xsi:type='xsd:dateTime'>2026-10-22T20:58:12Z</ptmServerTime>",
+          ),
+        });
+        // the SDK result (cast to a Date) is dropped
+        return Promise.resolve(new Date("2026-10-22T20:58:12.000Z"));
+      });
+      instance.client = observableClient({
+        xml: { xtkSession: { getServerTime } },
+      });
 
       const result = await instance.adapterCallSoap(
-        "nmsDelivery",
-        "buildPreviewFromId",
+        "xtkSession",
+        "getServerTime",
         [1234, "<params/>"],
         false,
       );
 
-      expect(buildPreviewFromId.calledOnceWithExactly(1234, "<params/>")).to.be
-        .true;
-      expect(result).to.equal("<preview/>");
+      expect(getServerTime.calledOnceWithExactly(1234, "<params/>")).to.be.true;
+      expect(result).to.equal("2026-10-22T20:58:12Z");
+      expect(instance.client.observers).to.be.empty;
+    });
+
+    it("adapterCallSoap returns the whole SOAP response as received when rawEnabled", async () => {
+      instance = newInstance();
+      const envelope = soapEnvelope(
+        "GetOption",
+        "<pstrValue xsi:type='xsd:string'>nms:recipient</pstrValue><pbtType xsi:type='xsd:byte'>6</pbtType>",
+      );
+      const getOption = sinon.stub().callsFake(() => {
+        instance.client.emit({
+          internal: false,
+          methodName: "GetOption",
+          response: envelope,
+        });
+        return Promise.resolve(["nms:recipient", 6]);
+      });
+      instance.client = observableClient({
+        xml: { xtkSession: { getOption } },
+      });
+
+      const result = await instance.adapterCallSoap(
+        "xtkSession",
+        "getOption",
+        ["Nms_DefaultRcpSchema"],
+        false,
+        true,
+      );
+
+      expect(result).to.equal(envelope);
+      expect(instance.client.observers).to.be.empty;
     });
   });
 

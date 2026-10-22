@@ -565,7 +565,7 @@ Call any SOAP method on an Adobe Campaign instance (e.g. nms:delivery#BuildPrevi
 
 ```
 USAGE
-  $ acc instance soap -s <value> -m <value> [--json] [-a <value>] [-p <value>] [-c <value>] [--args <value>]
+  $ acc instance soap -s <value> -m <value> [-a <value>] [-p <value>] [-c <value>] [--args <value>] [--raw | --json]
 
 FLAGS
   -a, --alias=<value>   Local alias for this instance, e.g. prod, staging, local. Defaults to the alias field of
@@ -576,6 +576,7 @@ FLAGS
   -s, --schema=<value>  (required) Schema id, e.g. nms:delivery, xtk:session
       --args=<value>    Method arguments as a JSON array, e.g. '[1234, "<params/>"]'. Omit for methods that take no
                         argument.
+      --raw             Print the SOAP response (XML) as received, instead of the return values.
 
 GLOBAL FLAGS
   --json  Format output as json.
@@ -589,18 +590,38 @@ DESCRIPTION
   i/soap-methods-in-javascript
 
 EXAMPLES
-  Get the server time
+  Get the server time (xtk:session#GetServerTime)
 
     $ acc instance soap --schema xtk:session --method GetServerTime
 
-  Convert HTML to text-only with nms:delivery#HtmlToText method
+  Get the default namespace (xtk:builder#GetDefaultNamespace)
 
-    $ acc instance soap --schema nms:delivery --method HtmlToText --args '["<p>Hello</p>"]'
+    $ acc instance soap -s xtk:builder -m GetDefaultNamespace
 
-  Preview the delivery 1234 with the recipient 1000
+  Get the default entity for the nms:recipient schema (xtk:session#GetDefaultEntity)
+
+    $ acc instance soap -s xtk:session -m GetDefaultEntity --args '["nms:recipient"]'
+
+  Get 5 new IDs (xtk:session#GetNewIds)
+
+    $ acc instance soap -s xtk:session -m GetNewIds --args '[5]'
+
+  Get an option, such as Nms_DefaultRcpSchema (xtk:session#GetOption)
+
+    $ acc instance soap -s xtk:session -m GetOption --args '["Nms_DefaultRcpSchema"]'
+
+  Convert HTML to text-only (nms:delivery#HtmlToText)
+
+    $ acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
+
+  Preview a delivery with a recipient (nms:delivery#BuildPreviewFromId)
 
     $ acc instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, {"content": "html", "filter": "@id = \
       1000"}]' --json
+
+  Print the SOAP response as received (<?xml version='1.0'?><SOAP-ENV:Envelope ...)
+
+    $ acc instance soap -s xtk:session -m GetOption --args '["WdbcTimeZone"]' --raw
 ```
 
 _See code: [src/commands/instance/soap.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/instance/soap.js)_
@@ -775,6 +796,8 @@ acc instance soap --schema xtk:session --method GetServerTime
 acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hi</p>"]'
 # --json switches input + output to JSON (best for methods taking/returning XML)
 acc instance soap -s nms:delivery -m BuildPreviewFromId --args '[1234, "<params/>"]' --json
+# --raw prints the SOAP response as received (name and type of each return value)
+acc instance soap -s xtk:session -m GetOption --args '["Nms_DefaultRcpSchema"]' --raw
 ```
 
 ```bash

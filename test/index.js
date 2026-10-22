@@ -18,6 +18,7 @@ import "./unit/BaseCommand.spec.js";
 import "./unit/helpers/AccCache.spec.js";
 import "./unit/helpers/makeLogger.spec.js";
 import "./unit/helpers/soapLogObserver.spec.js";
+import "./unit/helpers/soapResponse.spec.js";
 import "./unit/helpers/cacheStatsLogger.spec.js";
 import "./unit/helpers/jwt.spec.js";
 import "./unit/helpers/DomUtilAcc.spec.js";

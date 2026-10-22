@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { ux } from "@oclif/core";
+import { Flags, Parser, ux } from "@oclif/core";
 import CampaignAuth from "../../../src/CampaignAuth.js";
 import CampaignConfig from "../../../src/CampaignConfig.js";
 import CampaignInstance from "../../../src/CampaignInstance.js";
@@ -61,6 +61,52 @@ describe("InstanceSoap", () => {
     expect(soapStub.firstCall.args[0].method).to.equal("BuildPreviewFromId");
     expect(soapStub.firstCall.args[0].args).to.equal("[1234]");
     expect(logStub.calledOnceWith("<preview/>")).to.be.true;
+  });
+
+  it("should have an optional raw flag, exclusive with json", () => {
+    expect(InstanceSoap.flags.raw.required).to.not.be.true;
+    expect(InstanceSoap.flags.raw.exclusive).to.deep.equal(["json"]);
+  });
+
+  it("should forward --raw and print the SOAP response on stdout", async () => {
+    stubBootstrap();
+    const envelope = "<SOAP-ENV:Envelope/>";
+    const soapStub = sinon
+      .stub(CampaignInstance.prototype, "soap")
+      .resolves(envelope);
+    const logStub = sinon.stub(InstanceSoap.prototype, "log");
+
+    const result = await InstanceSoap.run([
+      "--alias",
+      "test",
+      "--schema",
+      "xtk:session",
+      "--method",
+      "GetOption",
+      "--raw",
+    ]);
+
+    expect(result).to.equal(envelope);
+    expect(soapStub.firstCall.args[0].raw).to.equal(true);
+    expect(soapStub.firstCall.args[0].json).to.equal(false);
+    expect(logStub.calledOnceWith(envelope)).to.be.true;
+  });
+
+  // run() does not reject in --json mode (oclif prints the error as JSON), so
+  // the parser is used; oclif adds the json flag at run time, so it is declared here.
+  it("should reject --raw together with --json", async () => {
+    const flags = {
+      ...InstanceSoap.baseFlags,
+      ...InstanceSoap.flags,
+      json: Flags.boolean(),
+    };
+
+    await expect(
+      Parser.parse(
+        ["--schema", "xtk:session", "--method", "GetOption", "--raw", "--json"],
+        { flags },
+      ),
+    ).to.be.rejectedWith(/cannot also be provided/);
   });
 
   it("should return the SimpleJson object in --json mode (no stdout log)", async () => {
