@@ -101,11 +101,11 @@ export default [
       "src/adapters/**/*.js",
     ],
     rules: {
-      complexity: ["warn", 15],
-      "max-depth": ["warn", 4],
+      complexity: "warn",
+      "max-depth": "warn",
       "max-lines-per-function": [
         "warn",
-        { max: 60, skipBlankLines: true, skipComments: true },
+        { skipBlankLines: true, skipComments: true },
       ],
     },
   },
