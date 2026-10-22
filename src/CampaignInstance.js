@@ -29,6 +29,7 @@ const {
 import DomUtilAcc from "./helpers/DomUtilAcc.js";
 import CampaignPullLog from "./helpers/CampaignPullLog.js";
 import { withSpinner } from "./helpers/withSpinner.js";
+import { extractSoapReturnValues } from "./helpers/soapResponse.js";
 import {
   computeFilename,
   getTemplateAttributes,
@@ -477,8 +478,9 @@ class CampaignInstance {
    * @param {string} [cliOptions.args] - method arguments as a JSON array string,
    *   e.g. '[1234, "<params/>"]'. Omitted/empty means no argument.
    * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string | object>} the method result: an XML string (or the
-   *   array's parts joined) in human mode, or the SimpleJson value when `json`
+   * @returns {Promise<string | object>} the method result: the return values as
+   *   the server sent them (one per line) in human mode, or the SimpleJson value
+   *   when `json`
    * @throws {INSTANCE_SOAP_BAD_ARGS|INSTANCE_SOAP_ARGS_NOT_ARRAY|INSTANCE_SOAP_SDK_CALL_FAILED}
    */
   async soap(cliOptions) {
@@ -511,30 +513,54 @@ class CampaignInstance {
     );
 
     this.logger.verbose(result);
-    return cliOptions.json ? result : this._serializeSoapResult(result);
+    return result;
   }
 
   /**
    * Adapter of the NLWS proxy dispatch for `soap()`:
    * - easier mocking in unit tests
    * - SDK error wrapping
-   * The representation (xml vs json) drives how the SDK marshals both the input
-   * parameters and the return value. The schema key is the camelCase namespace
-   * the proxy expects (e.g. "nmsDelivery" for "nms:delivery").
+   * The representation (xml vs json) drives how the SDK marshals the input
+   * parameters, and in json mode the return value. The schema key is the
+   * camelCase namespace the proxy expects (e.g. "nmsDelivery" for "nms:delivery").
+   *
+   * In xml mode the SDK result is dropped: the SDK casts scalars (xsd:dateTime
+   * to Date, ...), so the return values are read from the raw response instead.
+   * Internal calls (schema loading) are ignored: only the user's call is kept.
    * @param {string} schemaKey camelCase schema key, e.g. "nmsDelivery"
    * @param {string} method method name (the SDK resolves either casing)
    * @param {Array} args positional arguments
    * @param {boolean} jsonEnabled when true use the SimpleJson representation
-   * @returns {Promise<any>} DOM node / scalar / array (xml) or SimpleJson (json)
+   * @returns {Promise<string | object>} the return values as the server sent
+   *   them (xml), or SimpleJson (json)
    * @throws {CampaignException}
    */
   async adapterCallSoap(schemaKey, method, args, jsonEnabled) {
+    if (jsonEnabled) {
+      try {
+        return await this.client.NLWS.json[schemaKey][method](...args);
+      } catch (err) {
+        throw wrapSdkError(err, INSTANCE_SOAP_SDK_CALL_FAILED);
+      }
+    }
+
+    let returnValues = "";
+    const rawResponseObserver = {
+      onSOAPCallSuccess: (call, safeResponse) => {
+        if (!call.internal) {
+          returnValues = extractSoapReturnValues(safeResponse, call.methodName);
+        }
+      },
+    };
+    this.client.registerObserver(rawResponseObserver);
     try {
-      const nlws = jsonEnabled ? this.client.NLWS.json : this.client.NLWS.xml;
-      return await nlws[schemaKey][method](...args);
+      await this.client.NLWS.xml[schemaKey][method](...args);
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_SOAP_SDK_CALL_FAILED);
+    } finally {
+      this.client.unregisterObserver(rawResponseObserver);
     }
+    return returnValues;
   }
 
   /**
@@ -548,25 +574,6 @@ class CampaignInstance {
     const [ns, entity] = schema.split(":");
     if (!entity) return schema; // already a key (or malformed): pass through
     return ns + entity.charAt(0).toUpperCase() + entity.slice(1);
-  }
-
-  /**
-   * Serialises a SOAP result for human (XML) mode. A method may return nothing
-   * (null), a scalar, a DOM node or, for multi-output methods like
-   * BuildPreviewFromId, an array of those. DOM nodes are stringified; arrays
-   * are stringified part-by-part and joined.
-   * @param {*} result the raw NLWS return value
-   * @returns {string} the serialized XML string
-   */
-  _serializeSoapResult(result) {
-    if (result === null || result === undefined) return "";
-    if (Array.isArray(result)) {
-      return result.map((r) => this._serializeSoapResult(r)).join("\n");
-    }
-    if (typeof result === "object" && result.nodeType) {
-      return DomUtil.toXMLString(result);
-    }
-    return String(result);
   }
 
   /**
