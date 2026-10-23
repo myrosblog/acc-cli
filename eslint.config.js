@@ -89,6 +89,21 @@ export default [
     },
   },
 
+  // Airbnb rules that neostandard leaves out or loosens
+  {
+    files: ["src/**/*.js"],
+    rules: {
+      "no-shadow": "warn",
+      // neostandard checks no function argument (`args: "none"`)
+      "no-unused-vars": [
+        "warn",
+        { vars: "all", args: "after-used", ignoreRestSiblings: true },
+      ],
+      // Result goes to this.log (stdout), diagnostics to the logger (stderr)
+      "no-console": "warn",
+    },
+  },
+
   // Strict rules, starting with helpers, then will be extended to src/
   {
     files: [
