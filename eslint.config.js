@@ -86,7 +86,34 @@ export default [
       // narrower type would be wrong.
       "jsdoc/reject-any-type": "off",
       "jsdoc/reject-function-type": "off",
+      // Flags a description that only repeats the name it describes
+      "jsdoc/informative-docs": "warn",
     },
+  },
+
+  // Services and helpers document every function and method. Constructors and
+  // the run() of commands are left out: their params and name say enough.
+  {
+    files: ["src/services/**/*.js", "src/helpers/**/*.js"],
+    rules: {
+      "jsdoc/require-jsdoc": [
+        "warn",
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+          },
+          checkConstructors: false,
+        },
+      ],
+    },
+  },
+
+  // Node built-ins are imported with the `node:` prefix
+  {
+    files: ["src/**/*.js"],
+    rules: { "n/prefer-node-protocol": "warn" },
   },
 
   // Airbnb rules that neostandard leaves out or loosens
@@ -114,6 +141,24 @@ export default [
         },
         { enforceForRenamedProperties: false },
       ],
+      "spaced-comment": [
+        "warn",
+        "always",
+        {
+          line: { exceptions: ["-", "+"], markers: ["=", "!", "/"] },
+          block: {
+            exceptions: ["-", "+"],
+            markers: ["=", "!", ":", "::"],
+            balanced: true,
+          },
+        },
+      ],
+      // Airbnb sets these terms but leaves the rule off. AGENTS.md: no TODO or FIXME.
+      "no-warning-comments": [
+        "warn",
+        { terms: ["todo", "fixme", "xxx"], location: "start" },
+      ],
+      "no-duplicate-imports": "warn",
     },
   },
 
