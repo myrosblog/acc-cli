@@ -82,10 +82,10 @@ describe("InstanceWatch", () => {
     // Mock AccInstanceWatch
     sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
-    // Mock getInstance to return instance with client and config
-    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+    // Mock connect to return the client and config
+    sinon.stub(InstanceWatch.prototype, "connect").resolves({
       client: mockClient,
-      accConfig: configInstance,
+      config: configInstance,
     });
 
     // Run the command
@@ -130,9 +130,9 @@ describe("InstanceWatch", () => {
 
     sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
-    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+    sinon.stub(InstanceWatch.prototype, "connect").resolves({
       client: mockClient,
-      accConfig: configInstance,
+      config: configInstance,
     });
 
     const result = await InstanceWatch.run(argv);
@@ -172,9 +172,9 @@ describe("InstanceWatch", () => {
     const error = new Error("No schemas with 'decompose' configuration found");
     sinon.stub(AccInstanceWatch.prototype, "startWatching").rejects(error);
 
-    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+    sinon.stub(InstanceWatch.prototype, "connect").resolves({
       client: mockClient,
-      accConfig: configInstance,
+      config: configInstance,
     });
 
     // Mock the logger
@@ -230,9 +230,9 @@ describe("InstanceWatch", () => {
 
     sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
 
-    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+    sinon.stub(InstanceWatch.prototype, "connect").resolves({
       client: mockClient,
-      accConfig: configInstance,
+      config: configInstance,
     });
 
     // Mock process.on
@@ -246,9 +246,9 @@ describe("InstanceWatch", () => {
   });
 
   it("should stop the watcher once and exit 0 on a signal", async () => {
-    sinon.stub(InstanceWatch.prototype, "getInstance").resolves({
+    sinon.stub(InstanceWatch.prototype, "connect").resolves({
       client: {},
-      accConfig: {},
+      config: {},
     });
     sinon.stub(AccInstanceWatch.prototype, "startWatching").resolves();
     const stopWatching = sinon

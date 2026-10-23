@@ -3,7 +3,6 @@ import { Flags } from "@oclif/core";
 import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
-import AccInstance from "./services/instance/AccInstance.js";
 import { CONFIG_FILENAME } from "./services/config/AccConfig.js";
 import { codes } from "./helpers/AccErrors.js";
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
@@ -11,8 +10,8 @@ const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 /**
  * Base command for `acc instance ...` subcommands that talk to an instance.
  *
- * Centralizes the shared flags (alias/path/config) via oclif `baseFlags` and
- * the login (connect), then the AccInstance bootstrap used by exec/queryDef/soap/info.
+ * Centralizes the shared flags (alias/path/config) via oclif `baseFlags`, the
+ * login (connect) and the spinner factory injected in the Acc* services.
  *
  * @class InstanceCommand
  */
@@ -73,27 +72,5 @@ export default class InstanceCommand extends BaseCommand {
       ...sdkOptionsOverride,
     });
     return { client, config, flags: resolvedFlags };
-  }
-
-  /**
-   * Logs in to the aliased instance and builds a AccInstance.
-   * @param {object} flags - parsed CLI flags (alias, config, path, ...)
-   * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
-   *   over the config ones (e.g. a raised `timeout` for heavy calls)
-   * @returns {Promise<AccInstance>} a new AccInstance, ready to call its methods (exec/queryDef/soap/info)
-   */
-  async getInstance(flags, sdkOptionsOverride = {}) {
-    const {
-      client,
-      config,
-      flags: resolvedFlags,
-    } = await this.connect(flags, sdkOptionsOverride);
-    return new AccInstance(
-      this.logger,
-      client,
-      config,
-      resolvedFlags,
-      this.createSpinner,
-    );
   }
 }

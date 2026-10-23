@@ -28,7 +28,7 @@ describe("InstanceSoap", () => {
     expect(InstanceSoap.baseFlags.config).to.exist;
   });
 
-  // Keeps getInstance() off the network/disk: stubs login + config.init.
+  // Keeps connect() off the network/disk: stubs login + config.init.
   function stubBootstrap() {
     sinon.stub(AccAuth.prototype, "login").resolves();
     sinon.stub(AccConfig.prototype, "init").resolves();

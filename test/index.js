@@ -34,7 +34,7 @@ import "./unit/validators/queryDef.spec.js";
 import "./unit/services/config/AccConfig.spec.js";
 import "./unit/services/auth/AccAuth.spec.js";
 import "./unit/services/instance/AccInstancePull.spec.js";
-import "./unit/services/instance/AccInstance.spec.js";
+import "./unit/services/instance/AccInstanceExec.spec.js";
 import "./unit/services/instance/AccInstanceSoap.spec.js";
 import "./unit/services/instance/AccInstanceQueryDef.spec.js";
 import "./unit/services/instance/AccInstanceInfo.spec.js";

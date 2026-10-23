@@ -3,7 +3,7 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 
 /**
- * Log data retrieved by AccInstance.pull() for troubleshooting and auditing
+ * Log data retrieved by AccInstancePull.pull() for troubleshooting and auditing
  * 1 instance per batch, i.e. 15 records with lineCount=10 yields 2 AccInstancePullLogs
  * @class AccInstancePullLog
  */

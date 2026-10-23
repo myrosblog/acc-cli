@@ -10,7 +10,7 @@ const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
 /**
  * Monitoring/health-check operations for ACC instances.
  *
- * Unlike AccAuth/AccInstance, monitoring probes are non-mutating and
+ * Unlike AccAuth/AccInstance*, monitoring probes are non-mutating and
  * may run without credentials: `test()` hits the anonymous /r/test endpoint on
  * the Apache front server and requires no logon.
  *

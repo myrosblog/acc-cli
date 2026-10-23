@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstanceExec from "../../../src/services/instance/AccInstanceExec.js";
 import InstanceExec from "../../../src/commands/instance/exec.js";
 
 describe("InstanceExec", () => {
@@ -28,7 +28,7 @@ describe("InstanceExec", () => {
     const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     const configInitStub = sinon.stub(AccConfig.prototype, "init").resolves();
     const instanceExecStub = sinon
-      .stub(AccInstance.prototype, "exec")
+      .stub(AccInstanceExec.prototype, "exec")
       .resolves("<context result='ok'/>");
     // this.log is oclif's stdout writer: the result must go there, raw.
     const logStub = sinon.stub(InstanceExec.prototype, "log");

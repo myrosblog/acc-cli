@@ -70,7 +70,7 @@ ACC_E2E_S2S_JSON=~/Downloads/oauth-s2s.json npm run test:e2e
 
 - **CLI-only.** Each spec drives the `acc` binary via `runAcc()` (see
   [helpers.js](helpers.js)) and asserts on stdout / stderr / exit code. We do
-  **not** add a "class layer" that calls `AccInstance`/`AccAuth`
+  **not** add a "class layer" that calls `AccInstance*`/`AccAuth`
   directly: running the binary already exercises those classes against the
   server, and typed return shapes belong in the (mocked, fast) unit tests.
 - **stdout = result, stderr = diagnostics.** Assert the command result lands on

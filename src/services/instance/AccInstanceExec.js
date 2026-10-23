@@ -5,7 +5,6 @@ import chalk from "chalk";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import { Client } from "@adobe/acc-js-sdk/src/client.js";
 import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
 const { INSTANCE_EXEC_FILE_NOT_FOUND, INSTANCE_EXEC_SDK_EVALUATE_FAILED } =
   codes;
@@ -13,12 +12,11 @@ const { INSTANCE_EXEC_FILE_NOT_FOUND, INSTANCE_EXEC_SDK_EVALUATE_FAILED } =
 import { withSpinner } from "../../helpers/withSpinner.js";
 
 /**
- * Campaign Instance class for interacting with ACC instances.
- * Handles exec, queryDef, soap and info. The pull and check live in AccInstancePull.
+ * Executes server-side JavaScript on an ACC instance (`acc instance exec`).
  *
- * @class AccInstance
+ * @class AccInstanceExec
  */
-class AccInstance {
+class AccInstanceExec {
   /**
    * @type {AioLogger}
    */
@@ -30,22 +28,17 @@ class AccInstance {
   createSpinner;
 
   /**
-   * Creates a new AccInstance.
+   * Creates a new AccInstanceExec.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {Client} client - Authenticated ACC client
-   * @param {AccConfig} accConfig - Configuration object defining schemas and download options
-   * @param {object} cliOptions - Command-line options including path, and metadata filters
-   * @param {Function} createSpinner - Ora spinner instance for displaying progress
+   * @param {Function} createSpinner - Factory of the spinner displaying progress
    * @example
-   * const instance = new AccInstance(logger, client, accConfig, cliOptions, createSpinner);
+   * const instanceExec = new AccInstanceExec(logger, client, createSpinner);
    */
-  constructor(logger, client, accConfig, cliOptions, createSpinner) {
+  constructor(logger, client, createSpinner) {
     this.logger = logger;
     this.client = client;
-    this.accConfig = accConfig;
-    this.downloadPath = cliOptions.path;
-    this.metadata = cliOptions.metadata;
     this.createSpinner = createSpinner;
   }
 
@@ -116,4 +109,4 @@ class AccInstance {
   }
 }
 
-export default AccInstance;
+export default AccInstanceExec;

@@ -59,7 +59,7 @@ export default class BaseCommand extends Command {
           ),
         ),
       undefined,
-      // Marks each login stage, as InstanceCommand does for AccInstance.
+      // Marks each login stage, as InstanceCommand does for the AccInstance* services.
       (text) => this.spinner(text),
     ));
   }

@@ -48,14 +48,14 @@ export default class InstanceWatch extends InstanceCommand {
   async run() {
     const { flags } = await this.parse(InstanceWatch);
 
-    // Get authenticated instance
-    const instance = await this.getInstance(flags);
+    // Get authenticated client
+    const { client, config } = await this.connect(flags);
 
     // Create watcher with dependency injection
     this.watcher = new AccInstanceWatch(
       this.logger,
-      instance.client,
-      instance.accConfig,
+      client,
+      config,
       flags,
       (text) => this.spinner(text),
     );

@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import InstanceCommand from "../../src/InstanceCommand.js";
-import AccInstance from "../../src/services/instance/AccInstance.js";
 import { codes } from "../../src/helpers/AccErrors.js";
 
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
@@ -40,31 +39,31 @@ describe("InstanceCommand", () => {
 
   it("should use the --alias flag when provided", async () => {
     cmd = makeCmd("fromConfig");
-    await cmd.getInstance({ config: "acc.config.json", alias: "fromFlag" });
+    await cmd.connect({ config: "acc.config.json", alias: "fromFlag" });
     expect(loginStub.firstCall.args[0].alias).to.equal("fromFlag");
   });
 
   it("should fall back to the config alias when no flag", async () => {
     cmd = makeCmd("fromConfig");
-    await cmd.getInstance({ config: "acc.config.json" });
+    await cmd.connect({ config: "acc.config.json" });
     expect(loginStub.firstCall.args[0].alias).to.equal("fromConfig");
   });
 
   it("should pass the flag alias to config init, to seed a new config", async () => {
     cmd = makeCmd(undefined);
-    await cmd.getInstance({ config: "acc.config.json", alias: "fromFlag" });
+    await cmd.connect({ config: "acc.config.json", alias: "fromFlag" });
     expect(initStub.calledOnceWith("acc.config.json", "fromFlag")).to.be.true;
   });
 
   it("should not pass an alias to config init when no flag and no last auth init alias", async () => {
     cmd = makeCmd("fromConfig");
-    await cmd.getInstance({ config: "acc.config.json" });
+    await cmd.connect({ config: "acc.config.json" });
     expect(initStub.calledOnceWith("acc.config.json", undefined)).to.be.true;
   });
 
   it("should pass the last auth init alias to config init when no flag alias is given", async () => {
     cmd = makeCmd("fromLastInit", "fromLastInit");
-    await cmd.getInstance({ config: "acc.config.json" });
+    await cmd.connect({ config: "acc.config.json" });
     expect(initStub.calledOnceWith("acc.config.json", "fromLastInit")).to.be
       .true;
     expect(loginStub.firstCall.args[0].alias).to.equal("fromLastInit");
@@ -72,22 +71,22 @@ describe("InstanceCommand", () => {
 
   it("should prefer the --alias flag over the last auth init alias", async () => {
     cmd = makeCmd("fromFlag", "fromLastInit");
-    await cmd.getInstance({ config: "acc.config.json", alias: "fromFlag" });
+    await cmd.connect({ config: "acc.config.json", alias: "fromFlag" });
     expect(initStub.calledOnceWith("acc.config.json", "fromFlag")).to.be.true;
   });
 
   it("should keep the config alias over the last auth init alias", async () => {
     // acc.config.json already exists: the seed is ignored by config.init
     cmd = makeCmd("fromConfig", "fromLastInit");
-    await cmd.getInstance({ config: "acc.config.json" });
+    await cmd.connect({ config: "acc.config.json" });
     expect(loginStub.firstCall.args[0].alias).to.equal("fromConfig");
   });
 
   it("should throw INSTANCE_ALIAS_UNRESOLVED when neither is set", async () => {
     cmd = makeCmd(undefined);
-    await expect(
-      cmd.getInstance({ config: "acc.config.json" }),
-    ).to.be.rejectedWith(INSTANCE_ALIAS_UNRESOLVED);
+    await expect(cmd.connect({ config: "acc.config.json" })).to.be.rejectedWith(
+      INSTANCE_ALIAS_UNRESOLVED,
+    );
     expect(loginStub.called).to.be.false;
   });
 
@@ -125,20 +124,5 @@ describe("InstanceCommand", () => {
     cmd.spinner.returns("spinner");
     expect(cmd.createSpinner("Pulling")).to.equal("spinner");
     expect(cmd.spinner.calledOnceWith("Pulling")).to.be.true;
-  });
-
-  it("getInstance should build the AccInstance from the connection", async () => {
-    cmd = makeCmd("fromConfig");
-    const instance = await cmd.getInstance({
-      config: "acc.config.json",
-      path: "/some/path",
-    });
-    expect(instance).to.be.instanceOf(AccInstance);
-    expect(instance.client).to.deep.equal({ NLWS: {} });
-    expect(instance.accConfig.alias).to.equal("fromConfig");
-    expect(instance.downloadPath).to.equal("/some/path");
-    // the spinner factory is the command's
-    cmd.spinner.returns("spinner");
-    expect(instance.createSpinner("Pulling")).to.equal("spinner");
   });
 });

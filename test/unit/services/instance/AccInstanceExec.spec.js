@@ -1,38 +1,22 @@
 // node
-import fs from "fs-extra";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 // npm
 import { expect } from "chai";
-import hjson from "hjson";
 import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
 import { makeClient, makeLogger, makeSpinner } from "../../../helpers.js";
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// hjson, as the template contains comments
-const loadJson = (file) =>
-  hjson.parse(fs.readFileSync(join(__dirname, file), "utf8"));
-const configDefaultFull = loadJson("../../../../src/templates/acc.config.json");
 // acc
-import AccInstance from "../../../../src/services/instance/AccInstance.js";
+import AccInstanceExec from "../../../../src/services/instance/AccInstanceExec.js";
 
-describe("AccInstance", () => {
-  let mockClient, mockLogger, mockSpinner, instance, pathFull, optionsFull;
+describe("AccInstanceExec", () => {
+  let mockClient, mockLogger, mockSpinner, instance;
 
   beforeEach(() => {
     // mock client
     mockClient = makeClient();
-
-    // options template
-    pathFull = join(__dirname, "../../../dist/configFull/");
-
-    // mock options
-    optionsFull = {
-      path: pathFull,
-    };
 
     // mock AioLogger
     mockLogger = makeLogger();
@@ -47,13 +31,7 @@ describe("AccInstance", () => {
 
   describe("exec", () => {
     const newInstance = () =>
-      new AccInstance(
-        mockLogger,
-        mockClient,
-        configDefaultFull,
-        optionsFull,
-        mockSpinner,
-      );
+      new AccInstanceExec(mockLogger, mockClient, mockSpinner);
 
     it("should evaluate an inline script and return the serialized context", async () => {
       instance = newInstance();
@@ -88,7 +66,7 @@ describe("AccInstance", () => {
       await instance.exec({ file: __filename });
 
       const [name, script] = adapterStub.firstCall.args;
-      expect(name).to.equal("AccInstance.spec.js");
+      expect(name).to.equal("AccInstanceExec.spec.js");
       expect(script).to.contain("describe");
     });
 
