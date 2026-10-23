@@ -1,5 +1,6 @@
 // Shared helpers for the e2e suite (runs the `acc` binary).
 import { execFile } from "node:child_process";
+import fs from "node:fs";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -37,3 +38,17 @@ export const runAcc = (args, opts = {}) =>
       ...opts.env,
     },
   });
+
+/**
+ * Write a file in a directory, typically the throwaway cwd of a spec.
+ *
+ * @param {string} cwd - directory to write in
+ * @param {string} name - file name
+ * @param {string} content - file content
+ * @returns {string} the absolute path of the file
+ */
+export const writeFile = (cwd, name, content) => {
+  const file = join(cwd, name);
+  fs.writeFileSync(file, content);
+  return file;
+};

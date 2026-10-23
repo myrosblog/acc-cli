@@ -23,45 +23,6 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
 
   const acc = (...args) => runAcc(args, { cwd });
 
-  it("calls a static no-arg method and prints the result on stdout", async () => {
-    const { stdout, stderr } = await acc(
-      "instance",
-      "soap",
-      "--alias",
-      ALIAS,
-      "--schema",
-      "xtk:session",
-      "--method",
-      "GetServerTime",
-    );
-
-    // stdout carries the result only: the server time, which contains a year
-    expect(stdout.trim()).to.not.be.empty;
-    expect(stdout).to.match(/\d{4}/);
-
-    // diagnostics (login, spinner) go to stderr, never polluting stdout
-    expect(stderr).to.contain("Logged in");
-    expect(stdout).to.not.contain("Logged in");
-  });
-
-  it("prints the SOAP response as received with --raw", async () => {
-    const { stdout } = await acc(
-      "instance",
-      "soap",
-      "--alias",
-      ALIAS,
-      "--schema",
-      "xtk:session",
-      "--method",
-      "GetServerTime",
-      "--raw",
-    );
-
-    // the envelope keeps the name and the xsi:type of the return value
-    expect(stdout).to.contain("GetServerTimeResponse");
-    expect(stdout).to.contain("ptmServerTime");
-  });
-
   it("fails fast when the required --method flag is missing", async () => {
     const err = await acc(
       "instance",
@@ -98,5 +59,130 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     expect(err, "expected a non-zero exit").to.not.be.null;
     expect(err.code).to.not.equal(0);
     expect(err.stderr).to.match(/args is not valid JSON/i);
+  });
+
+  // acc instance soap --schema xtk:session --method GetServerTime
+  it("calls xtk:session#GetServerTime", async () => {
+    const { stdout, stderr } = await acc(
+      "instance",
+      "soap",
+      "--alias",
+      ALIAS,
+      "--schema",
+      "xtk:session",
+      "--method",
+      "GetServerTime",
+    );
+    expect(stdout.trim()).to.not.be.empty;
+    expect(stdout).to.match(/\d{4}/); // YYYY
+    // diagnostics (login, spinner) go to stderr, never polluting stdout
+    expect(stderr).to.contain("Logged in");
+    expect(stdout).to.not.contain("Logged in");
+  });
+
+  // acc instance soap --schema xtk:session --method GetServerTime --raw
+  it("calls xtk:session#GetServerTime --raw", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "GetServerTime",
+      "--raw",
+    );
+    expect(stdout).to.match(/\d{4}/); // YYYY
+    // the envelope keeps the name and the xsi:type of the return value
+    expect(stdout).to.contain("GetServerTimeResponse");
+    expect(stdout).to.contain("ptmServerTime");
+  });
+
+  // acc instance soap -s xtk:builder -m GetDefaultNamespace
+  it("calls xtk:builder#GetDefaultNamespace", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:builder",
+      "-m",
+      "GetDefaultNamespace",
+    );
+    expect(stdout).to.match(/^\w+/); // cus
+  });
+
+  // acc instance soap -s xtk:session -m GetDefaultEntity --args '["nms:recipient"]'
+  it("calls xtk:session#GetDefaultEntity", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "GetDefaultEntity",
+      "--args",
+      '["nms:recipient"]',
+    );
+    expect(stdout).to.match(/^<recipient/);
+    expect(stdout).to.match(/created="\d{4}-\d{2}-\d{2} /);
+    expect(stdout).to.contain("</recipient>");
+  });
+
+  // acc instance soap -s xtk:session -m GetNewIds --args [5]
+  it("calls xtk:session#GetNewIds --args [5]", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "GetNewIds",
+      "--args",
+      "[5]",
+    );
+    const ids = stdout.trim().split(",").map(Number); // 1,2,3,4,5
+    expect(ids).to.have.lengthOf(5);
+    expect(ids.every(Number.isInteger)).to.be.true;
+  });
+
+  // acc instance soap -s xtk:session -m GetOption --args '["Nms_DefaultRcpSchema"]'
+  it("calls xtk:session#GetOption --args [Nms_DefaultRcpSchema]", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "GetOption",
+      "--args",
+      '["Nms_DefaultRcpSchema"]',
+    );
+    expect(stdout).to.match(/^[\w:-]+/); // nms:recipient
+  });
+
+  // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
+  it("calls nms:delivery#HtmlToText --args ['<p>Hello</p>']", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "nms:delivery",
+      "-m",
+      "HtmlToText",
+      "--args",
+      '["<p>Hello</p>"]',
+    );
+    expect(stdout).to.match(/^Hello/);
   });
 });
