@@ -61,16 +61,6 @@ describe("AccAuth", function () {
           },
         }),
       }),
-      ip: sinon.stub().resolves({
-        ipAddress: "11.11.11.11",
-        continentCode: "EU",
-        continentName: "Europe",
-        countryCode: "FR",
-        countryName: "France",
-        stateProvCode: "ABC",
-        stateProv: "Abc",
-        city: "Def",
-      }),
     };
 
     // Mock aio config
@@ -1301,22 +1291,6 @@ describe("AccAuth", function () {
       // S2S reuses the IMS bearer path once the token has been generated.
       expect(actual._credentials._type).to.equal("ImsBearerToken");
       expect(actual._options.sessionInfo).to.equal(true);
-    });
-  });
-
-  describe("ip", () => {
-    it("should display ip info", async () => {
-      const ip = await auth.ip();
-      expect(ip).to.deep.equal({
-        ipAddress: "11.11.11.11",
-        continentCode: "EU",
-        continentName: "Europe",
-        countryCode: "FR",
-        countryName: "France",
-        stateProvCode: "ABC",
-        stateProv: "Abc",
-        city: "Def",
-      });
     });
   });
 

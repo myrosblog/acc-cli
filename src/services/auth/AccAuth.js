@@ -114,19 +114,6 @@ class AccAuth {
   }
 
   /**
-   * Fetches the public IP address of the current machine via the Adobe SDK.
-   *
-   * @returns {Promise<string>} The public IP address (e.g., "192.0.2.1")
-   */
-  async ip() {
-    this.logger.info(
-      `Fetching IP address with the Adobe SDK (from https://api.db-ip.com/v2/free/self)...`,
-    );
-    const ip = await this.sdk.ip();
-    return ip;
-  }
-
-  /**
    * Returns a redacted view of the configured instances, safe to print.
    *
    * Secrets are NEVER included: only the connection target (host), the operator

@@ -33,6 +33,7 @@ import "./unit/helpers/hideCommand.spec.js";
 import "./unit/validators/queryDef.spec.js";
 import "./unit/services/config/AccConfig.spec.js";
 import "./unit/services/auth/AccAuth.spec.js";
+import "./unit/services/auth/AccAuthIp.spec.js";
 import "./unit/services/instance/AccInstancePull.spec.js";
 import "./unit/services/instance/AccInstanceExec.spec.js";
 import "./unit/services/instance/AccInstanceSoap.spec.js";
