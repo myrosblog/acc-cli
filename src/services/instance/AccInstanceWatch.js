@@ -5,16 +5,16 @@ import chalk from "chalk";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import DomUtilAcc from "./helpers/DomUtilAcc.js";
-import CampaignPushLog from "./helpers/CampaignPushLog.js";
+import DomUtilAcc from "../../helpers/DomUtilAcc.js";
+import AccInstancePushLog from "../../helpers/AccInstancePushLog.js";
 import {
   buildWatchTargets,
   findMatchingTargets,
   getDecomposedSchemas,
   toPosixPath,
-} from "./helpers/watchTargets.js";
-import { formatKeyValues, getWriteKey } from "./helpers/writeKey.js";
-import { codes, wrapSdkError } from "./helpers/AccErrors.js";
+} from "../../helpers/watchTargets.js";
+import { formatKeyValues, getWriteKey } from "../../helpers/writeKey.js";
+import { codes, wrapSdkError } from "../../helpers/AccErrors.js";
 const {
   INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS,
   INSTANCE_WATCH_FILE_NOT_IN_SCOPE,
@@ -25,97 +25,80 @@ const {
 } = codes;
 
 /**
- * Campaign Watcher class for watching decomposed files and pushing changes to AC.
- * Only files described by the "decompose" key in acc.config.json are watched.
- * When a file is edited, its content is wrapped in CDATA and pushed to the server.
+ * Watches the files described by the `decompose` key of acc.config.json and
+ * pushes each edit to the instance, wrapped in CDATA.
  *
- * At start: getDecomposedSchemas > _buildWatchList
- * On file change (_onFileChange), 3 stages:  > _findSchemaForFile > _getMetadataDocument > _pushEntityToServer
+ * At start: getDecomposedSchemas, then _buildWatchList.
+ * On a file change (_onFileChange): _findSchemaForFile, _getMetadataDocument,
+ * _pushEntityToServer.
  *
- * @class CampaignWatch
+ * @class AccInstanceWatch
  */
-class CampaignWatch {
+class AccInstanceWatch {
   /**
-   * Default debounce time in milliseconds
+   * Default debounce, in milliseconds
    * @type {number}
    */
   DEFAULT_DEBOUNCE_TIME = 300;
 
-  /**
-   * @type {AioLogger}
-   */
+  /** @type {AioLogger} */
   logger;
 
-  /**
-   * @type {Client}
-   */
+  /** @type {Client} */
   client;
 
-  /**
-   * @type {CampaignConfig}
-   */
+  /** @type {AccConfig} */
   accConfig;
 
-  /**
-   * @type {string}
-   */
+  /** @type {string} */
   watchPath;
 
-  /**
-   * @type {Function} to create spinner, injected for easier unit testing
-   */
+  /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
   /**
-   * @type {object} spinner instance for displaying progress
+   * Spinner of the file being pushed
+   * @type {object}
    */
   spinner;
 
-  /**
-   * @type {string}
-   */
+  /** @type {string} */
   spinnerFilename;
 
-  /**
-   * @type {string}
-   */
+  /** @type {string} */
   spinnerMetadata;
 
   /**
-   * Formatted reconciliation keys of the entity being pushed, or undefined until resolved
+   * Reconciliation keys of the pushed entity, undefined until resolved
    * @type {string | undefined}
    */
   spinnerKeys;
 
   /**
-   * Chokidar watcher instance
+   * Created by startWatching, closed by stopWatching
    * @type {object | null}
    */
   chokidarWatcher = null;
 
   /**
-   * Watch targets derived from the `decompose` config, one entry per glob pattern.
-   * Patterns are relative to `watchPath` and use "/" separators.
+   * One target per `decompose` entry. Patterns are relative to `watchPath` and
+   * use "/" separators.
    * @type {Array<{pattern: string, schemaConfig: object, xpath: string}>}
    */
   watchTargets = [];
 
   /**
-   * Whether the watcher is currently running
+   * Whether the watcher is running
    * @type {boolean}
    */
   isRunning = false;
 
   /**
-   * Creates a new CampaignWatch.
-   *
-   * @param {AioLogger} logger - Logger instance for logging messages
-   * @param {Client} client - Authenticated SDK client
-   * @param {CampaignConfig} accConfig - Configuration object defining schemas and download options
-   * @param {object} cliOptions - Command-line options including path
-   * @param {Function} createSpinner - Ora spinner instance for displaying progress
-   * @example
-   * const watcher = new CampaignWatch(logger, client, accConfig, cliOptions, createSpinner);
+   * @param {AioLogger} logger - Diagnostics logger
+   * @param {Client} client - Authenticated ACC client
+   * @param {AccConfig} accConfig - Schemas and download options (acc.config.json)
+   * @param {object} cliOptions - Command-line options: `path` (watched folder)
+   * @param {Function} createSpinner - Spinner factory
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -123,19 +106,18 @@ class CampaignWatch {
     this.accConfig = accConfig;
     this.watchPath = cliOptions.path || process.cwd();
     this.createSpinner = createSpinner;
-    // TODO: remove when stable
+    // Early access notice, to remove once stable
     this.logger.warn(
       "`acc instance watch` is in early access and subject to change. Always test in sandbox first.",
     );
   }
 
   /**
-   * Starts watching decomposed files for changes and pushing them to the instance.
+   * Watches the decomposed files and pushes their changes to the instance.
    *
-   * @param {number} [debounceTime] - Debounce time in milliseconds (default: 300)
-   * @returns {Promise<void>} Resolves when watching has started
-   * @throws {INSTANCE_WATCH_ALREADY_RUNNING} If watcher is already running
-   * @throws {INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS} If no schemas with decompose config found
+   * @param {number} [debounceTime] - Wait after the last write, in milliseconds
+   * @throws {INSTANCE_WATCH_ALREADY_RUNNING} If already running
+   * @throws {INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS} If no schema has a `decompose` config
    */
   async startWatching(debounceTime = this.DEFAULT_DEBOUNCE_TIME) {
     if (this.isRunning) {
@@ -146,7 +128,6 @@ class CampaignWatch {
       `👀 Starting to watch decomposed files in ${this.watchPath} (debounce: ${debounceTime}ms)`,
     );
 
-    // Get schemas with decompose configuration
     const decomposedSchemas = getDecomposedSchemas(this.accConfig.schemas);
     if (decomposedSchemas.length === 0) {
       throw new INSTANCE_WATCH_NO_DECOMPOSED_SCHEMAS();
@@ -156,7 +137,6 @@ class CampaignWatch {
       `Found ${decomposedSchemas.length} schemas with decompose configuration`,
     );
 
-    // Build the watch targets, one per decompose entry
     this.watchTargets = this._buildWatchList(decomposedSchemas);
     const filePatterns = this.watchTargets.map((target) => target.pattern);
 
@@ -169,7 +149,6 @@ class CampaignWatch {
 
     this.logger.verbose(`Watching patterns: ${filePatterns.join(", ")}`);
 
-    // Import chokidar (added as a dependency in package.json)
     let chokidar;
     try {
       chokidar = await this._importChokidar();
@@ -180,9 +159,9 @@ class CampaignWatch {
       throw err;
     }
 
-    // Create watcher. `cwd` keeps both the patterns and the emitted paths relative
-    // to the watch path, so an absolute prefix containing glob metacharacters
-    // (e.g. /Users/me/my[work]/) can never be read as part of a pattern.
+    // `cwd` keeps the patterns and the emitted paths relative, so glob
+    // characters in the absolute prefix (e.g. /Users/me/my[work]/) are never
+    // read as part of a pattern.
     const watcherOptions = {
       cwd: this.watchPath,
       persistent: true,
@@ -201,7 +180,6 @@ class CampaignWatch {
 
     this.chokidarWatcher = chokidar.default.watch(filePatterns, watcherOptions);
 
-    // Set up event handlers
     this.chokidarWatcher
       .on("add", (filePath) => this._onFileChange(filePath))
       .on("change", (filePath) => this._onFileChange(filePath))
@@ -211,7 +189,7 @@ class CampaignWatch {
       })
       .on("error", (error) => {
         this.logger.error(`Watcher error: ${error.message}`);
-        // A watcher error can fire before any file change, i.e. before a spinner exists
+        // An error can fire before any file change, so before the spinner exists
         this.spinner?.fail(
           this._getSpinnerPrefix(0) + `Error "${error.message}"`,
         );
@@ -224,9 +202,7 @@ class CampaignWatch {
   }
 
   /**
-   * Stops watching files.
-   *
-   * @returns {Promise<void>} Resolves when watching has stopped
+   * Stops watching the files.
    */
   async stopWatching() {
     if (!this.isRunning || !this.chokidarWatcher) {
@@ -242,11 +218,10 @@ class CampaignWatch {
   }
 
   /**
-   * Builds the watch targets, one per entry of every decomposed schema, and
-   * logs each of them.
+   * Builds one watch target per entry of the decomposed schemas, and logs them.
    *
-   * @param {Array<object>} decomposedSchemas - Schemas with decompose config
-   * @returns {Array<{pattern: string, schemaConfig: object, xpath: string}>} the watch targets
+   * @param {Array<object>} decomposedSchemas - Schemas with a decompose config
+   * @returns {Array<{pattern: string, schemaConfig: object, xpath: string}>} The watch targets
    */
   _buildWatchList(decomposedSchemas) {
     const watchTargets = buildWatchTargets(decomposedSchemas);
@@ -261,10 +236,10 @@ class CampaignWatch {
   }
 
   /**
-   * Finds the schema config and xpath a changed file belongs to.
+   * Finds the target (schema config and xpath) of a changed file.
    *
-   * @param {string} filePath - Path of the changed file, relative to the watch path
-   * @returns {{pattern: string, schemaConfig: object, xpath: string}|null} the matching target, or null
+   * @param {string} filePath - Changed file, relative to the watch path
+   * @returns {{pattern: string, schemaConfig: object, xpath: string}|null} The matching target, or null
    */
   _findSchemaForFile(filePath) {
     const matches = findMatchingTargets(this.watchTargets, filePath);
@@ -273,8 +248,8 @@ class CampaignWatch {
       return null;
     }
     if (matches.length > 1) {
-      // Two decompose entries claiming the same file is a configuration problem,
-      // so report it rather than silently picking one.
+      // Two entries claiming one file is a config problem: report it instead of
+      // picking silently.
       this.logger.warn(
         `${toPosixPath(filePath)} matches ${matches.length} decompose patterns, using ${matches[0].schemaConfig.schemaId}`,
       );
@@ -283,19 +258,18 @@ class CampaignWatch {
   }
 
   /**
-   * Imports chokidar lazily, isolated in its own method so unit tests can stub it.
+   * Imports chokidar lazily, in its own method so tests can stub it.
    *
-   * @returns {Promise<object>} the chokidar module namespace
+   * @returns {Promise<object>} The chokidar module
    */
   async _importChokidar() {
     return import("chokidar");
   }
 
   /**
-   * Callback for file change events.
-   * Rebuilds the entity from the changed file and pushes to instance.
+   * Handles an added or changed file: rebuilds the entity and pushes it.
    *
-   * @param {string} filePath - The path of the changed file, relative to the watch path
+   * @param {string} filePath - Changed file, relative to the watch path
    */
   async _onFileChange(filePath) {
     this.spinnerFilename = path.basename(filePath);
@@ -313,7 +287,6 @@ class CampaignWatch {
 
       this.logger.verbose(`File changed: ${absolutePath}`);
 
-      // Find which schema this file belongs to
       match = this._findSchemaForFile(filePath);
       if (!match) {
         throw new INSTANCE_WATCH_FILE_NOT_IN_SCOPE();
@@ -333,12 +306,10 @@ class CampaignWatch {
     try {
       currentContent = fs.readFileSync(absolutePath, "utf8");
 
-      // Rebuild entity from file
       metadataDocument = await this._getMetadataDocument(
         schemaConfig,
         absolutePath,
         xpath,
-        currentContent,
       );
 
       if (!metadataDocument) {
@@ -383,8 +354,10 @@ class CampaignWatch {
   }
 
   /**
-   * @param {number} stage 0/1/2
-   * @returns {string} the prefix
+   * Builds the spinner prefix: Watch, then Metadata (stage 1), then Push (stage 2).
+   *
+   * @param {number} stage - 0 (watch), 1 (metadata) or 2 (push)
+   * @returns {string} Text placed before the step message
    */
   _getSpinnerPrefix(stage) {
     let prefix = `Watch(${chalk.green(this.spinnerFilename)})`;
@@ -401,30 +374,22 @@ class CampaignWatch {
   }
 
   /**
-   * Rebuilds the complete entity XML from a decomposed file.
-   * Loads the meta XML file, finds the target node by XPath, and inserts
-   * the file content as CDATA.
+   * Loads and parses the meta XML file of a decomposed file.
    *
-   * @param {object} schemaConfig - Schema configuration
-   * @param {string} filePath - Path to the changed decomposed file
-   * @param {string} xpath - The xpath key from decompose config
-   * @param {string} fileContent - Content of the changed file
-   * @returns {Promise<Document|null>} The complete entity XML as string, or null if failed
-   * @throws {Error}
+   * @param {object} schemaConfig - Schema entry of acc.config.json
+   * @param {string} filePath - Changed decomposed file
+   * @param {string} xpath - xpath key of the decompose config
+   * @returns {Promise<Document>} The meta document
+   * @throws {Error} If the meta file is missing, unreadable or has no root element
    */
-  async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
-    const { filename: metaFilename } = schemaConfig;
-
+  async _getMetadataDocument(schemaConfig, filePath, xpath) {
     this.spinnerMetadata = xpath;
 
     this.spinner.text =
       this._getSpinnerPrefix(1) +
       `Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
 
-    // Generate the meta file path by replacing the decomposed file extension
-    // with .meta.xml (or .xml if metaFilename ends with that)
-    // This assumes the meta file follows the same naming pattern as the decomposed file
-    const metaFilePath = this._getMetaFilePath(filePath, metaFilename);
+    const metaFilePath = this._getMetaFilePath(filePath);
 
     if (!fs.existsSync(metaFilePath)) {
       throw new INSTANCE_WATCH_META_FILE_MISSING({
@@ -432,11 +397,9 @@ class CampaignWatch {
       });
     }
 
-    // Load and parse the meta XML
     const metaXmlContent = fs.readFileSync(metaFilePath, "utf8"); // @throws
     const document = DomUtil.parse(metaXmlContent); // @throws
 
-    // Find the root element (should be the entity)
     const rootElement = document.documentElement;
     if (!rootElement) {
       throw new Error(`No root element found in meta XML`);
@@ -446,40 +409,36 @@ class CampaignWatch {
   }
 
   /**
-   * Generates the meta file path from a decomposed file path.
-   * Replaces the file extension with .meta.xml or adjusts based on the
-   * schema's filename template.
+   * Builds the meta file path of a decomposed file: same folder and base name,
+   * with the `.meta.xml` extension.
    *
-   * @param {string} decomposedFilePath - Path to the decomposed file
-   * @param {string} metaFilename - Meta filename template from config
-   * @returns {string} Path to the meta file
+   * @param {string} decomposedFilePath - Decomposed file, e.g. cus/myScript.js
+   * @returns {string} Meta file, e.g. cus/myScript.meta.xml
    */
-  _getMetaFilePath(decomposedFilePath, metaFilename) {
+  _getMetaFilePath(decomposedFilePath) {
     const dir = path.dirname(decomposedFilePath);
 
-    // Extract the base name without extension
     const baseName = path.basename(
       decomposedFilePath,
       path.extname(decomposedFilePath),
     );
 
-    // If the meta filename ends with .meta.xml, replace the decomposed file's extension
-    // This is a simplified approach - assumes the decomposed file name matches
-    // the pattern without the extension
+    // Simplified: the meta file is assumed to share the base name of the
+    // decomposed file, rather than follow the filename template of the config
     return path.join(dir, baseName + ".meta.xml");
   }
 
   /**
-   * Pushes the rebuilt entity XML to the instance.
-   * Uses xtk:session#Write with _operation: "update".
+   * Writes the rebuilt entity to the instance with xtk:session#Write
+   * (_operation "update").
    *
-   * @param {string} xpath - The xpath key from decompose config
-   * @param {string} currentContent - The current content of the changed file
-   * @param {Document} metadataDocument - The complete metadata document
-   * @param {object} schemaConfig - Schema configuration
-   * @param {string} filePath - Absolute path of the file that changed, logged for auditing
+   * @param {string} xpath - xpath key of the decompose config
+   * @param {string} currentContent - Content of the changed file
+   * @param {Document} metadataDocument - Meta document of the entity
+   * @param {object} schemaConfig - Schema entry of acc.config.json
+   * @param {string} filePath - Absolute path of the changed file, logged for auditing
    * @returns {Promise<boolean>} true when pushed, false when skipped (XML element)
-   * @throws {INSTANCE_WATCH_PUSH_FAILED} If push fails after retries
+   * @throws {INSTANCE_WATCH_PUSH_FAILED} If the write fails
    */
   async _pushEntityToServer(
     xpath,
@@ -489,7 +448,7 @@ class CampaignWatch {
     filePath,
   ) {
     const { schemaId } = schemaConfig;
-    const pushLog = new CampaignPushLog(schemaConfig);
+    const pushLog = new AccInstancePushLog(schemaConfig);
     pushLog.filePath = filePath;
     pushLog.xpath = xpath;
 
@@ -507,18 +466,18 @@ class CampaignWatch {
         });
       }
 
-      // The reconciliation key comes from the schema, not from a guess
+      // The reconciliation key comes from the schema
       const { key, keyValues } = getWriteKey(schema, rootElement);
       pushLog.keyValues = keyValues;
       this.spinnerKeys = formatKeyValues(keyValues);
 
       this.logger.verbose(
-        `CampaignPushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
+        `AccInstancePushLog for ${schemaId} on ${key.isInternal ? "internal" : "external"} key "${key.name}"`,
       );
 
-      // Only text values (e.g. delivery html source) can be pushed: an element
-      // holding child elements (e.g. workflow activities) would be overwritten
-      // by a CDATA section
+      // Only text values (e.g. a delivery html source) can be pushed: a CDATA
+      // section would overwrite the child elements of an element (e.g. workflow
+      // activities)
       if (await this._isElementOnly(schema, xpath)) {
         this.logger.warn(
           `${schemaId} "${xpath}" is an XML element: pushing it is not supported yet, the file was not pushed.`,
@@ -528,7 +487,6 @@ class CampaignWatch {
 
       this.spinner.text = this._getSpinnerPrefix(2) + `Writing to the instance`;
 
-      // build payload
       const payloadDocument = DomUtilAcc.buildXmlFromPath(
         xpath,
         currentContent,
@@ -537,8 +495,8 @@ class CampaignWatch {
       const payload = payloadDocument.documentElement;
       payload.setAttribute("xtkschema", schemaId);
       payload.setAttribute("_operation", "update");
-      // Declare the key so the server reconciles on it rather than on whichever
-      // attribute it finds first
+      // Declares the key, so the server does not reconcile on the first
+      // attribute it finds
       payload.setAttribute(
         "_key",
         keyValues.map(({ xpath: keyXpath }) => keyXpath).join(","),
@@ -556,8 +514,8 @@ class CampaignWatch {
       this.logger.verbose(`  Push failed: ${err.message || String(err)}`);
       pushLog.error = err;
 
-      // adapterWrite already reports SDK failures as AccErrors: re-wrapping one
-      // would nest the message inside itself
+      // adapterWrite already wraps SDK failures: wrapping again would nest the
+      // message
       if (err?.sdk === "acc") {
         throw err;
       }
@@ -569,12 +527,12 @@ class CampaignWatch {
   }
 
   /**
-   * Tells whether the decomposed xpath is an element that can hold child
-   * elements rather than a text value (memo, html, CDATA...).
+   * Tells whether the xpath is an element that can hold child elements, rather
+   * than a text value (memo, html, CDATA).
    *
-   * @param {XtkSchema} schema - The schema of the entity, from the SDK
-   * @param {string} xpath - The xpath key from decompose config
-   * @returns {Promise<boolean>} true if the schema node has no type
+   * @param {XtkSchema} schema - Schema of the entity, from the SDK
+   * @param {string} xpath - xpath key of the decompose config
+   * @returns {Promise<boolean>} true for an element-only node
    * @see https://opensource.adobe.com/acc-js-sdk/application.html
    */
   async _isElementOnly(schema, xpath) {
@@ -583,11 +541,10 @@ class CampaignWatch {
   }
 
   /**
-   * Adapter of xtk:session#Write for:
-   * - easier mocking in unit tests
-   * - SDK error wrapping
+   * Wraps xtk:session#Write, to mock it in tests and wrap SDK errors.
+   *
    * @param {Element} element - The entity element to write
-   * @returns {Promise<Element>} the result
+   * @returns {Promise<Element>} The result of the write
    * @throws {CampaignException}
    */
   async adapterWrite(element) {
@@ -600,4 +557,4 @@ class CampaignWatch {
   }
 }
 
-export default CampaignWatch;
+export default AccInstanceWatch;

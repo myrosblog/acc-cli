@@ -67,7 +67,7 @@ export function getWriteKey(schema, rootElement) {
  *
  * To explore: sdk.XtkCaster.asString => "xtk:sql|4521" "xtk:javascript|New|cus"
  *
- * @param {Array<{attributeName: string, value: string}>} keyValues - The key values
+ * @param {Array<{attributeName: string, value: string}>} keyValues - Name and value of each key attribute
  * @returns {string} "DM123" for a single field, "cus:New" for name + namespace, "a, b" otherwise
  */
 export function formatKeyValues(keyValues) {

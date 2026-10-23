@@ -3,11 +3,15 @@ import fs from "fs-extra";
 import path from "node:path";
 import Ajv from "ajv";
 import hjson from "hjson";
-import { fileURLToPath } from "url";
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { fileURLToPath } from "node:url";
+// src/ folder, which holds templates/ and validators/
+const srcDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
 // acc
-import { codes } from "./helpers/AccErrors.js";
-import { DOC_QUERYDEF } from "./helpers/helpText.js";
+import { codes } from "../../helpers/AccErrors.js";
+import { DOC_QUERYDEF } from "../../helpers/helpText.js";
 const {
   CONFIG_CONSTR_DEFAULT_PATH_MISSING,
   CONFIG_INIT_CONFIG_PATH_MISSING,
@@ -21,7 +25,13 @@ const {
  */
 export const CONFIG_FILENAME = "acc.config.json";
 
-class CampaignConfig {
+/**
+ * Project configuration (acc.config.json): loads it, validates it against the
+ * JSON schemas and exposes the schemas, the SDK options and the alias.
+ *
+ * @class AccConfig
+ */
+class AccConfig {
   /**
    * @type {Array<object>}
    */
@@ -48,7 +58,7 @@ class CampaignConfig {
   /**
    * @type {string}
    */
-  templateDir = path.join(__dirname, "templates");
+  templateDir = path.join(srcDir, "templates");
 
   /**
    * @type {AioLogger}
@@ -91,7 +101,7 @@ class CampaignConfig {
   ajvValidateQueryDef;
 
   /**
-   * Creates a new CampaignConfig instance.
+   * Creates a new AccConfig instance.
    *
    * @param {AioLogger} logger - Logger instance for logging messages
    * @param {string} defaultConfigPath - Default path to the acc.config.json file
@@ -105,12 +115,12 @@ class CampaignConfig {
     this.defaultConfigPath = defaultConfigPath;
     this.ajv = new Ajv();
     this.ajvSchema = fs.readJsonSync(
-      path.join(__dirname, "validators", "accConfig.json"),
+      path.join(srcDir, "validators", "accConfig.json"),
     );
     this.ajvValidate = this.ajv.compile(this.ajvSchema);
     this.ajvQueryDef = new Ajv({ allErrors: true });
     this.ajvValidateQueryDef = this.ajvQueryDef.compile(
-      fs.readJsonSync(path.join(__dirname, "validators", "queryDef.json")),
+      fs.readJsonSync(path.join(srcDir, "validators", "queryDef.json")),
     );
   }
 
@@ -206,11 +216,11 @@ class CampaignConfig {
 
   /**
    * Checks if a file exists at the given path.
-   * @param {string} path - the file path to check
+   * @param {string} filePath - the file path to check
    * @returns {boolean} true if the file exists
    */
-  fileExists(path) {
-    return fs.existsSync(path);
+  fileExists(filePath) {
+    return fs.existsSync(filePath);
   }
 
   /**
@@ -247,4 +257,4 @@ class CampaignConfig {
   }
 }
 
-export default CampaignConfig;
+export default AccConfig;

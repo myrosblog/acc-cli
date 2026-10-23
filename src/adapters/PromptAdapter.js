@@ -3,7 +3,7 @@ import { input, password, select } from "@inquirer/prompts";
 /**
  * Adapter around `@inquirer/prompts` (the same prompt library aio-cli relies on).
  * Encapsulates interactive terminal prompts behind a clean, mockable interface
- * so business services (e.g. CampaignAuth) can ask the user for missing input
+ * so business services (e.g. AccAuth) can ask the user for missing input
  * without coupling to a specific prompt library, and so tests can stub it.
  *
  * IMPORTANT: callers must guard interactive prompts with

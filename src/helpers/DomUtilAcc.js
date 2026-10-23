@@ -6,6 +6,11 @@ import {
   DomException,
 } from "@adobe/acc-js-sdk/src/domUtil.js";
 
+/**
+ * acc-js-sdk DomUtil with the xpath and decompose helpers of pull and watch.
+ *
+ * @class DomUtilAcc
+ */
 class DomUtilAcc extends DomUtil {
   static XPATH_ATTR = "@";
 

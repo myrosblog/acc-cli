@@ -18,7 +18,7 @@ const dir = "mocks/acc-js-sdk-xml/xtk/queryDef/executeQuery/";
 // mocks
 const configDefaultFull = loadJson("../../src/templates/acc.config.json");
 // acc
-import CampaignInstance from "../../src/CampaignInstance.js";
+import AccInstancePull from "../../src/services/instance/AccInstancePull.js";
 
 /** Shallow-clone config and keep only the given schemaIds */
 const filterSchemas = (config, schemaId, filename = "") => ({
@@ -249,7 +249,7 @@ const mappingFixtures = [
   },
 ];
 
-describe("CampaignInstance.pull.integration", () => {
+describe("AccInstancePull.integration", () => {
   let mockClient,
     mockLogger,
     mockSpinner,
@@ -275,7 +275,7 @@ describe("CampaignInstance.pull.integration", () => {
     for (const fixture of mappingFixtures) {
       const { schemaId, filename, xml, parsedFilenames } = fixture;
       const config = filterSchemas(configDefaultFull, schemaId, filename);
-      instance = new CampaignInstance(
+      instance = new AccInstancePull(
         mockLogger,
         mockClient,
         config,

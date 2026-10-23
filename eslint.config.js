@@ -3,20 +3,14 @@ import neostandard from "neostandard";
 import jsdoc from "eslint-plugin-jsdoc";
 import globals from "globals";
 
+const jsdocRecommended = jsdoc.configs["flat/recommended"];
+
 /**
- * ESLint flat config.
- *
- * Based on `adobe/aio-cli` that imports `@adobe/eslint-config-aio-lib-config`
- * But recreated here because it enables the standard style, which contradicts
- * .prettierrc.json on semicolons and quotes, and it configures Jest where this
- * repo runs Mocha. The two parts worth reusing are taken directly instead:
- * neostandard without its style rules, and eslint-plugin-jsdoc.
+ * ESLint flat config: neostandard and eslint-plugin-jsdoc
  */
 export default [
+  // Mirrors .prettierignore
   {
-    // Mirrors .prettierignore. `dist` is not optional: dist/logs/*.js hold
-    // server-side Campaign scripts written in E4X (`context.@result = ...`),
-    // which no JavaScript parser can read.
     ignores: [
       "node_modules/",
       "coverage/",
@@ -27,47 +21,36 @@ export default [
     ],
   },
 
-  // Correctness half of standard: the n (Node), promise and core rules.
-  // `noStyle` leaves every formatting decision to Prettier, `noJsx` drops the
-  // React block this CLI has no use for. Node globals and ESM module scope come
-  // with it, so they are not repeated below.
+  // Correctness half of standard. Prettier formats, and there is no JSX.
   ...neostandard({ noStyle: true, noJsx: true }),
   {
+    // ESM resolves imports literally: a forgotten `.js` only fails at runtime
     rules: {
-      // ESM resolves relative imports literally, so a forgotten `.js` extension
-      // only fails at runtime, inside whichever command imports the file.
-      // Neither rule is part of the neostandard defaults.
       "n/no-missing-import": "error",
       "n/no-extraneous-import": "error",
     },
   },
 
-  // The code is densely documented, so JSDoc drift is a real source of
-  // misleading comments. flat/recommended ships every rule at `warn`, which is
-  // the level to keep while the existing stock is brought up to date.
-  // Scoped to src: a spec documents itself through its describe/it names.
-  { files: ["src/**/*.js"], ...jsdoc.configs["flat/recommended"] },
+  // src: Airbnb and neostandard
   {
     files: ["src/**/*.js"],
-    settings: {
-      // Same choice as the Adobe config: @private blocks are internal notes.
-      jsdoc: { ignorePrivate: true },
-    },
+    ...jsdocRecommended,
+    // @private blocks are internal notes, as in the Adobe config
+    settings: { jsdoc: { ignorePrivate: true } },
     rules: {
+      ...jsdocRecommended.rules,
       "jsdoc/tag-lines": ["warn", "never", { startLines: null }],
-      // Types that exist but that a JS-only project cannot import:
-      // - aio-lib-core-logging: AioLogger
-      // - acc-js-sdk: Client, ConnectionParameters, CampaignException,
-      //   XtkSchema, XtkSchemaKey
-      // - @xmldom: Element, Document
-      // - Node: DOM, NodeJS.ReadStream
+      "jsdoc/informative-docs": "warn",
+      // Types that cannot be imported: AioLogger (aio-lib-core-logging),
+      // Client, ConnectionParameters, CampaignException, XtkSchema, XtkSchemaKey
+      // (acc-js-sdk), Element, Document (@xmldom), NodeJS.ReadStream (Node)
       "jsdoc/no-undefined-types": [
         "warn",
         {
           definedTypes: [
+            "AccAuth",
+            "AccConfig",
             "AioLogger",
-            "CampaignAuth",
-            "CampaignConfig",
             "CampaignException",
             "Client",
             "ConnectionParameters",
@@ -80,16 +63,73 @@ export default [
           ],
         },
       ],
-      // {Function} describes the injected factories (makeCache, createSpinner),
-      // which are the dependency injection convention of AGENTS.md. The {*} of
-      // CampaignAuth._stage returns whatever the wrapped stage returns, so a
-      // narrower type would be wrong.
+      // {Function} types the injected factories (AGENTS.md), and {*} the
+      // return of AccAuth._stage
       "jsdoc/reject-any-type": "off",
       "jsdoc/reject-function-type": "off",
+
+      "n/prefer-node-protocol": "warn",
+      "no-shadow": "warn",
+      // neostandard checks no function argument (`args: "none"`)
+      "no-unused-vars": [
+        "warn",
+        { vars: "all", args: "after-used", ignoreRestSiblings: true },
+      ],
+      // The result goes to this.log (stdout), diagnostics to the logger (stderr)
+      "no-console": "warn",
+      "no-loop-func": "warn",
+      "default-case": "warn",
+      "guard-for-in": "warn",
+      "no-useless-concat": "warn",
+      "no-duplicate-imports": "warn",
+      "max-classes-per-file": ["warn", 1],
+      "prefer-destructuring": [
+        "warn",
+        {
+          VariableDeclarator: { array: false, object: true },
+          AssignmentExpression: { array: true, object: false },
+        },
+        { enforceForRenamedProperties: false },
+      ],
+      "spaced-comment": [
+        "warn",
+        "always",
+        {
+          line: { exceptions: ["-", "+"], markers: ["=", "!", "/"] },
+          block: {
+            exceptions: ["-", "+"],
+            markers: ["=", "!", ":", "::"],
+            balanced: true,
+          },
+        },
+      ],
+      // no TODO or FIXME
+      "no-warning-comments": [
+        "warn",
+        { terms: ["todo", "fixme", "xxx"], location: "start" },
+      ],
     },
   },
 
-  // Strict rules, starting with helpers, then will be extended to src/
+  // Stricter rules for JSDoc
+  {
+    files: ["src/services/**/*.js", "src/helpers/**/*.js"],
+    rules: {
+      "jsdoc/require-jsdoc": [
+        "warn",
+        {
+          require: {
+            FunctionDeclaration: true,
+            MethodDefinition: true,
+            ClassDeclaration: true,
+          },
+          checkConstructors: false,
+        },
+      ],
+    },
+  },
+
+  // Stricter rules, to extend to src/services once its long functions are split
   {
     files: [
       "src/helpers/**/*.js",
@@ -97,14 +137,14 @@ export default [
       "src/adapters/**/*.js",
     ],
     rules: {
-      // ESLint's default thresholds.
+      // ESLint's default thresholds
       complexity: "warn",
       "max-depth": "warn",
       "max-lines-per-function": [
         "warn",
         { skipBlankLines: true, skipComments: true },
       ],
-      // Airbnb additional rules
+      // Airbnb
       "consistent-return": "warn",
       "default-param-last": "warn",
       "no-await-in-loop": "warn",
@@ -123,15 +163,14 @@ export default [
   },
 
   {
-    // Mocha injects describe/it/before, and test/index.js sets a global expect.
+    // Mocha injects describe/it/before, and test/index.js sets a global expect
     files: ["test/**/*.js"],
     languageOptions: {
       globals: { ...globals.mocha, expect: "readonly" },
     },
     rules: {
       // Chai asserts through property access (`expect(x).to.be.true`), which
-      // this rule reads as a statement with no effect. Keeping it on would
-      // report almost every assertion in the suite.
+      // this rule reads as a statement with no effect
       "no-unused-expressions": "off",
     },
   },
