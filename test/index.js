@@ -33,6 +33,7 @@ import "./unit/helpers/hideCommand.spec.js";
 import "./unit/validators/queryDef.spec.js";
 import "./unit/services/config/AccConfig.spec.js";
 import "./unit/services/auth/AccAuth.spec.js";
+import "./unit/services/instance/AccInstancePull.spec.js";
 import "./unit/services/instance/AccInstance.spec.js";
 import "./unit/services/monitor/AccMonitor.spec.js";
 import "./unit/services/instance/AccInstanceWatch.spec.js";
@@ -58,5 +59,5 @@ import "./unit/commands/monitor-test.spec.js";
 import "./unit/commands/flag-chars.spec.js";
 
 // integration tests
-import "./integration/AccInstance.pull.spec.js";
+import "./integration/AccInstancePull.spec.js";
 import "./integration/ConfigCommands.spec.js";

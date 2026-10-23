@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstancePull from "../../../src/services/instance/AccInstancePull.js";
 import InstancePull from "../../../src/commands/instance/pull.js";
 
 describe("InstancePull", () => {
@@ -37,7 +37,7 @@ describe("InstancePull", () => {
     const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     const configInitStub = sinon.stub(AccConfig.prototype, "init").resolves();
     const instanceLoginStub = sinon
-      .stub(AccInstance.prototype, "pull")
+      .stub(AccInstancePull.prototype, "pull")
       .resolves();
     const result = await InstancePull.run(argv);
     expect(result).to.be.undefined;

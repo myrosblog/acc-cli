@@ -12,7 +12,7 @@ const { INSTANCE_ALIAS_UNRESOLVED } = codes;
  * Base command for `acc instance ...` subcommands that talk to an instance.
  *
  * Centralizes the shared flags (alias/path/config) via oclif `baseFlags` and
- * the login (connect), then the AccInstance bootstrap used by pull/check/exec.
+ * the login (connect), then the AccInstance bootstrap used by exec/queryDef/soap/info.
  *
  * @class InstanceCommand
  */
@@ -80,7 +80,7 @@ export default class InstanceCommand extends BaseCommand {
    * @param {object} flags - parsed CLI flags (alias, config, path, ...)
    * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
    *   over the config ones (e.g. a raised `timeout` for heavy calls)
-   * @returns {Promise<AccInstance>} a new AccInstance, ready to call its methods (pull/check/exec)
+   * @returns {Promise<AccInstance>} a new AccInstance, ready to call its methods (exec/queryDef/soap/info)
    */
   async getInstance(flags, sdkOptionsOverride = {}) {
     const {

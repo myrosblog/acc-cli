@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
+import AccInstancePull from "../../services/instance/AccInstancePull.js";
 
 export default class InstancePull extends InstanceCommand {
   static description =
@@ -37,7 +38,14 @@ export default class InstancePull extends InstanceCommand {
 
   async run() {
     const { flags } = await this.parse(InstancePull);
-    const instance = await this.getInstance(flags);
-    await instance.pull(false);
+    const { client, config, flags: resolvedFlags } = await this.connect(flags);
+    const instancePull = new AccInstancePull(
+      this.logger,
+      client,
+      config,
+      resolvedFlags,
+      this.createSpinner,
+    );
+    await instancePull.pull(false);
   }
 }

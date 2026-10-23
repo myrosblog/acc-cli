@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstancePull from "../../../src/services/instance/AccInstancePull.js";
 import InstanceCheck from "../../../src/commands/instance/check.js";
 
 describe("InstanceCheck", () => {
@@ -26,7 +26,7 @@ describe("InstanceCheck", () => {
     const argv = ["--alias", "test"];
     const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     const instanceLoginStub = sinon
-      .stub(AccInstance.prototype, "pull")
+      .stub(AccInstancePull.prototype, "pull")
       .resolves();
     const configInitStub = sinon.stub(AccConfig.prototype, "init").resolves();
     const result = await InstanceCheck.run(argv);
