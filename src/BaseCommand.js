@@ -84,7 +84,7 @@ export default class BaseCommand extends Command {
 
   /**
    * Ora spinner factory (kept as a method for easy injection in tests).
-   * @param {string} text the spinner text
+   * @param {string} text Message shown next to the spinner
    * @returns {ora.Ora} a new spinner instance
    */
   spinner(text) {

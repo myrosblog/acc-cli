@@ -78,7 +78,7 @@ class AccInstanceExec {
   /**
    * Wraps xtk:builder#EvaluateJavaScript, to mock it in tests and wrap SDK errors.
    *
-   * @param {string} name - Script name
+   * @param {string} name - Logical script name, sent as the `name` param
    * @param {string} script - JavaScript source to evaluate on the server
    * @param {Document} contextXml - Execution context (in/out)
    * @returns {Promise<Element>} The output `context` element

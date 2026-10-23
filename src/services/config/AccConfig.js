@@ -3,7 +3,7 @@ import fs from "fs-extra";
 import path from "node:path";
 import Ajv from "ajv";
 import hjson from "hjson";
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
 // src/ folder, which holds templates/ and validators/
 const srcDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -25,6 +25,12 @@ const {
  */
 export const CONFIG_FILENAME = "acc.config.json";
 
+/**
+ * Project configuration (acc.config.json): loads it, validates it against the
+ * JSON schemas and exposes the schemas, the SDK options and the alias.
+ *
+ * @class AccConfig
+ */
 class AccConfig {
   /**
    * @type {Array<object>}

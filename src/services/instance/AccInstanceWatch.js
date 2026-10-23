@@ -75,7 +75,7 @@ class AccInstanceWatch {
   spinnerKeys;
 
   /**
-   * Chokidar watcher
+   * Created by startWatching, closed by stopWatching
    * @type {object | null}
    */
   chokidarWatcher = null;
@@ -357,7 +357,7 @@ class AccInstanceWatch {
    * Builds the spinner prefix: Watch, then Metadata (stage 1), then Push (stage 2).
    *
    * @param {number} stage - 0 (watch), 1 (metadata) or 2 (push)
-   * @returns {string} The prefix
+   * @returns {string} Text placed before the step message
    */
   _getSpinnerPrefix(stage) {
     let prefix = `Watch(${chalk.green(this.spinnerFilename)})`;
@@ -412,8 +412,8 @@ class AccInstanceWatch {
    * Builds the meta file path of a decomposed file: same folder and base name,
    * with the `.meta.xml` extension.
    *
-   * @param {string} decomposedFilePath - Path of the decomposed file
-   * @returns {string} The path of the meta file
+   * @param {string} decomposedFilePath - Decomposed file, e.g. cus/myScript.js
+   * @returns {string} Meta file, e.g. cus/myScript.meta.xml
    */
   _getMetaFilePath(decomposedFilePath) {
     const dir = path.dirname(decomposedFilePath);

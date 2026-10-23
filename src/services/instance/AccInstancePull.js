@@ -68,7 +68,7 @@ class AccInstancePull {
    * Merges the queryDef of the schema config over the base queryDef.
    *
    * @param {object} schemaConfig - Schema entry of acc.config.json
-   * @param {object} baseQueryDef - Base queryDef
+   * @param {object} baseQueryDef - Defaults (schema, operation, paging) that the config overrides
    * @returns {object} The merged queryDef
    */
   _getQueryDefForSchema(schemaConfig, baseQueryDef) {
