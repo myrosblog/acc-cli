@@ -1,5 +1,4 @@
-// Runs the `acc` binary as a subprocess, for the tests that exercise the real
-// CLI: test/integration/fail-fast.spec.js (no instance) and test/e2e (live instance).
+// Runs the `acc` binary as a subprocess (fail-fast integration spec, e2e tier).
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import { promisify } from "node:util";
@@ -10,20 +9,14 @@ const run = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const BIN = join(__dirname, "../bin/acc");
-// e2e only: the instance alias the live tests target; override per run with
-// ACC_E2E_ALIAS (see `acc auth list`).
+// Alias targeted by the e2e tier; override with ACC_E2E_ALIAS.
 export const ALIAS = process.env.ACC_E2E_ALIAS || "local";
 
 /**
- * Run the `acc` binary as a subprocess.
- *
- * Diagnostics are forced to info level so the stdout(result)/stderr(diagnostics)
- * routing can be asserted; ACC_NO_FILE_LOG is inherited from the test entrypoint.
- * OCLIF_COLUMNS is raised because oclif wraps errors at 80 columns when stderr
- * is not a TTY, which would split a message such as "--args is not valid JSON"
- * across two lines and break the assertions.
- * Rejects (like execFile) on a non-zero exit, exposing `code`, `stdout`,
- * `stderr` on the error.
+ * Run the `acc` binary as a subprocess. Logs are forced to info so stdout
+ * (result) and stderr (diagnostics) can be asserted, and OCLIF_COLUMNS stops
+ * oclif wrapping errors at 80 columns. Rejects on a non-zero exit, with `code`,
+ * `stdout` and `stderr` on the error.
  *
  * @param {string[]} args - CLI args, e.g. ["auth", "login", "--alias", "local"]
  * @param {object} [opts] - extra execFile options (cwd, env, ...)
@@ -42,7 +35,7 @@ export const runAcc = (args, opts = {}) =>
   });
 
 /**
- * Write a file in a directory, typically the throwaway cwd of a spec.
+ * Write a file in a directory and return its path.
  *
  * @param {string} cwd - directory to write in
  * @param {string} name - file name

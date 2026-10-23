@@ -1,7 +1,5 @@
-// CLI tests: run the real binary (bin/acc) without any instance. Each command
-// here is rejected before it logs in, so no server is involved. The aio
-// credentials file and the working directory are throwaway: the run never reads
-// the credentials of the developer and writes nothing in the repo.
+// Runs the real binary on commands rejected before any login, so no instance is
+// needed. The cwd and the credentials file are throwaway.
 import fs from "node:fs";
 import os from "node:os";
 import { join } from "node:path";
@@ -11,8 +9,7 @@ import { runAcc } from "../helpers-cli.js";
 describe("CLI fails fast (real binary, no instance)", function () {
   this.timeout(30000);
 
-  // Throwaway cwd: `instance` commands seed an acc.config.json in the working
-  // directory, which must not land in the repo.
+  // `instance` commands seed an acc.config.json in the cwd
   let cwd;
   before(() => {
     cwd = fs.mkdtempSync(join(os.tmpdir(), "acc-cli-"));
@@ -21,7 +18,7 @@ describe("CLI fails fast (real binary, no instance)", function () {
     fs.rmSync(cwd, { recursive: true, force: true });
   });
 
-  // No alias can resolve: the credentials file does not exist.
+  // The credentials file is missing, so no alias resolves
   const acc = (...args) =>
     runAcc(args, {
       cwd,
