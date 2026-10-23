@@ -53,19 +53,29 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
 
   /**
    * Counts the records on the server: the number of files a correct pull writes.
+   * @param {string} dir - throwaway cwd to run the query in
    * @returns {Promise<number>} the record count
    */
-  const countOnServer = async () => {
-    const { stdout } = await acc(
-      "instance",
-      "queryDef",
-      "--query",
-      COUNT_QUERY_XML,
+  const countOnServer = async (dir) => {
+    const { stdout } = await runAcc(
+      ["instance", "queryDef", "--alias", ALIAS, "--query", COUNT_QUERY_XML],
+      { cwd: dir },
     );
     const match = stdout.match(/count="(\d+)"/);
     expect(match, `no count in stdout: ${stdout}`).to.not.be.null;
     return Number(match[1]);
   };
+
+  // Same where in both tests: count once, in its own cwd (no acc.config.json yet)
+  let expectedCount;
+  before(async () => {
+    const dir = fs.mkdtempSync(join(os.tmpdir(), "acc-e2e-count-"));
+    try {
+      expectedCount = await countOnServer(dir);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 
   /**
    * Counts the files written by the pull.
@@ -76,9 +86,8 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
       .readdirSync(join(cwd, "forms"), { recursive: true })
       .filter((file) => file.endsWith(".xml")).length;
 
-  it("never loses records silently (no orderBy)", async () => {
+  it("pulls xtk:form and warns on duplicates (no orderBy)", async () => {
     writeConfig({ where: WHERE });
-    const expectedCount = await countOnServer();
 
     const { stderr } = await acc("instance", "pull", "--metadata", "xtk:form");
 
@@ -91,12 +100,11 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
     expect(countFiles() + overwrittenCount).to.equal(expectedCount);
   });
 
-  it("writes every record once with a unique orderBy next to where", async () => {
+  it("pulls xtk:form (orderBy)", async () => {
     writeConfig({
       where: WHERE,
       orderBy: { node: [{ expr: "@namespace" }, { expr: "@name" }] },
     });
-    const expectedCount = await countOnServer();
 
     const { stderr } = await acc("instance", "pull", "--metadata", "xtk:form");
 
