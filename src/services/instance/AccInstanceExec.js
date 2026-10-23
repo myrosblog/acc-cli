@@ -12,29 +12,21 @@ const { INSTANCE_EXEC_FILE_NOT_FOUND, INSTANCE_EXEC_SDK_EVALUATE_FAILED } =
 import { withSpinner } from "../../helpers/withSpinner.js";
 
 /**
- * Executes server-side JavaScript on an ACC instance (`acc instance exec`).
+ * Runs server-side JavaScript on an instance (`acc instance exec`).
  *
  * @class AccInstanceExec
  */
 class AccInstanceExec {
-  /**
-   * @type {AioLogger}
-   */
+  /** @type {AioLogger} */
   logger;
 
-  /**
-   * @type {Function} to create spinner, injected for easier unit testing
-   */
+  /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
   /**
-   * Creates a new AccInstanceExec.
-   *
-   * @param {AioLogger} logger - Logger instance for logging messages
+   * @param {AioLogger} logger - Diagnostics logger
    * @param {Client} client - Authenticated ACC client
-   * @param {Function} createSpinner - Factory of the spinner displaying progress
-   * @example
-   * const instanceExec = new AccInstanceExec(logger, client, createSpinner);
+   * @param {Function} createSpinner - Spinner factory
    */
   constructor(logger, client, createSpinner) {
     this.logger = logger;
@@ -43,15 +35,14 @@ class AccInstanceExec {
   }
 
   /**
-   * Executes server-side JavaScript on the instance via xtk:builder#EvaluateJavaScript.
-   * The script does not "return" a value: it surfaces output through logInfo() /
-   * the execution context, which is echoed back raw.
+   * Runs a script with xtk:builder#EvaluateJavaScript. The script returns no
+   * value: its output goes through logInfo() or the `context`, echoed back as XML.
    *
    * @param {object} cliOptions - Command-line options
-   * @param {string} [cliOptions.file] - Path to a JavaScript file to execute
-   * @param {string} [cliOptions.script] - Inline JavaScript to execute
-   * @param {string} [cliOptions.name] - Logical script name (param `name`)
-   * @returns {Promise<string>} The execution context, serialized as XML
+   * @param {string} [cliOptions.file] - JavaScript file to run
+   * @param {string} [cliOptions.script] - Inline JavaScript to run
+   * @param {string} [cliOptions.name] - Script name, defaults to the file name
+   * @returns {Promise<string>} The execution context, as XML
    * @throws {INSTANCE_EXEC_FILE_NOT_FOUND|INSTANCE_EXEC_SDK_EVALUATE_FAILED}
    */
   async exec(cliOptions) {
@@ -66,7 +57,7 @@ class AccInstanceExec {
     }
     const name = cliOptions.name || (file ? path.basename(file) : "acc-cli");
 
-    // EvaluateJavaScript requires a `context` XML param (in/out)
+    // EvaluateJavaScript takes a `context` XML param (in/out)
     const contextXml = DomUtil.fromJSON("context", {}, "SimpleJson");
     const highlightedName = chalk.bgCyan(name);
     const resultContext = await withSpinner(
@@ -85,19 +76,17 @@ class AccInstanceExec {
   }
 
   /**
-   * Adapter of the SDK static method xtk:builder#EvaluateJavaScript for:
-   * - easier mocking in unit tests
-   * - SDK error wrapping
-   * @param {string} name Script name (param `name`)
-   * @param {string} script JavaScript source to evaluate server-side (param `script`)
-   * @param {Document} contextXml Execution context (param `context`, in/out)
-   * @returns {Promise<Element>} the output `context` element
+   * Wraps xtk:builder#EvaluateJavaScript, to mock it in tests and wrap SDK errors.
+   *
+   * @param {string} name - Script name
+   * @param {string} script - JavaScript source to evaluate on the server
+   * @param {Document} contextXml - Execution context (in/out)
+   * @returns {Promise<Element>} The output `context` element
    * @throws {CampaignException}
    */
   async adapterEvaluateJavaScript(name, script, contextXml) {
     try {
-      // `.xml` forces the XML representation so DOMDocument params (context)
-      // are passed/returned as DOM rather than re-cast from SimpleJson.
+      // `.xml` passes and returns the context as DOM, not re-cast from SimpleJson
       return await this.client.NLWS.xml.xtkBuilder.evaluateJavaScript(
         name,
         script,

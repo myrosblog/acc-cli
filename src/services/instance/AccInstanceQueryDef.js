@@ -14,29 +14,21 @@ const {
 import { withSpinner } from "../../helpers/withSpinner.js";
 
 /**
- * Runs a read-only queryDef on an ACC instance (`acc instance queryDef`).
+ * Runs a read-only queryDef on an instance (`acc instance queryDef`).
  *
  * @class AccInstanceQueryDef
  */
 class AccInstanceQueryDef {
-  /**
-   * @type {AioLogger}
-   */
+  /** @type {AioLogger} */
   logger;
 
-  /**
-   * @type {Function} to create spinner, injected for easier unit testing
-   */
+  /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
   /**
-   * Creates a new AccInstanceQueryDef.
-   *
-   * @param {AioLogger} logger - Logger instance for logging messages
+   * @param {AioLogger} logger - Diagnostics logger
    * @param {Client} client - Authenticated ACC client
-   * @param {Function} createSpinner - Factory of the spinner displaying progress
-   * @example
-   * const instanceQueryDef = new AccInstanceQueryDef(logger, client, createSpinner);
+   * @param {Function} createSpinner - Spinner factory
    */
   constructor(logger, client, createSpinner) {
     this.logger = logger;
@@ -45,18 +37,15 @@ class AccInstanceQueryDef {
   }
 
   /**
-   * Runs a read-only query on the instance via xtk:queryDef#ExecuteQuery (the
-   * same SOAP mechanism as pull()). The caller passes a full queryDef as JSON;
-   * it is read-only by construction: ExecuteQuery is `const`, an
-   * operation:"select"/"count" can only read, and it is ACL-enforced (no
-   * server-side scripting right needed, unlike exec()).
+   * Runs a full queryDef with xtk:queryDef#ExecuteQuery, as pull() does. It is
+   * read-only: ExecuteQuery is a const method, select and count only read, and
+   * ACLs apply. Unlike exec(), it needs no scripting right.
    *
    * @param {object} cliOptions - Command-line options
-   * @param {string} [cliOptions.query] - Inline queryDef as a JSON string
-   * @param {string} [cliOptions.file] - Path to a .json file (alternative to query)
-   * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string | object>} the result collection, as an XML string
-   *   or, when `json` is set, a SimpleJson object
+   * @param {string} [cliOptions.query] - Inline queryDef, XML or JSON (with `json`)
+   * @param {string} [cliOptions.file] - File holding the queryDef, instead of `query`
+   * @param {boolean} [cliOptions.json] - Use and return SimpleJson instead of XML
+   * @returns {Promise<string | object>} The result collection, as XML or SimpleJson
    * @throws {INSTANCE_QUERYDEF_FILE_NOT_FOUND|INSTANCE_QUERYDEF_SDK_CREATE_FAILED|INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
    */
   async queryDef(cliOptions) {
@@ -81,22 +70,19 @@ class AccInstanceQueryDef {
       () => this.adapterExecuteQueryDef(raw, cliOptions.json),
     );
 
-    // Always trace the raw XML; return XML or SimpleJson depending on --json.
-    // const resultXml = DomUtil.toXMLString(resultElement);
+    // Always trace the result; return XML or SimpleJson depending on --json
     this.logger.verbose(result);
     return cliOptions.json ? result : DomUtil.toXMLString(result);
   }
 
   /**
-   * Adapter of xtk:queryDef#create + #ExecuteQuery for:
-   * - easier mocking in unit tests
-   * - SDK error wrapping
-   * Unlike pull's adapterCreateAndExecuteQuery, it does NOT call selectAll: the
-   * caller-supplied queryDef already carries its own `select`. `.xml` returns
-   * the result collection as a DOM Element (one child per row).
-   * @param {object} queryDef - the original queryDef JSON, used to detect lineCount for logging
-   * @param {boolean} jsonEnabled - when true, use the SimpleJson representation
-   * @returns {Promise<Element>} the result collection element
+   * Wraps xtk:queryDef#create and #ExecuteQuery, to mock them in tests and wrap
+   * SDK errors. Unlike pull, it does not call selectAll: the queryDef carries
+   * its own `select`. `.xml` returns the result collection as a DOM Element.
+   *
+   * @param {string} queryDef - The queryDef, as XML or as JSON
+   * @param {boolean} jsonEnabled - Use the SimpleJson representation
+   * @returns {Promise<Element>} The result collection, one child per row
    * @throws {CampaignException}
    */
   async adapterExecuteQueryDef(queryDef, jsonEnabled) {

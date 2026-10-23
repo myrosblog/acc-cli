@@ -12,29 +12,21 @@ const {
 import { withSpinner } from "../../helpers/withSpinner.js";
 
 /**
- * Builds the diagnostic report of an ACC instance (`acc instance info`).
+ * Builds the diagnostic report of an instance (`acc instance info`).
  *
  * @class AccInstanceInfo
  */
 class AccInstanceInfo {
-  /**
-   * @type {AioLogger}
-   */
+  /** @type {AioLogger} */
   logger;
 
-  /**
-   * @type {Function} to create spinner, injected for easier unit testing
-   */
+  /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
   /**
-   * Creates a new AccInstanceInfo.
-   *
-   * @param {AioLogger} logger - Logger instance for logging messages
+   * @param {AioLogger} logger - Diagnostics logger
    * @param {Client} client - Authenticated ACC client
-   * @param {Function} createSpinner - Factory of the spinner displaying progress
-   * @example
-   * const instanceInfo = new AccInstanceInfo(logger, client, createSpinner);
+   * @param {Function} createSpinner - Spinner factory
    */
   constructor(logger, client, createSpinner) {
     this.logger = logger;
@@ -43,21 +35,17 @@ class AccInstanceInfo {
   }
 
   /**
-   * Diagnostic report combining read-only session/monitoring probes:
-   *   - xtk:session#TestCnx (reachability ping)
-   *   - xtk:session#GetServerTime (server clock)
-   *   - xtk:session#GetCnxInfo (active connections + datasource)
-   *   - nl:monitoring#DumpCurrentInstanceState (workflows & instance state)
+   * Builds the report from four read-only probes: xtk:session#TestCnx
+   * (reachability), xtk:session#GetServerTime (clock), xtk:session#GetCnxInfo
+   * (connections, datasource) and nl:monitoring#DumpCurrentInstanceState
+   * (workflows, instance state). Each probe has its own try/catch, so a failure
+   * does not hide the others.
    *
-   * Best-effort, "doctor"-style: each probe runs in its own try/catch so one
-   * failure doesn't hide the others. The caller gets the rendered report plus
-   * the list of failed probes (to set a non-zero exit code).
-   *
-   * @returns {object} { text: string, errors: Array<Error> } the report and any errors
+   * @returns {{text: string, errors: Array<Error>}} The report and the errors of the failed probes
    */
   async info() {
-    // GetServerTime returns a JS Date; the two XML probes return an Element
-    // (not a Document), so DomUtil.toXMLString serializes them directly.
+    // GetServerTime returns a Date, the XML probes an Element that
+    // DomUtil.toXMLString serializes directly
     const probes = [
       {
         title: "Connection (xtk:session#TestCnx)",
@@ -103,8 +91,9 @@ class AccInstanceInfo {
   }
 
   /**
-   * Adapter of xtk:session#TestCnx (reachability ping; resolves with no value).
-   * @returns {Promise<void>}
+   * Wraps xtk:session#TestCnx, a reachability ping.
+   *
+   * @returns {Promise<void>} Resolves with no value when the instance answers
    * @throws {CampaignException}
    */
   async adapterTestCnx() {
@@ -116,8 +105,9 @@ class AccInstanceInfo {
   }
 
   /**
-   * Adapter of xtk:session#GetServerTime.
-   * @returns {Promise<Date>} the server clock
+   * Wraps xtk:session#GetServerTime.
+   *
+   * @returns {Promise<Date>} The server clock
    * @throws {CampaignException}
    */
   async adapterGetServerTime() {
@@ -129,9 +119,9 @@ class AccInstanceInfo {
   }
 
   /**
-   * Adapter of xtk:session#GetCnxInfo. `.xml` forces the XML representation so
-   * the result is returned as a DOM Element.
-   * @returns {Promise<Element>} the `<infos>` element
+   * Wraps xtk:session#GetCnxInfo. `.xml` returns a DOM Element.
+   *
+   * @returns {Promise<Element>} The `<infos>` element
    * @throws {CampaignException}
    */
   async adapterGetCnxInfo() {
@@ -143,10 +133,10 @@ class AccInstanceInfo {
   }
 
   /**
-   * Adapter of nl:monitoring#DumpCurrentInstanceState. Heavy call (~7s): the
-   * caller must open the connection with a raised `timeout` (the SDK default of
-   * 5s is too short). `.xml` returns the `<elemMonitoring>` element.
-   * @returns {Promise<Element>} the `<elemMonitoring>` element
+   * Wraps nl:monitoring#DumpCurrentInstanceState. It takes about 7 s, above the
+   * SDK default timeout of 5 s: connect with a raised `timeout`.
+   *
+   * @returns {Promise<Element>} The `<elemMonitoring>` element
    * @throws {CampaignException}
    */
   async adapterDumpCurrentInstanceState() {

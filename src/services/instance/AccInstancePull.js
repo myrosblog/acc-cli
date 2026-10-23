@@ -22,52 +22,38 @@ import {
 } from "../../helpers/filenameTemplate.js";
 
 /**
- * Pulls the records of the schemas listed in acc.config.json from an ACC
- * instance (`acc instance pull` and, with isPreview, `acc instance check`).
- * - pull():
- *   - paginates by batch of CONFIG_DEFAULT_LINECOUNT (startLine, lineCount)
- *   - download()
- *     - NLWS.xml.xtkQueryDef.create(schema)
- *     - NLWS.xml.xtkQueryDef.selectAll()
- *     - NLWS.xml.xtkQueryDef.executeQuery()
- *     - for each XML record:
- *       - parse()
+ * Pulls the records of the schemas listed in acc.config.json (`acc instance
+ * pull`, and `acc instance check` with isPreview). Each schema is read in
+ * batches through xtk:queryDef (create, selectAll, executeQuery), and every
+ * record goes through parse().
  *
  * @class AccInstancePull
  */
 class AccInstancePull {
   /**
-   * Default SQL LIMIT to fetch schemas (querydef lineCount)
+   * Records per batch (queryDef lineCount) when the config sets none
    * @type {number}
    */
   CONFIG_DEFAULT_LINECOUNT = 20;
 
   /**
-   * Logs of downloaded data
+   * One log per downloaded batch
    * @type {Array<AccInstancePullLog>}
    */
   pullLogs = [];
 
-  /**
-   * @type {AioLogger}
-   */
+  /** @type {AioLogger} */
   logger;
 
-  /**
-   * @type {Function} to create spinner, injected for easier unit testing
-   */
+  /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
   /**
-   * Creates a new AccInstancePull.
-   *
-   * @param {AioLogger} logger - Logger instance for logging messages
+   * @param {AioLogger} logger - Diagnostics logger
    * @param {Client} client - Authenticated ACC client
-   * @param {AccConfig} accConfig - Configuration object defining schemas and download options
-   * @param {object} cliOptions - Command-line options including path, and metadata filters
-   * @param {Function} createSpinner - Ora spinner instance for displaying progress
-   * @example
-   * const instancePull = new AccInstancePull(logger, client, accConfig, cliOptions, createSpinner);
+   * @param {AccConfig} accConfig - Schemas and download options (acc.config.json)
+   * @param {object} cliOptions - Command-line options: `path` (download folder) and `metadata` (comma-separated schema ids)
+   * @param {Function} createSpinner - Spinner factory
    */
   constructor(logger, client, accConfig, cliOptions, createSpinner) {
     this.logger = logger;
@@ -79,16 +65,11 @@ class AccInstancePull {
   }
 
   /**
-   * Gets query definition for a specific schema, merging with default config.
+   * Merges the queryDef of the schema config over the base queryDef.
    *
-   * @param {object} schemaConfig - Schema configuration object from acc.config.json
-   * @param {object} baseQueryDef - Base query definition
-   * @returns {object} Merged query definition
-   * @example
-   * const queryDef = instance._getQueryDefForSchema('nms:recipient', {
-   *   schema: 'nms:recipient',
-   *   operation: 'count'
-   * });
+   * @param {object} schemaConfig - Schema entry of acc.config.json
+   * @param {object} baseQueryDef - Base queryDef
+   * @returns {object} The merged queryDef
    */
   _getQueryDefForSchema(schemaConfig, baseQueryDef) {
     const configQueryDef = schemaConfig.queryDef ? schemaConfig.queryDef : {};
@@ -100,13 +81,9 @@ class AccInstancePull {
   }
 
   /**
-   * Pulls data from all schemas in the ACC instance.
-   * Implements pagination to handle large datasets.
+   * Pulls every schema of the config, in batches of lineCount records.
    *
-   * @param {boolean} isPreview - If true, only previews the data without saving to disk
-   * @returns {Promise<void>} Resolves when pull operation is complete
-   * @example
-   * await instance.pull('/path/to/download');
+   * @param {boolean} isPreview - When true, parse the records without writing files
    */
   async pull(isPreview) {
     this.logger.info(
@@ -114,14 +91,13 @@ class AccInstancePull {
     );
     this.pullLogs = [];
 
-    // loop schemas
     for (const [index, schemaConfig] of this.accConfig.schemas.entries()) {
       const { schemaId, filename, queryDef } = schemaConfig;
       const pullLogsForThisSchema = [];
-      // save filenames to report duplicates
+      // to report duplicates
       const writtenPaths = new Set();
       const overwrittenPaths = [];
-      // skip if metadata option was included and not matching
+      // --metadata: skip the schemas that are not listed
       if (this.metadata) {
         const metadata = this.metadata.split(",").map((id) => id.trim());
         if (!metadata.includes(schemaId)) {
@@ -129,21 +105,19 @@ class AccInstancePull {
           continue;
         }
       }
-      // Show queryDef warnings (ajv validation) above the schema
+      // queryDef warnings (ajv validation), shown above the schema
       for (const warning of this.accConfig.queryDefWarnings?.[index] ?? []) {
         this.logger.warn(warning);
       }
       const spinner = this.createSpinner(
         `${filename}: ${chalk.bgCyan(schemaId)}`,
-      ).start(); // Démarre le spinner
-      // download and parse
+      ).start();
       const lineCount = queryDef?.lineCount || this.CONFIG_DEFAULT_LINECOUNT;
-      // startLine is 0-based, matching the Adobe Campaign console (verified via
-      // Fiddler)
+      // startLine is 0-based, like the Adobe Campaign console
       let startLine = 0;
       let recordsParsedTotal = 0;
       let recordsLengthOfThisBatch = 0;
-      // pagination loop, 1 per batch
+      // one iteration per batch
       do {
         spinner.text = `${filename}: ${chalk.bgCyan(schemaId)} parsed ${recordsParsedTotal}. Downloading next ${lineCount}`;
         const pullLog = new AccInstancePullLog(schemaConfig);
@@ -159,7 +133,6 @@ class AccInstancePull {
           isPreview,
           pullLog,
         );
-        // increment counters
         recordsLengthOfThisBatch = elementsForThisBatch.length;
         startLine += lineCount;
         recordsParsedTotal += recordsLengthOfThisBatch;
@@ -170,15 +143,13 @@ class AccInstancePull {
           writtenPaths.add(parsedPath);
         }
         pullLog.endTime = new Date();
-        // Like the console, pagination ends with one empty batch when the total
-        // is an exact multiple of lineCount. Don't journal that trailing empty
-        // batch (no records, no errors): drop it and stop.
+        // When the total is a multiple of lineCount, the last batch is empty, as
+        // in the console. Drop it from the logs and stop.
         if (recordsLengthOfThisBatch === 0 && pullLog.errors.length === 0) {
           this.pullLogs.pop();
           pullLogsForThisSchema.pop();
           break;
         }
-        // debug pullLog
         this.logger.debug(
           `AccInstancePullLog for ${schemaId} batch starting at line ${pullLog.queryDef.startLine}:`,
         );
@@ -200,7 +171,6 @@ class AccInstancePull {
           `${filename}: ${chalk.bgCyan(schemaId)} ${recordsParsedTotal} parsed ${errorMsg}`,
         );
       }
-      // display errors if any
       const flatErrors = pullLogsForThisSchema.flatMap((x) => x.errors);
       if (flatErrors.length > 0) {
         this.logger.verbose(`⚠️ Listing errors for ${schemaId}:`);
@@ -210,14 +180,14 @@ class AccInstancePull {
   }
 
   /**
-   * Downloads records from a specific schema and saves them as XML files.
+   * Downloads one batch of a schema and writes its records as XML files.
    *
-   * @param {object} schemaConfig - Schema download config
-   * @param {number} startLine - Starting line number for pagination
-   * @param {number} lineCount - Size of pagination
-   * @param {boolean} isPreview - If true, only previews the data without saving to disk
-   * @param {object} pullLog - Log object to record the download and parse process
-   * @returns {Promise<Array<Element>>} the parsed records of this batch
+   * @param {object} schemaConfig - Schema entry of acc.config.json
+   * @param {number} startLine - First line of the batch (0-based)
+   * @param {number} lineCount - Batch size
+   * @param {boolean} isPreview - When true, parse the records without writing files
+   * @param {object} pullLog - Log of the batch, filled in here
+   * @returns {Promise<Array<Element>>} The records of the batch
    */
   async downloadAndParse(
     schemaConfig,
@@ -245,7 +215,7 @@ class AccInstancePull {
       const queryDefXml = DomUtil.fromJSON("queryDef", queryDef, "SimpleJson");
       pullLog.queryDefXml = queryDefXml;
       elementDownloaded = await this.adapterCreateAndExecuteQuery(queryDefXml); // Element, <srcSchema-collection>
-      elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // converts to Array[Element] to prefer for loops over "while+getNextSiblingElement"
+      elementsParsed = EntityAccessor.getChildElements(elementDownloaded); // an Array, to use for...of rather than getNextSiblingElement
     } catch (err) {
       pullLog.errors.push(err);
       return elementsParsed;
@@ -267,7 +237,6 @@ class AccInstancePull {
         pullLog.errors.push(err);
       }
     }
-    // display filenames
     if (filenamesForThisBatch.length > 0) {
       this.logger.verbose(filenamesForThisBatch.join(", "));
     }
@@ -276,11 +245,11 @@ class AccInstancePull {
   }
 
   /**
-   * Adapter of the sdk functions for:
-   * - easier mocking in unit test
-   * - format isolation (XML vs JSON)
-   * @param {Document} queryDefXml created from DomUtil.fromJSON
-   * @returns {Promise<Element>} the result collection element
+   * Wraps the SDK queryDef calls (create, selectAll, executeQuery), to mock them
+   * in tests, keep the XML format in one place and wrap SDK errors.
+   *
+   * @param {Document} queryDefXml - Built with DomUtil.fromJSON
+   * @returns {Promise<Element>} The result collection
    * @throws {CampaignException}
    */
   async adapterCreateAndExecuteQuery(queryDefXml) {
@@ -303,12 +272,13 @@ class AccInstancePull {
   }
 
   /**
-   * Writes a single record to disk (raw XML, or decomposed per `decompose`),
-   * after blanking any `excludeXPaths`.
-   * @param {Element} childElement - the record element
-   * @param {object} schemaConfig - schema download config (filename, decompose, excludeXPaths)
-   * @param {boolean} isPreview - when true, compute filenames but write nothing
-   * @returns {string} the path of the saved record, relative to the download path
+   * Writes one record to disk, as raw XML or decomposed per `decompose`, after
+   * blanking the `excludeXPaths`.
+   *
+   * @param {Element} childElement - The record
+   * @param {object} schemaConfig - Schema entry (filename, decompose, excludeXPaths)
+   * @param {boolean} isPreview - When true, compute the filename but write nothing
+   * @returns {string} The path of the record, relative to the download path
    */
   parse(childElement, schemaConfig, isPreview) {
     const { filename, decompose, excludeXPaths } = schemaConfig;
@@ -321,7 +291,6 @@ class AccInstancePull {
     );
     const datapath = path.join(this.downloadPath, computedFilename);
 
-    // prepare XML by removing excluded attributes
     if (excludeXPaths) {
       for (const xpathString of excludeXPaths) {
         const { node, attributeName } = DomUtilAcc.resolveXPathTarget(
@@ -332,58 +301,50 @@ class AccInstancePull {
           continue; // not found in this record, nothing to blank
         }
 
-        // if attribute, set it to blank
         if (attributeName !== null) {
           if (node.hasAttribute(attributeName)) {
             node.setAttribute(attributeName, "");
           }
-        }
-        // if element, empty its textContent
-        else {
+        } else {
           node.textContent = "";
         }
       }
     }
 
-    // no decomposition: save raw XML
+    // no decompose: the raw XML
     if (!decompose) {
       const raw = DomUtil.toXMLString(childElement);
       if (!isPreview) {
         fs.outputFileSync(datapath, raw);
       }
     }
-    // with decomposition: save each xpath, then save the clean meta
+    // decompose: each xpath goes to its own file, the meta file keeps the rest
     else {
-      // 1. save each xpath + removeElement
       for (const [xpathString, filenameTemplate] of Object.entries(decompose)) {
         try {
-          // compute filename
           const decomposedFilename = computeFilename(
             filenameTemplate,
             configAttributes,
             childElement,
           );
-          // then traverse xpath
           const lastNode = DomUtilAcc.findLastElement(
             childElement,
             xpathString,
           );
           if (!lastNode) {
-            continue; // if xpath not found, skip to next one without throwing error as it can be optional
+            continue; // optional xpath: skip when absent
           }
           const content = DomUtilAcc.getDecomposedContent(lastNode);
-          // save to file
           const datapath = path.join(this.downloadPath, decomposedFilename);
           if (!isPreview) {
             fs.outputFileSync(datapath, content);
           }
-          // empty element (text and child elements): the meta keeps an empty placeholder
+          // the meta file keeps an empty placeholder
           lastNode.textContent = "";
         } catch (err) {
           this.logger.verbose(`(⚠️ warning:parse ${err.message})`);
         }
       }
-      // 2. save meta
       const metaContent = DomUtil.toXMLString(childElement);
       if (!isPreview) {
         fs.outputFileSync(datapath, metaContent);

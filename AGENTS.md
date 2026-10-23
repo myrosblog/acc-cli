@@ -69,15 +69,17 @@ See the feature list in `./README.md` (single source of truth). Do not duplicate
 ```bash
 acc # default oclif output
 acc auth # handles authentication: login, list, init, ip
-acc instance # handles main logic: pull, exec, check, info, template
+acc instance # handles main logic: pull, check, exec, queryDef, soap, info, watch, template
 acc monitor # handles monitoring: test
 ```
 
 ### Source layout (`./src/`)
 
-- `commands/{auth,instance,monitor}/*.js`: oclif command classes (one file per command). Thin: parse flags, then delegate.
-- `BaseCommand.js`, `InstanceCommand.js`: shared oclif base classes.
+- `commands/{auth,config,instance,monitor}/*.js`: oclif command classes (one file per command). Thin: parse flags, then delegate.
+- `BaseCommand.js`, `InstanceCommand.js`: shared oclif base classes. `InstanceCommand.connect(flags)` resolves the alias, logs in and returns `{ client, config, flags }`; `createSpinner` is the spinner factory handed to the services.
 - `services/{auth,config,instance,monitor}/Acc*.js`: service classes holding the business logic, one folder per topic. Dependencies are injected (see Code guidelines).
+  - Named `Acc<Topic><Command>`, one class per command (`AccInstancePull`, `AccInstanceSoap`, ...), so a service can be tested and changed without touching the others.
+  - A command that talks to an instance logs in with `connect()`, then builds its service with the client: `new AccInstanceSoap(this.logger, client, this.createSpinner)`.
 - `adapters/`: wrappers around external concerns (prompt, cache, spinner, ...).
 - `helpers/`, `validators/`, `templates/`: pure utilities, ajv validators, and file templates.
 - `index.js`: package entry point (`main`).
@@ -127,7 +129,7 @@ Adhere to the following guidelines in your code:
   }
   ```
 
-- **Prose style (README, comments, CLI help)**: comments and JSDoc state _why_ in plain language. Be concise and professional. No empty intensifiers ("genuine", "bare", "truly", "actionable", "hermetic"), no editorialising ("the point", "loudly", "on purpose", "by design", "verbatim"), no buzzwords ("synergy", "disruptive", "craft", "scaffold", "hatch", "mint"), no invented section labels ("Secret hygiene"). No em-dashes
+- **Prose style (README, comments, CLI help)**: comments and JSDoc state _why_ in plain language. Be concise and professional. No empty intensifiers ("genuine", "bare", "truly", "actionable", "hermetic"), no editorialising ("the point", "loudly", "on purpose", "by design", "verbatim"), no buzzwords ("synergy", "disruptive", "craft", "scaffold", "hatch", "mint", "escape hatch", "spread", "curated"), no invented section labels ("Secret hygiene"). No em-dashes
   - CLI help is defined via oclif `static examples` and must contain `command` (starting with `<%= config.bin %>`) and `description` (Starting with an uppercase letter and ending with `.`)
   - Use OAuth vocabulary from https://experienceleague.adobe.com/en/docs/campaign-classic/using/technotes/ims/ims-migration
 
@@ -140,7 +142,7 @@ Adhere to the following guidelines in your code:
 ### Testing & tooling
 
 ```bash
-npm test                       # unit + integration tests (XML samples), no network
+npm test                       # unit + integration tests (XML samples, real binary on commands failing before login), no network
 npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds and below 100% per file in src/helpers/, src/commands/ and src/adapters/
 npm run coverage:strict        # only the 100% per-file check of src/helpers/, src/commands/ and src/adapters/, on the data of the last coverage run
 npm run format:check           # prettier check (use npm run format to fix)
@@ -149,7 +151,9 @@ npm run readme                 # regenerate the command reference in README.md (
 ACC_E2E_ALIAS=local npm run test:e2e   # end-to-end against an instance
 ```
 
-Unit/integration tests must never touch the network or the filesystem, inject stubs (see Dependency injection). Only `test:e2e` hits a live instance.
+Unit/integration tests must never touch the network or files outside temporary directories, inject stubs (see Dependency injection). Only `test:e2e` hits a live instance.
+
+Tests mirror `src/` (`test/unit/services/<topic>/Acc*.spec.js`, `test/unit/commands/<topic>-<command>.spec.js`). Tests that run the `acc` binary use `test/helpers-cli.js`: a case rejected before login goes to `test/integration/fail-fast.spec.js`, a case that needs an instance to `test/e2e/`. See `test/README.md`.
 
 Quality gates:
 
