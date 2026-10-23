@@ -3,7 +3,7 @@ import sinon from "sinon";
 import { Flags, Parser, ux } from "@oclif/core";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstanceSoap from "../../../src/services/instance/AccInstanceSoap.js";
 import InstanceSoap from "../../../src/commands/instance/soap.js";
 
 describe("InstanceSoap", () => {
@@ -37,7 +37,7 @@ describe("InstanceSoap", () => {
   it("should print the raw XML result on stdout in human mode", async () => {
     stubBootstrap();
     const soapStub = sinon
-      .stub(AccInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves("<preview/>");
     const logStub = sinon.stub(InstanceSoap.prototype, "log");
 
@@ -72,7 +72,7 @@ describe("InstanceSoap", () => {
     stubBootstrap();
     const envelope = "<SOAP-ENV:Envelope/>";
     const soapStub = sinon
-      .stub(AccInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves(envelope);
     const logStub = sinon.stub(InstanceSoap.prototype, "log");
 
@@ -113,7 +113,7 @@ describe("InstanceSoap", () => {
     stubBootstrap();
     const jsonResult = { serverTime: "2026-06-26" };
     const soapStub = sinon
-      .stub(AccInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves(jsonResult);
     const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceSoap.prototype, "logJson"); // oclif prints it
