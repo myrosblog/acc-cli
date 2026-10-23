@@ -101,6 +101,19 @@ export default [
       ],
       // Result goes to this.log (stdout), diagnostics to the logger (stderr)
       "no-console": "warn",
+      "no-loop-func": "warn",
+      "default-case": "warn",
+      "guard-for-in": "warn",
+      "no-useless-concat": "warn",
+      "max-classes-per-file": ["warn", 1],
+      "prefer-destructuring": [
+        "warn",
+        {
+          VariableDeclarator: { array: false, object: true },
+          AssignmentExpression: { array: true, object: false },
+        },
+        { enforceForRenamedProperties: false },
+      ],
     },
   },
 
