@@ -1,24 +1,19 @@
-// e2e for `acc instance pull` against a live instance: pulls xtk:form (read-only)
-// and checks every record on the server ends up in its own file.
-// Paginating without orderBy lets the database return overlapping pages: some
-// records are written twice (overwritten) and others never. The pull must then
-// report the overwritten files instead of succeeding silently.
+// e2e for `acc instance check` and `pull` against a live instance, on xtk:xslt:
+// standard stylesheets, in small enough namespaces to pull in seconds. The
+// record count comes from a queryDef, and check and pull must match it.
 // Suite docs (how to run, gating): see ./README.md
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect } from "chai";
-import { ALIAS, runAcc } from "./helpers.js";
+import { ALIAS, runAcc } from "../helpers-cli.js";
 
-// Several pages of 20 on a standard instance, the case where pages overlapped
-const WHERE = { condition: [{ expr: "@namespace NOT IN ('xtk')" }] };
-const COUNT_QUERY_XML =
-  '<queryDef schema="xtk:form" operation="count">' +
-  "<where><condition expr=\"@namespace NOT IN ('xtk')\"/></where></queryDef>";
+const SCHEMA_ID = "xtk:xslt";
+const FILENAME_PATTERN = "/xslt/{@namespace}/{@name}.xml";
+const ORDER_BY = { node: [{ expr: "@name" }] };
 
 describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
-  // A full xtk:form pull downloads every form definition (~90s on a local instance)
-  this.timeout(300000);
+  this.timeout(120000);
 
   // Throwaway cwd per test: it holds the test's own acc.config.json and the
   // pulled files, which must not land in the repo.
@@ -33,19 +28,25 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
   const acc = (...args) => runAcc(args, { cwd });
 
   /**
-   * Writes an acc.config.json pulling xtk:form only.
-   * @param {object} queryDef - queryDef merged by the pull (where, orderBy...)
+   * Writes an acc.config.json pulling the xtk:xslt of one namespace.
+   * @param {string} namespace - namespace to pull
+   * @param {object} [orderBy] - queryDef orderBy, none by default
    */
-  const writeConfig = (queryDef) =>
+  const writeConfig = (namespace, orderBy) =>
     fs.writeFileSync(
       join(cwd, "acc.config.json"),
       JSON.stringify({
         alias: ALIAS,
+        // a page of 20 stylesheets takes about 5s, the SDK default timeout
+        "acc-js-sdk": { timeout: 60000 },
         schemas: [
           {
-            schemaId: "xtk:form",
-            filename: "/forms/{@namespace}/{@name}.xml",
-            queryDef,
+            schemaId: SCHEMA_ID,
+            filename: FILENAME_PATTERN,
+            queryDef: {
+              where: { condition: [{ expr: `@namespace = '${namespace}'` }] },
+              ...(orderBy && { orderBy }),
+            },
           },
         ],
       }),
@@ -53,14 +54,17 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
 
   /**
    * Counts the records on the server: the number of files a correct pull writes.
+   * @param {string} dir - throwaway cwd to run the query in
+   * @param {string} namespace - namespace to count
    * @returns {Promise<number>} the record count
    */
-  const countOnServer = async () => {
-    const { stdout } = await acc(
-      "instance",
-      "queryDef",
-      "--query",
-      COUNT_QUERY_XML,
+  const countOnServer = async (dir, namespace) => {
+    const query =
+      `<queryDef schema="${SCHEMA_ID}" operation="count"><where>` +
+      `<condition expr="@namespace = '${namespace}'"/></where></queryDef>`;
+    const { stdout } = await runAcc(
+      ["instance", "queryDef", "--alias", ALIAS, "--query", query],
+      { cwd: dir },
     );
     const match = stdout.match(/count="(\d+)"/);
     expect(match, `no count in stdout: ${stdout}`).to.not.be.null;
@@ -73,34 +77,72 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
    */
   const countFiles = () =>
     fs
-      .readdirSync(join(cwd, "forms"), { recursive: true })
+      .readdirSync(join(cwd, "xslt"), { recursive: true })
       .filter((file) => file.endsWith(".xml")).length;
 
-  it("never loses records silently (no orderBy)", async () => {
-    writeConfig({ where: WHERE });
-    const expectedCount = await countOnServer();
+  // Last line of check and pull: "<filename>: xtk:xslt 29 parsed"
+  const parsedCount = (stderr) => Number(stderr.match(/ (\d+) parsed/)?.[1]);
 
-    const { stderr } = await acc("instance", "pull", "--metadata", "xtk:form");
+  /**
+   * Registers the tests of one pull. To be used to test 1 batch, 2 batches, etc.
+   * @param {string} namespace - xtk:xslt namespace to pull
+   * @param {number} batches - requests the pull makes
+   * @param {number[]} range - [min, max] record count giving that many batches
+   */
+  const describePull = (schemaId, namespace, batches, [min, max]) =>
+    describe(`acc instance check/pull ${schemaId} for namespace: ${namespace}`, () => {
+      let expectedCount;
+      before(async function () {
+        const dir = fs.mkdtempSync(join(os.tmpdir(), "acc-e2e-count-"));
+        try {
+          expectedCount = await countOnServer(dir, namespace);
+        } finally {
+          fs.rmSync(dir, { recursive: true, force: true });
+        }
+        console.log(
+          `      ${expectedCount} retrieved via queryDef (expected between ${min}-${max})`,
+        );
+        if (expectedCount < min || expectedCount > max) this.skip();
+      });
 
-    // Whether or not the database reorders pages on this instance, each
-    // missing file must be reported as overwritten.
-    const match = stderr.match(
-      /(\d+) records were saved to a file already existing in this pull/,
-    );
-    const overwrittenCount = match ? Number(match[1]) : 0;
-    expect(countFiles() + overwrittenCount).to.equal(expectedCount);
-  });
+      it("acc instance check (0 file)", async () => {
+        writeConfig(namespace);
 
-  it("writes every record once with a unique orderBy next to where", async () => {
-    writeConfig({
-      where: WHERE,
-      orderBy: { node: [{ expr: "@namespace" }, { expr: "@name" }] },
+        const { stderr } = await acc("instance", "check", "-m", schemaId);
+
+        expect(parsedCount(stderr), stderr).to.equal(expectedCount);
+        expect(fs.existsSync(join(cwd, "xslt"))).to.be.false;
+      });
+
+      it("acc instance pull (orderBy)", async () => {
+        writeConfig(namespace, ORDER_BY);
+
+        const { stderr } = await runAcc(["instance", "pull", "-m", schemaId], {
+          cwd,
+          env: { AIO_LOG_LEVEL: "verbose" },
+        });
+
+        expect(countFiles()).to.equal(expectedCount);
+        expect(stderr).to.not.contain("already existing in this pull");
+        expect(stderr.match(/Querying instance for records/g)).to.have.lengthOf(
+          batches,
+        );
+      });
+
+      it("acc instance pull (no orderBy)", async () => {
+        writeConfig(namespace);
+
+        const { stderr } = await acc("instance", "pull", "-m", schemaId);
+
+        // Pages may overlap without orderBy: each missing file must be reported
+        const match = stderr.match(
+          /(\d+) records were saved to a file already existing in this pull/,
+        );
+        const overwrittenCount = match ? Number(match[1]) : 0;
+        expect(countFiles() + overwrittenCount).to.equal(expectedCount);
+      });
     });
-    const expectedCount = await countOnServer();
 
-    const { stderr } = await acc("instance", "pull", "--metadata", "xtk:form");
-
-    expect(countFiles()).to.equal(expectedCount);
-    expect(stderr).to.not.contain("already existing in this pull");
-  });
+  describePull(SCHEMA_ID, "nl", 1, [1, 19]);
+  describePull(SCHEMA_ID, "nms", 2, [21, 39]);
 });

@@ -61,3 +61,4 @@ import "./unit/commands/flag-chars.spec.js";
 // integration tests
 import "./integration/AccInstancePull.spec.js";
 import "./integration/ConfigCommands.spec.js";
+import "./integration/fail-fast.spec.js";

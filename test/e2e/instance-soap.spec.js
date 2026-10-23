@@ -6,7 +6,7 @@ import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect } from "chai";
-import { ALIAS, runAcc } from "./helpers.js";
+import { ALIAS, runAcc } from "../helpers-cli.js";
 
 describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
   this.timeout(30000);
@@ -22,23 +22,6 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
   });
 
   const acc = (...args) => runAcc(args, { cwd });
-
-  it("fails fast when the required --method flag is missing", async () => {
-    const err = await acc(
-      "instance",
-      "soap",
-      "--alias",
-      ALIAS,
-      "--schema",
-      "xtk:session",
-    ).then(
-      () => null,
-      (e) => e,
-    );
-    expect(err, "expected a non-zero exit").to.not.be.null;
-    expect(err.code).to.not.equal(0);
-    expect(err.stderr).to.match(/method/i);
-  });
 
   it("fails with a clear error when --args is not valid JSON", async () => {
     const err = await acc(

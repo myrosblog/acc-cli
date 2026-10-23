@@ -4,7 +4,7 @@ import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect } from "chai";
-import { ALIAS, runAcc } from "./helpers.js";
+import { ALIAS, runAcc } from "../helpers-cli.js";
 
 describe(`acc instance info (e2e CLI, alias=${ALIAS})`, function () {
   // DumpCurrentInstanceState is heavy (~7s); allow a generous mocha timeout.
@@ -34,15 +34,5 @@ describe(`acc instance info (e2e CLI, alias=${ALIAS})`, function () {
     // diagnostics (login, spinners) go to stderr, never polluting stdout
     expect(stderr).to.contain("Logged in");
     expect(stdout).to.not.contain("Logged in");
-  });
-
-  it("fails fast with a clear error on an unknown alias", async () => {
-    const err = await acc("instance", "info", "--alias", "does-not-exist").then(
-      () => null,
-      (e) => e,
-    );
-    expect(err, "expected a non-zero exit").to.not.be.null;
-    expect(err.code).to.not.equal(0);
-    expect(err.stderr).to.match(/alias/i);
   });
 });
