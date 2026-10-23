@@ -335,9 +335,12 @@ class AccInstancePull {
             continue; // optional xpath: skip when absent
           }
           const content = DomUtilAcc.getDecomposedContent(lastNode);
-          const datapath = path.join(this.downloadPath, decomposedFilename);
+          const decomposedPath = path.join(
+            this.downloadPath,
+            decomposedFilename,
+          );
           if (!isPreview) {
-            fs.outputFileSync(datapath, content);
+            fs.outputFileSync(decomposedPath, content);
           }
           // the meta file keeps an empty placeholder
           lastNode.textContent = "";

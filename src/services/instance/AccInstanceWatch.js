@@ -310,7 +310,6 @@ class AccInstanceWatch {
         schemaConfig,
         absolutePath,
         xpath,
-        currentContent,
       );
 
       if (!metadataDocument) {
@@ -380,20 +379,17 @@ class AccInstanceWatch {
    * @param {object} schemaConfig - Schema entry of acc.config.json
    * @param {string} filePath - Changed decomposed file
    * @param {string} xpath - xpath key of the decompose config
-   * @param {string} fileContent - Content of the changed file
    * @returns {Promise<Document>} The meta document
    * @throws {Error} If the meta file is missing, unreadable or has no root element
    */
-  async _getMetadataDocument(schemaConfig, filePath, xpath, fileContent) {
-    const { filename: metaFilename } = schemaConfig;
-
+  async _getMetadataDocument(schemaConfig, filePath, xpath) {
     this.spinnerMetadata = xpath;
 
     this.spinner.text =
       this._getSpinnerPrefix(1) +
       `Building ${chalk.cyan(schemaConfig.schemaId)} from ${chalk.cyan(path.basename(filePath))}`;
 
-    const metaFilePath = this._getMetaFilePath(filePath, metaFilename);
+    const metaFilePath = this._getMetaFilePath(filePath);
 
     if (!fs.existsSync(metaFilePath)) {
       throw new INSTANCE_WATCH_META_FILE_MISSING({
@@ -417,10 +413,9 @@ class AccInstanceWatch {
    * with the `.meta.xml` extension.
    *
    * @param {string} decomposedFilePath - Path of the decomposed file
-   * @param {string} metaFilename - Meta filename template of the config
    * @returns {string} The path of the meta file
    */
-  _getMetaFilePath(decomposedFilePath, metaFilename) {
+  _getMetaFilePath(decomposedFilePath) {
     const dir = path.dirname(decomposedFilePath);
 
     const baseName = path.basename(
@@ -428,8 +423,8 @@ class AccInstanceWatch {
       path.extname(decomposedFilePath),
     );
 
-    // Simplified: metaFilename is not read, the meta file is assumed to share
-    // the base name of the decomposed file
+    // Simplified: the meta file is assumed to share the base name of the
+    // decomposed file, rather than follow the filename template of the config
     return path.join(dir, baseName + ".meta.xml");
   }
 

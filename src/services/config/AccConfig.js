@@ -210,11 +210,11 @@ class AccConfig {
 
   /**
    * Checks if a file exists at the given path.
-   * @param {string} path - the file path to check
+   * @param {string} filePath - the file path to check
    * @returns {boolean} true if the file exists
    */
-  fileExists(path) {
-    return fs.existsSync(path);
+  fileExists(filePath) {
+    return fs.existsSync(filePath);
   }
 
   /**

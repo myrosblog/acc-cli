@@ -223,21 +223,18 @@ describe("AccInstanceWatch", () => {
 
   describe("_getMetaFilePath", () => {
     it("should generate meta file path from decomposed file path", () => {
-      const metaFilename =
-        "/Admin/Config/JavaScript codes/{@namespace}/{@name}.meta.xml";
       const decomposedFilePath = join("some", "path", "cus", "myScript.js");
 
-      const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
+      const result = watcher._getMetaFilePath(decomposedFilePath);
 
       // Should replace .js with .meta.xml in the same directory
       expect(result).to.equal(join("some", "path", "cus", "myScript.meta.xml"));
     });
 
     it("should handle files with multiple dots in name", () => {
-      const metaFilename = "/path/to/{@name}.meta.xml";
       const decomposedFilePath = join("some", "path", "my.file.js");
 
-      const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
+      const result = watcher._getMetaFilePath(decomposedFilePath);
 
       expect(result).to.equal(join("some", "path", "my.file.meta.xml"));
     });
@@ -429,7 +426,6 @@ describe("AccInstanceWatch", () => {
         schemaConfig,
         filePath,
         "data",
-        "const test = 'hello';",
       );
 
       expect(result).to.not.be.null;
@@ -447,7 +443,6 @@ describe("AccInstanceWatch", () => {
           schemaConfig,
           "/nonexistent/path/file.js",
           "data",
-          "const test = 'hello';",
         );
         expect.fail("Should have thrown");
       } catch (err) {
@@ -467,7 +462,6 @@ describe("AccInstanceWatch", () => {
         testConfig.schemas[0],
         join(tempDir, "noData.js"),
         "nonexistent",
-        "const test = 'hello';",
       );
 
       expect(result.documentElement.tagName).to.equal("javascript");
