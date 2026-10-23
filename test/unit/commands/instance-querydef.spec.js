@@ -3,7 +3,7 @@ import sinon from "sinon";
 import { ux } from "@oclif/core";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstanceQueryDef from "../../../src/services/instance/AccInstanceQueryDef.js";
 import InstanceQueryDef from "../../../src/commands/instance/queryDef.js";
 
 describe("InstanceQueryDef", () => {
@@ -40,7 +40,7 @@ describe("InstanceQueryDef", () => {
   it("should print the raw XML result on stdout in human mode", async () => {
     stubBootstrap();
     const queryDefStub = sinon
-      .stub(AccInstance.prototype, "queryDef")
+      .stub(AccInstanceQueryDef.prototype, "queryDef")
       .resolves(
         "<recipient-collection><recipient id='1'/></recipient-collection>",
       );
@@ -67,7 +67,7 @@ describe("InstanceQueryDef", () => {
     stubBootstrap();
     const jsonResult = { recipient: [{ id: "1" }] };
     const queryDefStub = sinon
-      .stub(AccInstance.prototype, "queryDef")
+      .stub(AccInstanceQueryDef.prototype, "queryDef")
       .resolves(jsonResult);
     const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceQueryDef.prototype, "logJson"); // oclif prints it

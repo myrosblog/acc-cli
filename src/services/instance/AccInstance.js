@@ -14,9 +14,6 @@ const {
   INSTANCE_INFO_SDK_SERVERTIME_FAILED,
   INSTANCE_INFO_SDK_CNXINFO_FAILED,
   INSTANCE_INFO_SDK_DUMPSTATE_FAILED,
-  INSTANCE_QUERYDEF_FILE_NOT_FOUND,
-  INSTANCE_QUERYDEF_SDK_CREATE_FAILED,
-  INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED,
 } = codes;
 // acc
 import { withSpinner } from "../../helpers/withSpinner.js";
@@ -121,84 +118,6 @@ class AccInstance {
       );
     } catch (err) {
       throw wrapSdkError(err, INSTANCE_EXEC_SDK_EVALUATE_FAILED);
-    }
-  }
-
-  /**
-   * Runs a read-only query on the instance via xtk:queryDef#ExecuteQuery (the
-   * same SOAP mechanism as pull()). The caller passes a full queryDef as JSON;
-   * it is read-only by construction: ExecuteQuery is `const`, an
-   * operation:"select"/"count" can only read, and it is ACL-enforced (no
-   * server-side scripting right needed, unlike exec()).
-   *
-   * @param {object} cliOptions - Command-line options
-   * @param {string} [cliOptions.query] - Inline queryDef as a JSON string
-   * @param {string} [cliOptions.file] - Path to a .json file (alternative to query)
-   * @param {boolean} [cliOptions.json] - when true, return SimpleJson instead of XML
-   * @returns {Promise<string | object>} the result collection, as an XML string
-   *   or, when `json` is set, a SimpleJson object
-   * @throws {INSTANCE_QUERYDEF_FILE_NOT_FOUND|INSTANCE_QUERYDEF_SDK_CREATE_FAILED|INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED}
-   */
-  async queryDef(cliOptions) {
-    const { query: inlineQuery, file } = cliOptions;
-
-    let raw = inlineQuery;
-    if (file) {
-      if (!fs.existsSync(file)) {
-        throw new INSTANCE_QUERYDEF_FILE_NOT_FOUND({ messageValues: [file] });
-      }
-      raw = fs.readFileSync(file, "utf8");
-    }
-
-    const highlightedName = chalk.bgCyan("queryDef");
-    const result = await withSpinner(
-      this.createSpinner,
-      {
-        text: `Executing ${highlightedName} on the server`,
-        succeed: `${highlightedName} executed`,
-        fail: `${highlightedName} failed`,
-      },
-      () => this.adapterExecuteQueryDef(raw, cliOptions.json),
-    );
-
-    // Always trace the raw XML; return XML or SimpleJson depending on --json.
-    // const resultXml = DomUtil.toXMLString(resultElement);
-    this.logger.verbose(result);
-    return cliOptions.json ? result : DomUtil.toXMLString(result);
-  }
-
-  /**
-   * Adapter of xtk:queryDef#create + #ExecuteQuery for:
-   * - easier mocking in unit tests
-   * - SDK error wrapping
-   * Unlike pull's adapterCreateAndExecuteQuery, it does NOT call selectAll: the
-   * caller-supplied queryDef already carries its own `select`. `.xml` returns
-   * the result collection as a DOM Element (one child per row).
-   * @param {object} queryDef - the original queryDef JSON, used to detect lineCount for logging
-   * @param {boolean} jsonEnabled - when true, use the SimpleJson representation
-   * @returns {Promise<Element>} the result collection element
-   * @throws {CampaignException}
-   */
-  async adapterExecuteQueryDef(queryDef, jsonEnabled) {
-    let query;
-    try {
-      // XML
-      if (!jsonEnabled) {
-        const queryDefXml = DomUtil.parse(queryDef);
-        query = this.client.NLWS.xml.xtkQueryDef.create(queryDefXml);
-      }
-      // JSON
-      else {
-        const queryDefJson = JSON.parse(queryDef);
-        query = this.client.NLWS.json.xtkQueryDef.create(queryDefJson);
-      }
-    } catch (err) {
-      throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_CREATE_FAILED);
-    }
-    try {
-      return await query.executeQuery();
-    } catch (err) {
-      throw wrapSdkError(err, INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED);
     }
   }
 

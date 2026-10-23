@@ -36,6 +36,7 @@ import "./unit/services/auth/AccAuth.spec.js";
 import "./unit/services/instance/AccInstancePull.spec.js";
 import "./unit/services/instance/AccInstance.spec.js";
 import "./unit/services/instance/AccInstanceSoap.spec.js";
+import "./unit/services/instance/AccInstanceQueryDef.spec.js";
 import "./unit/services/monitor/AccMonitor.spec.js";
 import "./unit/services/instance/AccInstanceWatch.spec.js";
 import "./unit/InstanceCommand.spec.js";
