@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 import AccConfig from "../../../src/services/config/AccConfig.js";
-import AccInstance from "../../../src/services/instance/AccInstance.js";
+import AccInstanceInfo from "../../../src/services/instance/AccInstanceInfo.js";
 import InstanceInfo from "../../../src/commands/instance/info.js";
 
 describe("InstanceInfo", () => {
@@ -24,7 +24,7 @@ describe("InstanceInfo", () => {
     const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     sinon.stub(AccConfig.prototype, "init").resolves();
     const infoStub = sinon
-      .stub(AccInstance.prototype, "info")
+      .stub(AccInstanceInfo.prototype, "info")
       .resolves({ text: "== report ==", errors: [] });
     const logStub = sinon.stub(InstanceInfo.prototype, "log");
 
@@ -41,7 +41,7 @@ describe("InstanceInfo", () => {
     sinon.stub(AccAuth.prototype, "login").resolves();
     sinon.stub(AccConfig.prototype, "init").resolves();
     sinon
-      .stub(AccInstance.prototype, "info")
+      .stub(AccInstanceInfo.prototype, "info")
       .resolves({ text: "== report ==", errors: [new Error("boom")] });
     sinon.stub(InstanceInfo.prototype, "log");
 
