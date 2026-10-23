@@ -6,7 +6,7 @@ import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect, config as chaiConfig } from "chai";
-import { runAcc } from "./helpers.js";
+import { runAcc } from "../helpers-cli.js";
 
 // Path to your own credential file (Developer Console > Credentials > OAuth
 // Server-to-Server > Download JSON). Unset => the whole suite is skipped, so

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect } from "chai";
-import { ALIAS, runAcc, writeFile } from "./helpers.js";
+import { ALIAS, runAcc, writeFile } from "../helpers-cli.js";
 
 describe(`acc instance exec (e2e CLI, alias=${ALIAS})`, function () {
   this.timeout(30000);
@@ -21,36 +21,6 @@ describe(`acc instance exec (e2e CLI, alias=${ALIAS})`, function () {
   });
 
   const acc = (...args) => runAcc(args, { cwd });
-
-  it("fails fast when neither --script nor --file is given", async () => {
-    const err = await acc("instance", "exec", "--alias", ALIAS).then(
-      () => null,
-      (e) => e,
-    );
-    expect(err, "expected a non-zero exit").to.not.be.null;
-    expect(err.code).to.not.equal(0);
-    expect(err.stderr).to.match(/script/i);
-  });
-
-  it("fails fast when --script and --file are combined", async () => {
-    const err = await acc(
-      "instance",
-      "exec",
-      "--alias",
-      ALIAS,
-      "--script",
-      "context.@result = 1",
-      "--file",
-      "whatever.js",
-    ).then(
-      () => null,
-      (e) => e,
-    );
-    expect(err, "expected a non-zero exit").to.not.be.null;
-    expect(err.code).to.not.equal(0);
-    // rejected by the oclif `exactlyOne` flag validation, before any login
-    expect(err.stderr).to.match(/cannot also be provided/i);
-  });
 
   // acc instance exec --alias staging --script "context.@result = (1+2)*3"
   it("computes 1+2*3 and prints as attribute", async () => {

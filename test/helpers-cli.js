@@ -1,4 +1,5 @@
-// Shared helpers for the e2e suite (runs the `acc` binary).
+// Runs the `acc` binary as a subprocess, for the tests that exercise the real
+// CLI: test/integration/fail-fast.spec.js (no instance) and test/e2e (live instance).
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import { promisify } from "node:util";
@@ -8,15 +9,16 @@ import { dirname, join } from "node:path";
 const run = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export const BIN = join(__dirname, "../../bin/acc");
-// Default target; override per run with ACC_E2E_ALIAS (see `acc auth list`).
+export const BIN = join(__dirname, "../bin/acc");
+// e2e only: the instance alias the live tests target; override per run with
+// ACC_E2E_ALIAS (see `acc auth list`).
 export const ALIAS = process.env.ACC_E2E_ALIAS || "local";
 
 /**
  * Run the `acc` binary as a subprocess.
  *
  * Diagnostics are forced to info level so the stdout(result)/stderr(diagnostics)
- * routing can be asserted; ACC_NO_FILE_LOG is inherited from the e2e entrypoint.
+ * routing can be asserted; ACC_NO_FILE_LOG is inherited from the test entrypoint.
  * OCLIF_COLUMNS is raised because oclif wraps errors at 80 columns when stderr
  * is not a TTY, which would split a message such as "--args is not valid JSON"
  * across two lines and break the assertions.

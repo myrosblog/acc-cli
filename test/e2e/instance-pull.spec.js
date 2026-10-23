@@ -8,7 +8,7 @@ import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
 import { expect } from "chai";
-import { ALIAS, runAcc } from "./helpers.js";
+import { ALIAS, runAcc } from "../helpers-cli.js";
 
 // Several pages of 20 on a standard instance, the case where pages overlapped
 const WHERE = { condition: [{ expr: "@namespace NOT IN ('xtk')" }] };
