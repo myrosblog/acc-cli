@@ -74,7 +74,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "readme": "npx --yes oclif@6.0.10 readme && prettier --write README.md"
+    "readme": "npx --yes oclif@6.0.10 readme && prettier --write README.md",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "type": "module",
   "dependencies": {

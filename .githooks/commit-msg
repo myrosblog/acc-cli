@@ -1,0 +1,24 @@
+#!/bin/sh
+# Rejects a commit message whose first line is not a Conventional Commit.
+# Keep the types in sync with "Commits & pull requests" in AGENTS.md.
+
+# Git runs this hook before it strips the "#" lines of the editor template
+header=$(grep -v '^#' "$1" | sed -n '/[^[:space:]]/{p;q;}')
+
+# Git writes these messages itself
+case "$header" in
+  "Merge "* | "Revert "*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|test|docs|chore|refactor|build|style)(\([a-z0-9._/-]+\))?!?: .+'
+if printf '%s\n' "$header" | grep -Eq "$pattern"; then
+  exit 0
+fi
+
+cat >&2 <<EOF
+Commit message must follow Conventional Commits:
+  <type>(<optional scope>)!: <description>
+Types: feat, fix, test, docs, chore, refactor, build, style
+Got: $header
+EOF
+exit 1

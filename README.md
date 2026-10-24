@@ -727,7 +727,7 @@ _See code: [@adobe/aio-cli-plugin-info](https://github.com/adobe/aio-cli-plugin-
 ```bash
 # Clone repository
 git clone https://github.com/myrosblog/acc-cli.git && cd acc-cli
-npm install
+npm install # also enables the commit-msg hook that enforces Conventional Commits
 npm test # unit tests & integration tests with XML samples
 ACC_E2E_ALIAS=local npm run test:e2e # end-to-end tests against an instance
 ACC_E2E_S2S_JSON=~/oauth-s2s.json npm run test:e2e # also exercise a Developer Console credential
