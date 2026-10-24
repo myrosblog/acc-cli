@@ -16,7 +16,7 @@ describe("AuthList", () => {
     { alias: "staging", host: "http://stg", user: "ops", method: "Unknown" },
   ];
 
-  // Replaces the lazily-built CampaignAuth with a fake exposing list(), so the
+  // Replaces the lazily-built AccAuth with a fake exposing list(), so the
   // command never touches the real aio config on disk.
   function stubAuth(listReturn = rows) {
     const fakeAuth = { list: sinon.stub().returns(listReturn) };
@@ -51,7 +51,7 @@ describe("AuthList", () => {
   });
 
   it("should render an empty cell for a missing host or user", async () => {
-    // CampaignAuth.list() coerces missing values to null.
+    // AccAuth.list() coerces missing values to null.
     stubAuth([{ alias: "bare", host: null, user: null, method: "Unknown" }]);
     const logStub = sinon.stub(AuthList.prototype, "log");
 

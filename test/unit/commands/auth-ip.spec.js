@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import AuthIp from "../../../src/commands/auth/ip.js";
-import CampaignAuth from "../../../src/CampaignAuth.js";
+import AccAuthIp from "../../../src/services/auth/AccAuthIp.js";
 
 describe("AuthIp", () => {
   it("should have correct description", () => {
@@ -14,7 +14,7 @@ describe("AuthIp", () => {
 
   it("should run", async () => {
     const argv = [];
-    const authIpStub = sinon.stub(CampaignAuth.prototype, "ip").resolves();
+    const authIpStub = sinon.stub(AccAuthIp.prototype, "ip").resolves();
     const result = await AuthIp.run(argv);
     expect(result).to.be.undefined;
     expect(authIpStub.calledOnce).to.be.true;

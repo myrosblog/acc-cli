@@ -8,14 +8,19 @@ import sinon from "sinon";
 // sdk
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import { makeLogger, makeSpinner, makeClient, makeSchema } from "../helpers.js";
+import {
+  makeLogger,
+  makeSpinner,
+  makeClient,
+  makeSchema,
+} from "../../../helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // acc
-import CampaignWatch from "../../src/CampaignWatch.js";
-import { getDecomposedSchemas } from "../../src/helpers/watchTargets.js";
+import AccInstanceWatch from "../../../../src/services/instance/AccInstanceWatch.js";
+import { getDecomposedSchemas } from "../../../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
 const testConfig = {
@@ -75,7 +80,7 @@ const javascriptSchemaXml = `<schema namespace="xtk" name="javascript">
   </element>
 </schema>`;
 
-describe("CampaignWatch", () => {
+describe("AccInstanceWatch", () => {
   let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
 
   beforeEach(() => {
@@ -101,7 +106,7 @@ describe("CampaignWatch", () => {
     };
 
     // create watcher instance
-    watcher = new CampaignWatch(
+    watcher = new AccInstanceWatch(
       mockLogger,
       mockClient,
       testConfig,
@@ -123,7 +128,7 @@ describe("CampaignWatch", () => {
     });
 
     it("should use process.cwd() when no path provided", () => {
-      const watcherNoPath = new CampaignWatch(
+      const watcherNoPath = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -196,7 +201,7 @@ describe("CampaignWatch", () => {
           },
         ],
       };
-      const ambiguousWatcher = new CampaignWatch(
+      const ambiguousWatcher = new AccInstanceWatch(
         mockLogger,
         mockClient,
         ambiguousConfig,
@@ -218,21 +223,18 @@ describe("CampaignWatch", () => {
 
   describe("_getMetaFilePath", () => {
     it("should generate meta file path from decomposed file path", () => {
-      const metaFilename =
-        "/Admin/Config/JavaScript codes/{@namespace}/{@name}.meta.xml";
       const decomposedFilePath = join("some", "path", "cus", "myScript.js");
 
-      const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
+      const result = watcher._getMetaFilePath(decomposedFilePath);
 
       // Should replace .js with .meta.xml in the same directory
       expect(result).to.equal(join("some", "path", "cus", "myScript.meta.xml"));
     });
 
     it("should handle files with multiple dots in name", () => {
-      const metaFilename = "/path/to/{@name}.meta.xml";
       const decomposedFilePath = join("some", "path", "my.file.js");
 
-      const result = watcher._getMetaFilePath(decomposedFilePath, metaFilename);
+      const result = watcher._getMetaFilePath(decomposedFilePath);
 
       expect(result).to.equal(join("some", "path", "my.file.meta.xml"));
     });
@@ -270,7 +272,7 @@ describe("CampaignWatch", () => {
     });
 
     it("should throw if no decomposed schemas found", async () => {
-      const watcherNoDecompose = new CampaignWatch(
+      const watcherNoDecompose = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfigNoDecompose,
@@ -391,7 +393,7 @@ describe("CampaignWatch", () => {
 
     beforeEach(async () => {
       // Create a temporary directory for test files
-      tempDir = join(__dirname, "../dist/campaignWatcherTest");
+      tempDir = join(__dirname, "../../../dist/campaignWatcherTest");
       await fs.ensureDir(tempDir);
 
       // Create a meta file
@@ -424,7 +426,6 @@ describe("CampaignWatch", () => {
         schemaConfig,
         filePath,
         "data",
-        "const test = 'hello';",
       );
 
       expect(result).to.not.be.null;
@@ -442,7 +443,6 @@ describe("CampaignWatch", () => {
           schemaConfig,
           "/nonexistent/path/file.js",
           "data",
-          "const test = 'hello';",
         );
         expect.fail("Should have thrown");
       } catch (err) {
@@ -462,7 +462,6 @@ describe("CampaignWatch", () => {
         testConfig.schemas[0],
         join(tempDir, "noData.js"),
         "nonexistent",
-        "const test = 'hello';",
       );
 
       expect(result.documentElement.tagName).to.equal("javascript");
@@ -473,7 +472,7 @@ describe("CampaignWatch", () => {
     let tempDir;
 
     beforeEach(async () => {
-      tempDir = join(__dirname, "../dist/campaignWatcherIntegration");
+      tempDir = join(__dirname, "../../../dist/campaignWatcherIntegration");
       await fs.ensureDir(tempDir);
 
       // Pull writes the decomposed files under the template directory
@@ -499,7 +498,7 @@ describe("CampaignWatch", () => {
 
       // Create watcher rooted on the temp dir
       cliOptions = { path: tempDir };
-      watcher = new CampaignWatch(
+      watcher = new AccInstanceWatch(
         mockLogger,
         mockClient,
         testConfig,
@@ -533,7 +532,7 @@ describe("CampaignWatch", () => {
       expect(xml).to.include('id="456"');
       expect(xml).to.not.include("namespace=");
 
-      // The push is journaled for auditing, alongside CampaignPullLog for pull
+      // The push is journaled for auditing, alongside AccInstancePullLog for pull
       expect(mockLogger.debug).to.have.been.calledOnce;
       const pushLogSummary = mockLogger.debug.firstCall.args[0];
       expect(pushLogSummary.schemaId).to.equal("xtk:javascript");

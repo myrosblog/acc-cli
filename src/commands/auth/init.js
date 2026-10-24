@@ -79,7 +79,7 @@ export default class AuthInit extends BaseCommand {
 
   async run() {
     const { flags } = await this.parse(AuthInit);
-    // Normalize kebab-case CLI flags into the camelCase shape CampaignAuth uses.
+    // Normalize kebab-case CLI flags into the camelCase shape AccAuth uses.
     const { "json-file": jsonFile, "ims-env": imsEnv, ...rest } = flags;
     await this.auth.init({ ...rest, jsonFile, imsEnv });
   }

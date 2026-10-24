@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstanceInfo from "../../../src/services/instance/AccInstanceInfo.js";
 import InstanceInfo from "../../../src/commands/instance/info.js";
 
 describe("InstanceInfo", () => {
@@ -21,12 +21,10 @@ describe("InstanceInfo", () => {
 
   it("should login with a raised timeout and print the report", async () => {
     const argv = ["--alias", "test"];
-    const authLoginStub = sinon
-      .stub(CampaignAuth.prototype, "login")
-      .resolves();
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
     const infoStub = sinon
-      .stub(CampaignInstance.prototype, "info")
+      .stub(AccInstanceInfo.prototype, "info")
       .resolves({ text: "== report ==", errors: [] });
     const logStub = sinon.stub(InstanceInfo.prototype, "log");
 
@@ -40,10 +38,10 @@ describe("InstanceInfo", () => {
   });
 
   it("should exit non-zero when at least one probe failed", async () => {
-    sinon.stub(CampaignAuth.prototype, "login").resolves();
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccAuth.prototype, "login").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
     sinon
-      .stub(CampaignInstance.prototype, "info")
+      .stub(AccInstanceInfo.prototype, "info")
       .resolves({ text: "== report ==", errors: [new Error("boom")] });
     sinon.stub(InstanceInfo.prototype, "log");
 

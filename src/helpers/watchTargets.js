@@ -47,7 +47,7 @@ export function templateToGlob(template) {
  * Builds the watch targets, one per entry of every decomposed schema.
  *
  * @param {Array<object>} decomposedSchemas - Schemas with decompose config
- * @returns {Array<WatchTarget>} the watch targets
+ * @returns {Array<WatchTarget>} Targets with their glob pattern, schema config and xpath
  */
 export function buildWatchTargets(decomposedSchemas) {
   const watchTargets = [];

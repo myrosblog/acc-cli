@@ -73,7 +73,7 @@ function wrapSdkError(error, ErrorClass, context = {}) {
 const TRACED = "Review HTTP requests/responses (SOAP) saved in logs. Cause:";
 
 // AUTH
-E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize CampaignAuth.");
+E("AUTH_CONSTR_SDK_MISSING", "SDK required to initialize AccAuth.");
 // auth init
 E(
   "AUTH_INIT_EXISTING_ALIAS",
@@ -160,11 +160,11 @@ E("CACHE_CONSTR_DIR_MISSING", "dir is required for new AccCache().");
 // CONFIG
 E(
   "CONFIG_CONSTR_DEFAULT_PATH_MISSING",
-  "defaultConfigPath is required for new CampaignConfig().",
+  "defaultConfigPath is required for new AccConfig().",
 );
 E(
   "CONFIG_INIT_CONFIG_PATH_MISSING",
-  "configPath is required for CampaignConfig.init().",
+  "configPath is required for AccConfig.init().",
 );
 E("CONFIG_PARSE_ERROR", "Unable to parse the config file: %s");
 E("CONFIG_VALIDATE_ERRORS", "Invalid config: %s");

@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import { Flags, Parser, ux } from "@oclif/core";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstanceSoap from "../../../src/services/instance/AccInstanceSoap.js";
 import InstanceSoap from "../../../src/commands/instance/soap.js";
 
 describe("InstanceSoap", () => {
@@ -28,16 +28,16 @@ describe("InstanceSoap", () => {
     expect(InstanceSoap.baseFlags.config).to.exist;
   });
 
-  // Keeps getInstance() off the network/disk: stubs login + config.init.
+  // Keeps connect() off the network/disk: stubs login + config.init.
   function stubBootstrap() {
-    sinon.stub(CampaignAuth.prototype, "login").resolves();
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccAuth.prototype, "login").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
   }
 
   it("should print the raw XML result on stdout in human mode", async () => {
     stubBootstrap();
     const soapStub = sinon
-      .stub(CampaignInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves("<preview/>");
     const logStub = sinon.stub(InstanceSoap.prototype, "log");
 
@@ -72,7 +72,7 @@ describe("InstanceSoap", () => {
     stubBootstrap();
     const envelope = "<SOAP-ENV:Envelope/>";
     const soapStub = sinon
-      .stub(CampaignInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves(envelope);
     const logStub = sinon.stub(InstanceSoap.prototype, "log");
 
@@ -113,7 +113,7 @@ describe("InstanceSoap", () => {
     stubBootstrap();
     const jsonResult = { serverTime: "2026-06-26" };
     const soapStub = sinon
-      .stub(CampaignInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves(jsonResult);
     const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceSoap.prototype, "logJson"); // oclif prints it

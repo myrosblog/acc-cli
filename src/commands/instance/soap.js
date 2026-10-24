@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
+import AccInstanceSoap from "../../services/instance/AccInstanceSoap.js";
 import { DOC_SOAP } from "../../helpers/helpText.js";
 
 export default class InstanceSoap extends InstanceCommand {
@@ -76,8 +77,13 @@ export default class InstanceSoap extends InstanceCommand {
 
   async run() {
     const { flags } = await this.parse(InstanceSoap);
-    const instance = await this.getInstance(flags);
-    const result = await instance.soap({
+    const { client } = await this.connect(flags);
+    const instanceSoap = new AccInstanceSoap(
+      this.logger,
+      client,
+      this.createSpinner,
+    );
+    const result = await instanceSoap.soap({
       ...flags,
       json: this.jsonEnabled(),
     });
