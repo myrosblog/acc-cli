@@ -3,7 +3,11 @@ import sinon from "sinon";
 import AuthInit from "../../../src/commands/auth/init.js";
 import AccAuth from "../../../src/services/auth/AccAuth.js";
 
-describe("AuthInit", () => {
+describe("AuthInit", function () {
+  // The first command run of the suite loads the oclif config and its plugins
+  // cold, which exceeds the 2s default on a slow Windows runner
+  this.timeout(10000);
+
   it("should have correct description", () => {
     expect(AuthInit.description).to.match(
       /^Authenticate an Adobe Campaign instance/,
