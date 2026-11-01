@@ -145,4 +145,36 @@ describe(`acc instance pull (e2e CLI, alias=${ALIAS})`, function () {
 
   describePull(SCHEMA_ID, "nl", 1, [1, 19]);
   describePull(SCHEMA_ID, "nms", 2, [21, 39]);
+
+  it("acc instance pull xtk:javascript not found (0 file)", async () => {
+    fs.writeFileSync(
+      join(cwd, "acc.config.json"),
+      JSON.stringify({
+        alias: ALIAS,
+        schemas: [
+          {
+            schemaId: "xtk:javascript",
+            filename: "/javascript/{@namespace}/{@name}",
+            queryDef: {
+              where: {
+                condition: [{ expr: "@name = 'acc-e2e-not-found.js'" }],
+              },
+            },
+          },
+        ],
+      }),
+    );
+
+    const { stdout, stderr } = await runAcc(
+      ["instance", "pull", "-m", "xtk:javascript"],
+      { cwd, env: { AIO_LOG_LEVEL: "verbose" } },
+    );
+
+    // An empty result is a success, not an error, and stops after 1 request
+    expect(parsedCount(stderr), stderr).to.equal(0);
+    expect(stderr).to.not.match(/\d+ errors/);
+    expect(stderr.match(/Querying instance for records/g)).to.have.lengthOf(1);
+    expect(stdout).to.equal("");
+    expect(fs.existsSync(join(cwd, "javascript"))).to.be.false;
+  });
 });
