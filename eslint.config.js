@@ -1,15 +1,24 @@
 // npm
-import neostandard from "neostandard";
-import jsdoc from "eslint-plugin-jsdoc";
+import adobeConfig from "@adobe/eslint-config-aio-lib-config";
 import globals from "globals";
 
-const jsdocRecommended = jsdoc.configs["flat/recommended"];
+// helper to turn off adobeConfig rules
+const rulesOff = (prefix) =>
+  Object.fromEntries(
+    adobeConfig
+      .flatMap((config) => Object.keys(config.rules ?? {}))
+      .filter((rule) => rule.startsWith(prefix))
+      .map((rule) => [rule, "off"]),
+  );
+
+// Turn off the eslint format rules (neostandard { noStyle: true }) because Prettier already formats
+const stylisticRulesOff = rulesOff("@stylistic/");
 
 /**
- * ESLint flat config: neostandard and eslint-plugin-jsdoc
+ * ESLint flat config: Adobe aio-lib-config (neostandard and eslint-plugin-jsdoc)
  */
 export default [
-  // Mirrors .prettierignore
+  // Ignore list mirrors .prettierignore
   {
     ignores: [
       "node_modules/",
@@ -20,25 +29,27 @@ export default [
     ],
   },
 
-  // Correctness half of standard. Prettier formats, and there is no JSX.
-  ...neostandard({ noStyle: true, noJsx: true }),
+  // use adobeConfig as base, but turn off format rules
+  ...adobeConfig,
   {
-    // ESM resolves imports literally: a forgotten `.js` only fails at runtime
     rules: {
+      ...stylisticRulesOff,
+      // ESM resolves imports literally: a forgotten `.js` only fails at runtime
       "n/no-missing-import": "error",
       "n/no-extraneous-import": "error",
     },
   },
 
-  // src: Airbnb and neostandard
+  // Turn off adobeConfig JSDoc outside of src/
+  {
+    files: ["bin/**", "test/**/*.js", "*.js", "scripts/**", ".github/**"],
+    rules: rulesOff("jsdoc/"),
+  },
+
+  // acc
   {
     files: ["src/**/*.js"],
-    ...jsdocRecommended,
-    // @private blocks are internal notes, as in the Adobe config
-    settings: { jsdoc: { ignorePrivate: true } },
     rules: {
-      ...jsdocRecommended.rules,
-      "jsdoc/tag-lines": ["warn", "never", { startLines: null }],
       "jsdoc/informative-docs": "warn",
       // Types that cannot be imported: AioLogger (aio-lib-core-logging),
       // Client, ConnectionParameters, CampaignException, XtkSchema, XtkSchemaKey
@@ -157,6 +168,7 @@ export default [
     },
   },
 
+  // Tests
   {
     // Mocha injects describe/it/before, and test/index.js sets a global expect
     files: ["test/**/*.js"],
