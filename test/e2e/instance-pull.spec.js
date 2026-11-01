@@ -1,7 +1,5 @@
-// e2e for `acc instance check` and `pull` against a live instance, on xtk:xslt:
-// standard stylesheets, in small enough namespaces to pull in seconds. The
-// record count comes from a queryDef, and check and pull must match it.
-// Suite docs (how to run, gating): see ./README.md
+// e2e for `acc instance check` and `pull` against a live instance, on xtk:xslt.
+// check and pull must match the queryDef count.
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";

@@ -74,9 +74,8 @@ describe("AccAuth", function () {
     // mock AioLogger
     mockLogger = makeLogger();
 
-    // Default to a non-interactive prompt so tests are deterministic whether or
-    // not `npm test` runs attached to a TTY. Tests that exercise the
-    // interactive path inject their own prompt.
+    // Non-interactive by default, with or without a TTY. Interactive tests
+    // inject their own prompt.
     mockPrompt = {
       isInteractive: sinon.stub().returns(false),
       input: sinon.stub(),
@@ -991,9 +990,8 @@ describe("AccAuth", function () {
     });
 
     it("should list every missing key rather than failing later at IMS", async function () {
-      // A credential missing CLIENT_ID, with SCOPES and CLIENT_SECRETS emptied:
-      // all three are consumed by _resolveImsToken, so catching them here fails
-      // at init naming the keys, instead of as an IMS 400 on the next login.
+      // _resolveImsToken needs all three: init names them, instead of an IMS 400
+      // on the next login
       const file = writeJsonFile({
         ...consoleJson,
         CLIENT_ID: undefined,

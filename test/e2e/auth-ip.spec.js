@@ -1,6 +1,4 @@
-// e2e for `acc auth ip`: asks api.db-ip.com for the public IP address of the
-// machine. It needs the Internet, but no instance and no credential. Suite docs
-// (how to run, gating, conventions): see ../README.md
+// e2e for `acc auth ip` against api.db-ip.com: Internet, no instance, no credential.
 import { join } from "node:path";
 import net from "node:net";
 import os from "node:os";

@@ -1,7 +1,5 @@
-// e2e for `acc instance queryDef` against a live instance: runs a read-only
-// query (xtk:queryDef#ExecuteQuery) and echoes the result collection on stdout.
-// xtk:option exists on every instance, which makes a safe, universal probe.
-// Suite docs (how to run, gating): see ./README.md
+// e2e for `acc instance queryDef` against a live instance, on xtk:option, present
+// on every instance.
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";

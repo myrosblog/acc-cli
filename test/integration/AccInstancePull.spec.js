@@ -297,10 +297,8 @@ describe("AccInstancePull.integration", () => {
         `parsedFilenames for ${schemaId} (${filename})`,
       ).to.deep.equal(parsedFilenames);
 
-      // ── Mark matched schemas as covered (remove from uncovered list) ──────
-      // We find the index rather than using filter() so duplicates
-      // (same schemaId, different filename) are removed one at a time,
-      // matching exactly as many entries as the fixture covers.
+      // Mark as covered: splice, not filter, removes one duplicate schemaId
+      // (different filename) per fixture
       const idx = uncoveredSchemas.findIndex((s) => schemaMatches(s, fixture));
       if (idx !== -1) uncoveredSchemas.splice(idx, 1);
     }

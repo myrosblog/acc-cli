@@ -1,7 +1,5 @@
-// e2e for `acc instance soap` against a live instance: invokes an arbitrary
-// SOAP method via the acc-js-sdk NLWS proxy. xtk:session#GetServerTime is a
-// static, read-only, no-argument method that exists on every instance, which
-// makes a safe, universal probe. Suite docs (how to run, gating): see ./README.md
+// e2e for `acc instance soap` against a live instance, mainly on static read-only
+// xtk:session methods.
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
