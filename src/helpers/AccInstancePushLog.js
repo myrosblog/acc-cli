@@ -55,6 +55,12 @@ class AccInstancePushLog {
   payloadXml;
 
   /**
+   * The file the payload was written to, under the dist folder.
+   * @type {string}
+   */
+  distPath;
+
+  /**
    * @type {Error}
    */
   error;
@@ -83,6 +89,7 @@ class AccInstancePushLog {
       payloadXml: this.payloadXml
         ? DomUtil.toXMLString(this.payloadXml)
         : undefined,
+      distPath: this.distPath,
       error: this.error ? this.error.message || String(this.error) : undefined,
     };
   }

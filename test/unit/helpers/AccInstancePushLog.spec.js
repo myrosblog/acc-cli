@@ -38,10 +38,12 @@ describe("helpers/AccInstancePushLog", () => {
       pushLog.payloadXml = DomUtil.parse(
         '<delivery internalName="WELCOME"><![CDATA[<html></html>]]></delivery>',
       );
+      pushLog.distPath = "/project/dist/deliveries/welcome.body.html.xml";
       pushLog.endTime = new Date(pushLog.startTime.getTime() + 25);
 
       const summary = pushLog.toLog();
 
+      expect(summary.distPath).to.equal(pushLog.distPath);
       expect(summary.schemaId).to.equal("nms:delivery");
       expect(summary.filePath).to.equal(pushLog.filePath);
       expect(summary.xpath).to.equal("content/htmlSource");

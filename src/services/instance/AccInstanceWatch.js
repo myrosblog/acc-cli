@@ -5,8 +5,8 @@ import chalk from "chalk";
 // sdk
 import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
-import DomUtilAcc from "../../helpers/DomUtilAcc.js";
 import AccInstancePushLog from "../../helpers/AccInstancePushLog.js";
+import AccInstancePush from "./AccInstancePush.js";
 import {
   buildWatchTargets,
   findMatchingTargets,
@@ -56,6 +56,9 @@ class AccInstanceWatch {
   /** @type {Function} spinner factory, injected for unit tests */
   createSpinner;
 
+  /** @type {AccInstancePush} builds the payloads, written to dist */
+  accInstancePush;
+
   /**
    * Spinner of the file being pushed
    * @type {object}
@@ -99,13 +102,23 @@ class AccInstanceWatch {
    * @param {AccConfig} accConfig - Schemas and download options (acc.config.json)
    * @param {object} cliOptions - Command-line options: `path` (watched folder)
    * @param {Function} createSpinner - Spinner factory
+   * @param {AccInstancePush} [accInstancePush] - Payload builder, rooted on the watch path by default
    */
-  constructor(logger, client, accConfig, cliOptions, createSpinner) {
+  constructor(
+    logger,
+    client,
+    accConfig,
+    cliOptions,
+    createSpinner,
+    accInstancePush,
+  ) {
     this.logger = logger;
     this.client = client;
     this.accConfig = accConfig;
     this.watchPath = cliOptions.path || process.cwd();
     this.createSpinner = createSpinner;
+    this.accInstancePush =
+      accInstancePush || new AccInstancePush(logger, cliOptions);
     // Early access notice, to remove once stable
     this.logger.warn(
       "`acc instance watch` is in early access and subject to change. Always test in sandbox first.",
@@ -171,10 +184,12 @@ class AccInstanceWatch {
         pollInterval: 100,
       },
       ignored: [
+        // ignore "acc. instance push|watch" build folder
+        `**/${AccInstancePush.DIST_DIRNAME}/**`,
+        // ignore common system files and folders
         "**/.DS_Store",
         "**/node_modules/**",
         "**/.git/**",
-        "**/.dist/**",
       ],
     };
 
@@ -436,7 +451,7 @@ class AccInstanceWatch {
    * @param {string} currentContent - Content of the changed file
    * @param {Document} metadataDocument - Meta document of the entity
    * @param {object} schemaConfig - Schema entry of acc.config.json
-   * @param {string} filePath - Absolute path of the changed file, logged for auditing
+   * @param {string} filePath - Absolute path of the changed file, mirrored in dist and logged for auditing
    * @returns {Promise<boolean>} true when pushed, false when skipped (XML element)
    * @throws {INSTANCE_WATCH_PUSH_FAILED} If the write fails
    */
@@ -487,26 +502,17 @@ class AccInstanceWatch {
 
       this.spinner.text = this._getSpinnerPrefix(2) + `Writing to the instance`;
 
-      const payloadDocument = DomUtilAcc.buildXmlFromPath(
+      const { payloadDocument, distPath } = this.accInstancePush.build(
+        filePath,
         xpath,
         currentContent,
-        schema.name,
+        schema,
+        keyValues,
       );
-      const payload = payloadDocument.documentElement;
-      payload.setAttribute("xtkschema", schemaId);
-      payload.setAttribute("_operation", "update");
-      // Declares the key, so the server does not reconcile on the first
-      // attribute it finds
-      payload.setAttribute(
-        "_key",
-        keyValues.map(({ xpath: keyXpath }) => keyXpath).join(","),
-      );
-      for (const { attributeName, value } of keyValues) {
-        payload.setAttribute(attributeName, value);
-      }
 
       pushLog.operation = "update";
       pushLog.payloadXml = payloadDocument;
+      pushLog.distPath = distPath;
 
       await this.adapterWrite(payloadDocument);
       return true;
