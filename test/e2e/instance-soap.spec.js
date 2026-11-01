@@ -44,6 +44,49 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     expect(err.stderr).to.match(/args is not valid JSON/i);
   });
 
+  it("fails with a clear error on a schema not found", async () => {
+    const err = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:accE2eNotFound",
+      "-m",
+      "GetServerTime",
+    ).then(
+      () => null,
+      (e) => e,
+    );
+    expect(err, "expected a non-zero exit").to.not.be.null;
+    expect(err.code).to.not.equal(0);
+    expect(err.stderr).to.contain("INSTANCE_SOAP_SDK_CALL_FAILED");
+    expect(err.stderr).to.contain("schema 'xtk:accE2eNotFound'");
+    expect(err.stdout).to.equal("");
+  });
+
+  it("fails with a clear error on a method not found", async () => {
+    const err = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "AccE2eNotFound",
+    ).then(
+      () => null,
+      (e) => e,
+    );
+    expect(err, "expected a non-zero exit").to.not.be.null;
+    expect(err.code).to.not.equal(0);
+    expect(err.stderr).to.contain(
+      "Unknown method 'AccE2eNotFound' of schema 'xtk:session'",
+    );
+    expect(err.stdout).to.equal("");
+  });
+
   // acc instance soap --schema xtk:session --method GetServerTime
   it("calls xtk:session#GetServerTime", async () => {
     const { stdout, stderr } = await acc(
@@ -150,6 +193,24 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       '["Nms_DefaultRcpSchema"]',
     );
     expect(stdout).to.match(/^[\w:-]+/); // nms:recipient
+  });
+
+  // acc instance soap -s xtk:session -m GetOption --args '["acc_e2e_not_found"]'
+  it("calls xtk:session#GetOption on an option not found", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "soap",
+      "-a",
+      ALIAS,
+      "-s",
+      "xtk:session",
+      "-m",
+      "GetOption",
+      "--args",
+      '["acc_e2e_not_found"]',
+    );
+    // GetOption returns [value, type], one per line: an empty value, type 0
+    expect(stdout.trimEnd().split("\n")).to.deep.equal(["", "0"]);
   });
 
   // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
