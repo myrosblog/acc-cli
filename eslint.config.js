@@ -17,7 +17,6 @@ export default [
       "dist/",
       "test/dist/",
       "test/mocks/",
-      "scripts/",
     ],
   },
 
