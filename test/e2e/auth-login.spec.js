@@ -30,4 +30,16 @@ describe(`acc auth login (e2e CLI, alias=${ALIAS})`, function () {
     // a login without project config must not create one
     expect(fs.readdirSync(cwd)).to.be.empty;
   });
+
+  it("with -a flag", async () => {
+    const { stdout, stderr } = await runAcc(["auth", "login", "-a", ALIAS], {
+      cwd,
+    });
+
+    // login yields no result: stdout stays empty (diagnostics go to stderr)
+    expect(stdout.trim()).to.equal("");
+    expect(stderr).to.match(/Logged in to .+ \(.+ build .+\)/);
+    // a login without project config must not create one
+    expect(fs.readdirSync(cwd)).to.be.empty;
+  });
 });
