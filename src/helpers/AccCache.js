@@ -1,9 +1,14 @@
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 // acc
 import { codes } from "./AccErrors.js";
 const { CACHE_CONSTR_DIR_MISSING } = codes;
 
+/**
+ * File cache given to acc-js-sdk as its `storage`: one JSON file per key.
+ *
+ * @class AccCache
+ */
 class AccCache {
   /**
    * @param {string} dir - directory holding the cache files
@@ -32,6 +37,12 @@ class AccCache {
     return path.join(this.dir, `${encodeURIComponent(key)}.json`);
   }
 
+  /**
+   * Reads a cached value.
+   *
+   * @param {string} key - Key set by acc-js-sdk
+   * @returns {Promise<string | undefined>} The cached text, undefined when missing or unreadable
+   */
   async getItem(key) {
     try {
       const data = await fs.readFile(this._path(key), "utf8");
@@ -41,10 +52,21 @@ class AccCache {
     }
   }
 
+  /**
+   * Writes a value.
+   *
+   * @param {string} key - Key set by acc-js-sdk
+   * @param {string} value - Text to cache
+   */
   async setItem(key, value) {
     await fs.writeFile(this._path(key), value, "utf8");
   }
 
+  /**
+   * Deletes a value. A missing value is not an error.
+   *
+   * @param {string} key - Key set by acc-js-sdk
+   */
   async removeItem(key) {
     try {
       await fs.remove(this._path(key));

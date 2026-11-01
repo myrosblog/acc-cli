@@ -1,9 +1,13 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import AuthInit from "../../../src/commands/auth/init.js";
-import CampaignAuth from "../../../src/CampaignAuth.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
 
-describe("AuthInit", () => {
+describe("AuthInit", function () {
+  // The first command run of the suite loads the oclif config and its plugins
+  // cold, which exceeds the 2s default on a slow Windows runner
+  this.timeout(10000);
+
   it("should have correct description", () => {
     expect(AuthInit.description).to.match(
       /^Authenticate an Adobe Campaign instance/,
@@ -40,7 +44,7 @@ describe("AuthInit", () => {
       "--token",
       "ims-token",
     ];
-    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
+    const authInitStub = sinon.stub(AccAuth.prototype, "init").resolves();
     const result = await AuthInit.run(argv);
     expect(result).to.be.undefined;
     expect(authInitStub.calledOnce).to.be.true;
@@ -64,7 +68,7 @@ describe("AuthInit", () => {
       "--ims-env",
       "stage",
     ];
-    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
+    const authInitStub = sinon.stub(AccAuth.prototype, "init").resolves();
     await AuthInit.run(argv);
     expect(authInitStub.calledOnce).to.be.true;
     expect(authInitStub.firstCall.args[0]).to.include({
@@ -72,7 +76,7 @@ describe("AuthInit", () => {
       jsonFile: "./oauth-s2s.json",
       imsEnv: "stage",
     });
-    // The kebab-case originals must not leak through: CampaignAuth reads
+    // The kebab-case originals must not leak through: AccAuth reads
     // camelCase only, so a stray "json-file" key would silently do nothing.
     expect(authInitStub.firstCall.args[0]).to.not.have.property("json-file");
     expect(authInitStub.firstCall.args[0]).to.not.have.property("ims-env");
@@ -95,7 +99,7 @@ describe("AuthInit", () => {
       "--pass",
       "test",
     ];
-    const authInitStub = sinon.stub(CampaignAuth.prototype, "init").resolves();
+    const authInitStub = sinon.stub(AccAuth.prototype, "init").resolves();
     const result = await AuthInit.run(argv);
     expect(result).to.be.undefined;
     expect(authInitStub.calledOnce).to.be.true;

@@ -1,8 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import { Flags, Parser, ux } from "@oclif/core";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstanceSoap from "../../../src/services/instance/AccInstanceSoap.js";
 import InstanceSoap from "../../../src/commands/instance/soap.js";
 
 describe("InstanceSoap", () => {
@@ -27,16 +28,16 @@ describe("InstanceSoap", () => {
     expect(InstanceSoap.baseFlags.config).to.exist;
   });
 
-  // Keeps getInstance() off the network/disk: stubs login + config.init.
+  // Keeps connect() off the network/disk: stubs login + config.init.
   function stubBootstrap() {
-    sinon.stub(CampaignAuth.prototype, "login").resolves();
-    sinon.stub(CampaignConfig.prototype, "init").resolves();
+    sinon.stub(AccAuth.prototype, "login").resolves();
+    sinon.stub(AccConfig.prototype, "init").resolves();
   }
 
   it("should print the raw XML result on stdout in human mode", async () => {
     stubBootstrap();
     const soapStub = sinon
-      .stub(CampaignInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves("<preview/>");
     const logStub = sinon.stub(InstanceSoap.prototype, "log");
 
@@ -52,7 +53,7 @@ describe("InstanceSoap", () => {
     ];
     const result = await InstanceSoap.run(argv);
 
-    expect(result).to.be.undefined; // nothing returned in human mode
+    expect(result).to.equal("<preview/>");
     expect(soapStub.calledOnce).to.be.true;
     // the instance is asked for XML (json:false) in human mode
     expect(soapStub.firstCall.args[0].json).to.equal(false);
@@ -62,13 +63,59 @@ describe("InstanceSoap", () => {
     expect(logStub.calledOnceWith("<preview/>")).to.be.true;
   });
 
+  it("should have an optional raw flag, exclusive with json", () => {
+    expect(InstanceSoap.flags.raw.required).to.not.be.true;
+    expect(InstanceSoap.flags.raw.exclusive).to.deep.equal(["json"]);
+  });
+
+  it("should forward --raw and print the SOAP response on stdout", async () => {
+    stubBootstrap();
+    const envelope = "<SOAP-ENV:Envelope/>";
+    const soapStub = sinon
+      .stub(AccInstanceSoap.prototype, "soap")
+      .resolves(envelope);
+    const logStub = sinon.stub(InstanceSoap.prototype, "log");
+
+    const result = await InstanceSoap.run([
+      "--alias",
+      "test",
+      "--schema",
+      "xtk:session",
+      "--method",
+      "GetOption",
+      "--raw",
+    ]);
+
+    expect(result).to.equal(envelope);
+    expect(soapStub.firstCall.args[0].raw).to.equal(true);
+    expect(soapStub.firstCall.args[0].json).to.equal(false);
+    expect(logStub.calledOnceWith(envelope)).to.be.true;
+  });
+
+  // run() does not reject in --json mode (oclif prints the error as JSON), so
+  // the parser is used; oclif adds the json flag at run time, so it is declared here.
+  it("should reject --raw together with --json", async () => {
+    const flags = {
+      ...InstanceSoap.baseFlags,
+      ...InstanceSoap.flags,
+      json: Flags.boolean(),
+    };
+
+    await expect(
+      Parser.parse(
+        ["--schema", "xtk:session", "--method", "GetOption", "--raw", "--json"],
+        { flags },
+      ),
+    ).to.be.rejectedWith(/cannot also be provided/);
+  });
+
   it("should return the SimpleJson object in --json mode (no stdout log)", async () => {
     stubBootstrap();
     const jsonResult = { serverTime: "2026-06-26" };
     const soapStub = sinon
-      .stub(CampaignInstance.prototype, "soap")
+      .stub(AccInstanceSoap.prototype, "soap")
       .resolves(jsonResult);
-    const logStub = sinon.stub(InstanceSoap.prototype, "log");
+    const stdoutStub = sinon.stub(ux, "stdout");
     sinon.stub(InstanceSoap.prototype, "logJson"); // oclif prints it
 
     const argv = [
@@ -85,6 +132,6 @@ describe("InstanceSoap", () => {
     expect(result).to.deep.equal(jsonResult);
     // json:true is forwarded so the instance returns SimpleJson
     expect(soapStub.firstCall.args[0].json).to.equal(true);
-    expect(logStub.called).to.be.false; // raw XML is never written in json mode
+    expect(stdoutStub.called).to.be.false; // oclif silences log() in json mode
   });
 });

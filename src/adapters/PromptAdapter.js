@@ -3,7 +3,7 @@ import { input, password, select } from "@inquirer/prompts";
 /**
  * Adapter around `@inquirer/prompts` (the same prompt library aio-cli relies on).
  * Encapsulates interactive terminal prompts behind a clean, mockable interface
- * so business services (e.g. CampaignAuth) can ask the user for missing input
+ * so business services (e.g. AccAuth) can ask the user for missing input
  * without coupling to a specific prompt library, and so tests can stub it.
  *
  * IMPORTANT: callers must guard interactive prompts with
@@ -15,9 +15,12 @@ import { input, password, select } from "@inquirer/prompts";
 class PromptAdapter {
   /**
    * @param {NodeJS.ReadStream} stdin - input stream, defaults to process.stdin
+   * @param {{input: Function, password: Function, select: Function}} prompts - prompt functions, injectable
+   *   because the real ones need a TTY
    */
-  constructor(stdin = process.stdin) {
+  constructor(stdin = process.stdin, prompts = { input, password, select }) {
     this.stdin = stdin;
+    this.prompts = prompts;
   }
 
   /**
@@ -35,7 +38,7 @@ class PromptAdapter {
    * @returns {Promise<string>} the user input
    */
   async input(message, opts = {}) {
-    return input({ message, ...opts });
+    return this.prompts.input({ message, ...opts });
   }
 
   /**
@@ -45,7 +48,7 @@ class PromptAdapter {
    * @returns {Promise<string>} the user input
    */
   async password(message, opts = {}) {
-    return password({ message, mask: "*", ...opts });
+    return this.prompts.password({ message, mask: "*", ...opts });
   }
 
   /**
@@ -56,7 +59,7 @@ class PromptAdapter {
    * @returns {Promise<*>} the selected choice's value
    */
   async select(message, choices, opts = {}) {
-    return select({ message, choices, ...opts });
+    return this.prompts.select({ message, choices, ...opts });
   }
 }
 

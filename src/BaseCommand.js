@@ -8,9 +8,9 @@ import Config from "@adobe/aio-lib-core-config/src/Config.js";
 // acc
 import makeLogger from "./helpers/makeLogger.js";
 import AccCache from "./helpers/AccCache.js";
-import CampaignAuth from "./CampaignAuth.js";
-import CampaignConfig, { CONFIG_FILENAME } from "./CampaignConfig.js";
-import CampaignMonitor from "./CampaignMonitor.js";
+import AccAuth from "./services/auth/AccAuth.js";
+import AccConfig, { CONFIG_FILENAME } from "./services/config/AccConfig.js";
+import AccMonitor from "./services/monitor/AccMonitor.js";
 import logCacheStats from "./helpers/cacheStatsLogger.js";
 
 /**
@@ -39,10 +39,10 @@ export default class BaseCommand extends Command {
   }
 
   /**
-   * @type {CampaignAuth}
+   * @type {AccAuth}
    */
   get auth() {
-    return (this._auth ??= new CampaignAuth(
+    return (this._auth ??= new AccAuth(
       this.logger,
       sdk,
       new Config(),
@@ -59,24 +59,24 @@ export default class BaseCommand extends Command {
           ),
         ),
       undefined,
-      // Marks each login stage, as InstanceCommand does for CampaignInstance.
+      // Marks each login stage, as InstanceCommand does for the AccInstance* services.
       (text) => this.spinner(text),
     ));
   }
 
   /**
-   * @type {CampaignMonitor}
+   * @type {AccMonitor}
    */
   get monitor() {
-    return (this._monitor ??= new CampaignMonitor(this.logger, sdk, this.auth));
+    return (this._monitor ??= new AccMonitor(this.logger, sdk, this.auth));
   }
 
   /**
    * Builds a fresh config rooted at ./acc.config.json.
-   * @returns {CampaignConfig} new instance of CampaignConfig
+   * @returns {AccConfig} new instance of AccConfig
    */
   makeConfig() {
-    return new CampaignConfig(
+    return new AccConfig(
       this.logger,
       path.join(process.cwd(), CONFIG_FILENAME),
     );
@@ -84,7 +84,7 @@ export default class BaseCommand extends Command {
 
   /**
    * Ora spinner factory (kept as a method for easy injection in tests).
-   * @param {string} text the spinner text
+   * @param {string} text Message shown next to the spinner
    * @returns {ora.Ora} a new spinner instance
    */
   spinner(text) {

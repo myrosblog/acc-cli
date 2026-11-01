@@ -116,5 +116,16 @@ describe("AccCache", function () {
       const cache = new AccCache(dir);
       await expect(cache.removeItem("absent")).to.be.fulfilled;
     });
+
+    it("should not throw when the removal itself fails", async () => {
+      const cache = new AccCache(dir);
+      // A file in place of the cache directory makes the removal fail (ENOTDIR).
+      fs.removeSync(dir);
+      fs.writeFileSync(dir, "not a directory");
+
+      await expect(cache.removeItem("foo")).to.be.fulfilled;
+
+      fs.removeSync(dir);
+    });
   });
 });

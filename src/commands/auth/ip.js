@@ -1,4 +1,6 @@
+import sdk from "@adobe/acc-js-sdk";
 import BaseCommand from "../../BaseCommand.js";
+import AccAuthIp from "../../services/auth/AccAuthIp.js";
 import { DOC_WHITELIST } from "../../helpers/helpText.js";
 
 export default class AuthIp extends BaseCommand {
@@ -17,6 +19,7 @@ export default class AuthIp extends BaseCommand {
 
   async run() {
     await this.parse(AuthIp);
-    this.log(await this.auth.ip()); // The IP is data: print it on stdout (this.log)
+    const authIp = new AccAuthIp(this.logger, sdk);
+    this.log(await authIp.ip()); // The IP is data: print it on stdout (this.log)
   }
 }

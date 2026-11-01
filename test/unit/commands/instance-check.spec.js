@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignAuth from "../../../src/CampaignAuth.js";
-import CampaignConfig from "../../../src/CampaignConfig.js";
-import CampaignInstance from "../../../src/CampaignInstance.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
+import AccConfig from "../../../src/services/config/AccConfig.js";
+import AccInstancePull from "../../../src/services/instance/AccInstancePull.js";
 import InstanceCheck from "../../../src/commands/instance/check.js";
 
 describe("InstanceCheck", () => {
@@ -24,15 +24,11 @@ describe("InstanceCheck", () => {
 
   it("should run", async () => {
     const argv = ["--alias", "test"];
-    const authLoginStub = sinon
-      .stub(CampaignAuth.prototype, "login")
-      .resolves();
+    const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     const instanceLoginStub = sinon
-      .stub(CampaignInstance.prototype, "pull")
+      .stub(AccInstancePull.prototype, "pull")
       .resolves();
-    const configInitStub = sinon
-      .stub(CampaignConfig.prototype, "init")
-      .resolves();
+    const configInitStub = sinon.stub(AccConfig.prototype, "init").resolves();
     const result = await InstanceCheck.run(argv);
     expect(result).to.be.undefined;
     expect(authLoginStub.calledOnce).to.be.true;

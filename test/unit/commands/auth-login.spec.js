@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import AuthLogin from "../../../src/commands/auth/login.js";
-import CampaignAuth from "../../../src/CampaignAuth.js";
+import AccAuth from "../../../src/services/auth/AccAuth.js";
 
 describe("AuthLogin", () => {
   it("should have correct description", () => {
@@ -15,9 +15,7 @@ describe("AuthLogin", () => {
 
   it("should run", async () => {
     const argv = ["--alias", "test"];
-    const authLoginStub = sinon
-      .stub(CampaignAuth.prototype, "login")
-      .resolves();
+    const authLoginStub = sinon.stub(AccAuth.prototype, "login").resolves();
     const result = await AuthLogin.run(argv);
     expect(result).to.be.undefined;
     expect(authLoginStub.calledOnce).to.be.true;

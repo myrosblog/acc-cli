@@ -70,3 +70,14 @@ jobs:
 
       - name: Run Mocha tests
         run: npm test
+
+      # Starts the binary as a smoke test
+      - name: Smoke test the CLI
+        shell: bash
+        run: |
+          node bin/acc --version
+          node bin/acc --help
+          node bin/acc auth --help
+          node bin/acc instance --help
+          node bin/acc monitor --help
+          node bin/acc config --help

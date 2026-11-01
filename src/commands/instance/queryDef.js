@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
+import AccInstanceQueryDef from "../../services/instance/AccInstanceQueryDef.js";
 import { DOC_QUERYDEF } from "../../helpers/helpText.js";
 
 export default class InstanceQueryDef extends InstanceCommand {
@@ -46,16 +47,18 @@ export default class InstanceQueryDef extends InstanceCommand {
 
   async run() {
     const { flags } = await this.parse(InstanceQueryDef);
-    const instance = await this.getInstance(flags);
-    const result = await instance.queryDef({
+    const { client } = await this.connect(flags);
+    const instanceQueryDef = new AccInstanceQueryDef(
+      this.logger,
+      client,
+      this.createSpinner,
+    );
+    const result = await instanceQueryDef.queryDef({
       ...flags,
       json: this.jsonEnabled(),
     });
-    // In --json mode oclif serialises the returned object; otherwise the raw XML
-    // is the command's result and goes to stdout (this.log).
-    if (this.jsonEnabled()) {
-      return result;
-    }
-    this.log(result); // The result content is data: print it on stdout (this.log)
+
+    this.log(result);
+    return result;
   }
 }

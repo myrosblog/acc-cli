@@ -16,7 +16,7 @@ describe("AuthList", () => {
     { alias: "staging", host: "http://stg", user: "ops", method: "Unknown" },
   ];
 
-  // Replaces the lazily-built CampaignAuth with a fake exposing list(), so the
+  // Replaces the lazily-built AccAuth with a fake exposing list(), so the
   // command never touches the real aio config on disk.
   function stubAuth(listReturn = rows) {
     const fakeAuth = { list: sinon.stub().returns(listReturn) };
@@ -48,6 +48,18 @@ describe("AuthList", () => {
     expect(output).to.include("METHOD");
     expect(output).to.include("admin");
     expect(output).to.not.include("password");
+  });
+
+  it("should render an empty cell for a missing host or user", async () => {
+    // AccAuth.list() coerces missing values to null.
+    stubAuth([{ alias: "bare", host: null, user: null, method: "Unknown" }]);
+    const logStub = sinon.stub(AuthList.prototype, "log");
+
+    await AuthList.run([]);
+
+    const output = logStub.getCall(0).args[0];
+    expect(output).to.include("bare");
+    expect(output).to.not.include("null");
   });
 
   it("should return redacted rows in --json mode", async () => {

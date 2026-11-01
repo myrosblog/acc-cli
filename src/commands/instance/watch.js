@@ -1,6 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
-import CampaignWatch from "../../CampaignWatch.js";
+import AccInstanceWatch from "../../services/instance/AccInstanceWatch.js";
 
 /**
  * Command to watch decomposed files and push changes to Adobe Campaign instance.
@@ -40,22 +40,22 @@ export default class InstanceWatch extends InstanceCommand {
   };
 
   /**
-   * CampaignWatch instance
-   * @type {CampaignWatch | null}
+   * AccInstanceWatch instance
+   * @type {AccInstanceWatch | null}
    */
   watcher = null;
 
   async run() {
     const { flags } = await this.parse(InstanceWatch);
 
-    // Get authenticated instance
-    const instance = await this.getInstance(flags);
+    // Get authenticated client
+    const { client, config } = await this.connect(flags);
 
     // Create watcher with dependency injection
-    this.watcher = new CampaignWatch(
+    this.watcher = new AccInstanceWatch(
       this.logger,
-      instance.client,
-      instance.accConfig,
+      client,
+      config,
       flags,
       (text) => this.spinner(text),
     );

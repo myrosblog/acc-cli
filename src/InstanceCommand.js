@@ -3,16 +3,15 @@ import { Flags } from "@oclif/core";
 import path from "node:path";
 // acc
 import BaseCommand from "./BaseCommand.js";
-import CampaignInstance from "./CampaignInstance.js";
-import { CONFIG_FILENAME } from "./CampaignConfig.js";
+import { CONFIG_FILENAME } from "./services/config/AccConfig.js";
 import { codes } from "./helpers/AccErrors.js";
 const { INSTANCE_ALIAS_UNRESOLVED } = codes;
 
 /**
  * Base command for `acc instance ...` subcommands that talk to an instance.
  *
- * Centralizes the shared flags (alias/path/config) via oclif `baseFlags` and
- * the login + CampaignInstance bootstrap used by pull/check/exec.
+ * Centralizes the shared flags (alias/path/config) via oclif `baseFlags`, the
+ * login (connect) and the spinner factory injected in the Acc* services.
  *
  * @class InstanceCommand
  */
@@ -38,13 +37,22 @@ export default class InstanceCommand extends BaseCommand {
   };
 
   /**
-   * Logs in to the aliased instance and builds a CampaignInstance.
+   * Spinner factory injected in the services, which show their progress with it.
+   * @returns {Function} creates a spinner from its text
+   */
+  get createSpinner() {
+    return (text) => this.spinner(text);
+  }
+
+  /**
+   * Logs in to the aliased instance.
    * @param {object} flags - parsed CLI flags (alias, config, path, ...)
    * @param {object} [sdkOptionsOverride] - acc-js-sdk connection options merged
    *   over the config ones (e.g. a raised `timeout` for heavy calls)
-   * @returns {CampaignInstance} a new CampaignInstance, ready to call its methods (pull/check/exec)
+   * @returns {Promise<{client: Client, config: AccConfig, flags: object}>} the logged-in
+   *   client, the config, and the flags with the resolved alias
    */
-  async getInstance(flags, sdkOptionsOverride = {}) {
+  async connect(flags, sdkOptionsOverride = {}) {
     const config = this.makeConfig();
     // Only used when acc.config.json is created: the alias of the last
     // `auth init` is then written into it, which pins the project to it.
@@ -63,12 +71,6 @@ export default class InstanceCommand extends BaseCommand {
       ...config.accJsSdkOptions,
       ...sdkOptionsOverride,
     });
-    return new CampaignInstance(
-      this.logger,
-      client,
-      config,
-      resolvedFlags,
-      (text) => this.spinner(text),
-    );
+    return { client, config, flags: resolvedFlags };
   }
 }

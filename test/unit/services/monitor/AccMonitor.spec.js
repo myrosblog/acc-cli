@@ -1,14 +1,14 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import CampaignMonitor from "../../src/CampaignMonitor.js";
+import AccMonitor from "../../../../src/services/monitor/AccMonitor.js";
 import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
-import { codes } from "../../src/helpers/AccErrors.js";
-import { makeLogger } from "../helpers.js";
+import { codes } from "../../../../src/helpers/AccErrors.js";
+import { makeLogger } from "../../../helpers.js";
 
 const { MONITOR_HOST_UNRESOLVED, MONITOR_ALIAS_UNKNOWN, MONITOR_TEST_FAILED } =
   codes;
 
-describe("CampaignMonitor", () => {
+describe("AccMonitor", () => {
   let logger, testStub, mockSdk, auth;
 
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe("CampaignMonitor", () => {
 
   describe("test", () => {
     it("should probe the given --host anonymously and return raw xml", async () => {
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       const result = await monitor.test({ host: "https://acme.example.com" });
 
       expect(result.status).to.equal("OK");
@@ -33,7 +33,7 @@ describe("CampaignMonitor", () => {
     });
 
     it("should request the xml representation", async () => {
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       await monitor.test({ host: "https://acme.example.com" });
 
       const cp = mockSdk.init.firstCall.args[0];
@@ -41,7 +41,7 @@ describe("CampaignMonitor", () => {
     });
 
     it("should resolve the host from a stored alias", async () => {
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       await monitor.test({ alias: "prod" });
 
       const cp = mockSdk.init.firstCall.args[0];
@@ -49,14 +49,14 @@ describe("CampaignMonitor", () => {
     });
 
     it("should throw MONITOR_HOST_UNRESOLVED when neither host nor alias", async () => {
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       await expect(monitor.test({})).to.be.rejectedWith(
         MONITOR_HOST_UNRESOLVED,
       );
     });
 
     it("should throw MONITOR_ALIAS_UNKNOWN for an unknown alias", async () => {
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       await expect(monitor.test({ alias: "nope" })).to.be.rejectedWith(
         MONITOR_ALIAS_UNKNOWN,
       );
@@ -64,7 +64,7 @@ describe("CampaignMonitor", () => {
 
     it("should wrap transport errors in MONITOR_TEST_FAILED", async () => {
       mockSdk.init.rejects(new Error("ECONNREFUSED"));
-      const monitor = new CampaignMonitor(logger, mockSdk, auth);
+      const monitor = new AccMonitor(logger, mockSdk, auth);
       await expect(
         monitor.test({ host: "https://down.example.com" }),
       ).to.be.rejectedWith(MONITOR_TEST_FAILED);

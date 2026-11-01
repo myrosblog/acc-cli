@@ -1,5 +1,6 @@
 import { Flags } from "@oclif/core";
 import InstanceCommand from "../../InstanceCommand.js";
+import AccInstanceExec from "../../services/instance/AccInstanceExec.js";
 
 export default class InstanceExec extends InstanceCommand {
   static description =
@@ -29,7 +30,12 @@ export default class InstanceExec extends InstanceCommand {
 
   async run() {
     const { flags } = await this.parse(InstanceExec);
-    const instance = await this.getInstance(flags);
-    this.log(await instance.exec(flags)); // The result XML is data: print it on stdout (this.log)
+    const { client } = await this.connect(flags);
+    const instanceExec = new AccInstanceExec(
+      this.logger,
+      client,
+      this.createSpinner,
+    );
+    this.log(await instanceExec.exec(flags)); // The result XML is data: print it on stdout (this.log)
   }
 }

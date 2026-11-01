@@ -7,11 +7,12 @@ import tmp from "tmp";
 import { ConnectionParameters } from "@adobe/acc-js-sdk/src/client.js";
 import { CampaignException } from "@adobe/acc-js-sdk/src/campaign.js";
 // acc
-import CampaignAuth, {
+import AccAuth from "../../../../src/services/auth/AccAuth.js";
+import {
   AUTH_CURRENT_ALIAS_KEY,
   AUTH_INSTANCES_KEY,
-} from "../../src/CampaignAuth.js";
-import { codes } from "../../src/helpers/AccErrors.js";
+} from "../../../../src/helpers/authConstants.js";
+import { codes } from "../../../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
@@ -33,12 +34,12 @@ const {
   AUTH_INIT_JSON_FILE_METHOD_CONFLICT,
 } = codes;
 // helpers
-import { makeLogger } from "../helpers.js";
+import { makeLogger } from "../../../helpers.js";
 
-describe("CampaignAuth", function () {
+describe("AccAuth", function () {
   let mockSdk, mockConfig, mockLogger, mockPrompt, mockMakeCache;
   /**
-   * @type {CampaignAuth}
+   * @type {AccAuth}
    */
   let auth;
 
@@ -59,16 +60,6 @@ describe("CampaignAuth", function () {
             buildNumber: "12345",
           },
         }),
-      }),
-      ip: sinon.stub().resolves({
-        ipAddress: "11.11.11.11",
-        continentCode: "EU",
-        continentName: "Europe",
-        countryCode: "FR",
-        countryName: "France",
-        stateProvCode: "ABC",
-        stateProv: "Abc",
-        city: "Def",
       }),
     };
 
@@ -96,7 +87,7 @@ describe("CampaignAuth", function () {
     // Stub cache factory so login() never touches the filesystem in tests.
     mockMakeCache = sinon.stub().returns({});
 
-    auth = new CampaignAuth(
+    auth = new AccAuth(
       mockLogger,
       mockSdk,
       mockConfig,
@@ -120,7 +111,7 @@ describe("CampaignAuth", function () {
     });
 
     it("should throw AUTH_CONSTR_SDK_MISSING when SDK is missing", function () {
-      expect(() => new CampaignAuth(mockLogger, null, mockConfig)).to.throw(
+      expect(() => new AccAuth(mockLogger, null, mockConfig)).to.throw(
         AUTH_CONSTR_SDK_MISSING,
       );
     });
@@ -217,7 +208,7 @@ describe("CampaignAuth", function () {
     const makeAuthWith = (pointer, instances) => {
       mockConfig.get.withArgs(AUTH_CURRENT_ALIAS_KEY).returns(pointer);
       mockConfig.get.withArgs(AUTH_INSTANCES_KEY).returns(instances);
-      return new CampaignAuth(
+      return new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -250,7 +241,7 @@ describe("CampaignAuth", function () {
   describe("login", function () {
     it("should throw AUTH_LOGIN_ALIAS_MISSING when config cannot be parsed", async function () {
       mockConfig.get.threw(new Error("Generic error at parsing"));
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -264,7 +255,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist with empty config", async function () {
       mockConfig.get.returns({});
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -278,7 +269,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_MISSING when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ existingAlias: {} });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -292,7 +283,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_EMPTY when config has null values", async function () {
       mockConfig.get.returns({ existingAlias: null });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -306,7 +297,7 @@ describe("CampaignAuth", function () {
 
     it("should throw AUTH_LOGIN_ALIAS_INVALID when instance doesn't exist in config", async function () {
       mockConfig.get.returns({ instance32: {} });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -326,7 +317,7 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -356,7 +347,7 @@ describe("CampaignAuth", function () {
         new CampaignException(undefined, 400, 16384, `SDK-999999 sdk.init()`),
       );
 
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -391,7 +382,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -421,7 +412,7 @@ describe("CampaignAuth", function () {
         fail: sinon.stub(),
       };
       const createSpinner = sinon.stub().returns(spinner);
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -455,7 +446,7 @@ describe("CampaignAuth", function () {
         succeed: sinon.stub(),
         fail: sinon.stub(),
       };
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -495,7 +486,7 @@ describe("CampaignAuth", function () {
           ),
       });
 
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -522,7 +513,7 @@ describe("CampaignAuth", function () {
         getSessionInfo: sinon.stub().returns({ serverInfo: null }),
       });
 
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -545,7 +536,7 @@ describe("CampaignAuth", function () {
 
       // Inject a stub cache factory so the test never touches the filesystem.
       const makeCache = sinon.stub().returns({});
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -569,7 +560,7 @@ describe("CampaignAuth", function () {
       });
 
       const makeCache = sinon.stub().returns({ dir: "/cache/sdk-cache/local" });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -594,7 +585,7 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -615,7 +606,7 @@ describe("CampaignAuth", function () {
       });
       const sentinelCache = { getItem() {}, setItem() {}, removeItem() {} };
       const makeCache = sinon.stub().returns(sentinelCache);
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -640,7 +631,7 @@ describe("CampaignAuth", function () {
         local: { host: "http://localhost", user: "u", password: "p" },
       });
       const makeCache = sinon.stub();
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -662,7 +653,7 @@ describe("CampaignAuth", function () {
         local: { host: "http://localhost", user: "u", password: "p" },
       });
       const makeCache = sinon.stub();
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -679,7 +670,7 @@ describe("CampaignAuth", function () {
       mockConfig.get.returns({
         local: { host: "http://localhost", user: "u", password: "p" },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       const prepStub = sinon
         .stub(auth, "_prepareConnectionParameters")
         .returns({});
@@ -698,7 +689,7 @@ describe("CampaignAuth", function () {
           password: "testpass",
         },
       });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -720,7 +711,7 @@ describe("CampaignAuth", function () {
           token: "ims-token",
         },
       });
-      auth = new CampaignAuth(
+      auth = new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -737,7 +728,7 @@ describe("CampaignAuth", function () {
       mockConfig.get.returns({
         ims: { host: "http://localhost", authMethod: "ImsBearerToken" },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "ims" })).to.be.rejectedWith(
         AUTH_LOGIN_TOKEN_MISSING,
       );
@@ -747,7 +738,7 @@ describe("CampaignAuth", function () {
       mockConfig.get.returns({
         weird: { host: "http://localhost", authMethod: "Telepathy" },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "weird" })).to.be.rejectedWith(
         AUTH_LOGIN_INVALID_METHOD,
       );
@@ -768,12 +759,12 @@ describe("CampaignAuth", function () {
       },
     };
 
-    // Build a CampaignAuth wired with a stubbed IMS token generator, plus the
+    // Build a AccAuth wired with a stubbed IMS token generator, plus the
     // instance record and (optional) persisted token cache it should read.
     const makeAuth = (imsAuth, tokenCache) => {
       mockConfig.get.withArgs("acc.auth.instances").returns({ s2s: s2sCreds });
       mockConfig.get.withArgs("acc.auth.imsTokens").returns(tokenCache);
-      return new CampaignAuth(
+      return new AccAuth(
         mockLogger,
         mockSdk,
         mockConfig,
@@ -852,7 +843,7 @@ describe("CampaignAuth", function () {
           clientId: "cid",
         },
       });
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig);
       await expect(auth.login({ alias: "s2s" })).to.be.rejectedWith(
         AUTH_LOGIN_IMS_CREDENTIALS_MISSING,
       );
@@ -891,7 +882,7 @@ describe("CampaignAuth", function () {
     /**
      * Writes a throwaway credential file and returns its path. Reading a
      * path is the unit under test here, so the filesystem cannot be stubbed
-     * away; `tmp` keeps it out of the repo (same idiom as CampaignConfig.spec).
+     * away; `tmp` keeps it out of the repo (same idiom as AccConfig.spec).
      * @param {string|Object} content - JSON value, or raw text to write as-is
      * @returns {string} path to the file
      */
@@ -1041,7 +1032,7 @@ describe("CampaignAuth", function () {
         .resolves(`  ${file}  `) // surrounding blanks are trimmed
         .onCall(2)
         .resolves("prod");
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
@@ -1072,7 +1063,7 @@ describe("CampaignAuth", function () {
         .resolves(file)
         .onCall(3)
         .resolves("prod");
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
@@ -1099,7 +1090,7 @@ describe("CampaignAuth", function () {
         .resolves("admin") // user
         .onCall(2)
         .resolves("prod"); // alias
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
@@ -1132,7 +1123,7 @@ describe("CampaignAuth", function () {
         .resolves("http://localhost") // host
         .onCall(1)
         .resolves("prod"); // alias
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
@@ -1166,7 +1157,7 @@ describe("CampaignAuth", function () {
         ) // JSON
         .onCall(3)
         .resolves("prod"); // alias
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({});
@@ -1193,7 +1184,7 @@ describe("CampaignAuth", function () {
         password: sinon.stub(),
         select: sinon.stub(),
       };
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({
@@ -1232,7 +1223,7 @@ describe("CampaignAuth", function () {
         password: sinon.stub(),
         select: sinon.stub(),
       };
-      auth = new CampaignAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
       sinon.stub(auth, "login").resolves();
 
       await auth.init({
@@ -1300,22 +1291,6 @@ describe("CampaignAuth", function () {
       // S2S reuses the IMS bearer path once the token has been generated.
       expect(actual._credentials._type).to.equal("ImsBearerToken");
       expect(actual._options.sessionInfo).to.equal(true);
-    });
-  });
-
-  describe("ip", () => {
-    it("should display ip info", async () => {
-      const ip = await auth.ip();
-      expect(ip).to.deep.equal({
-        ipAddress: "11.11.11.11",
-        continentCode: "EU",
-        continentName: "Europe",
-        countryCode: "FR",
-        countryName: "France",
-        stateProvCode: "ABC",
-        stateProv: "Abc",
-        city: "Def",
-      });
     });
   });
 

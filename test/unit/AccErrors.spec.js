@@ -31,9 +31,8 @@ describe("AccErrors", () => {
       expect(wrapped.sdkDetails.urn).to.equal("xtk:queryDef");
     });
 
-    it("should handle plain Error (no methodCall), covers lines 36-37 branch", () => {
-      // A plain Error has no .methodCall → error?.methodCall is undefined
-      // → the second ?. never fires → uncovered branch in c8
+    it("should leave the SOAP call details undefined for a plain Error", () => {
+      // A plain Error has no .methodCall, so method and urn stay undefined
       const plainError = new Error("Network timeout");
 
       const wrapped = wrapSdkError(
@@ -89,6 +88,27 @@ describe("AccErrors", () => {
           codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
         ).message,
       ).to.contain("Network timeout");
+    });
+
+    it("should keep the message of the error class when there is nothing to add", () => {
+      const ErrorClass = codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED;
+      const baseMessage = new ErrorClass().message;
+
+      expect(wrapSdkError({}, ErrorClass).message).to.equal(baseMessage);
+      expect(wrapSdkError(undefined, ErrorClass).message).to.equal(baseMessage);
+      expect(wrapSdkError(null, ErrorClass).message).to.equal(baseMessage);
+    });
+
+    it("should fill the SDK details with undefined values for a missing error", () => {
+      const wrapped = wrapSdkError(
+        undefined,
+        codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+        { schemaId: "nms:delivery" },
+      );
+
+      expect(wrapped.sdkDetails.schemaId).to.equal("nms:delivery");
+      expect(wrapped.sdkDetails.statusCode).to.be.undefined;
+      expect(wrapped.sdkDetails.method).to.be.undefined;
     });
   });
 });
