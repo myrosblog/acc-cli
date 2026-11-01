@@ -1,8 +1,7 @@
-# Campaign CLI
+# added for acc
 .vscode
 AGENTS.local.md
 CLAUDE.local.md
-scripts/
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,windows
