@@ -75,6 +75,46 @@ describe("AccErrors", () => {
       expect(wrapped.message).to.contain("Session has expired");
     });
 
+    it("should append the server detail to the rendered message", () => {
+      // The faultString is generic, the detail names the missing schema
+      const sdkError = {
+        faultString:
+          "Error while executing the method 'ExecuteQuery' of service 'xtk:queryDef'.",
+        detail:
+          "XFR-180000 Unable to load the document of identifier 'xtk:foo' and type 'xtk:schema'.",
+      };
+      const wrapped = wrapSdkError(
+        sdkError,
+        codes.INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED,
+      );
+      expect(wrapped.message).to.contain(
+        "of service 'xtk:queryDef'. XFR-180000 Unable to load the document of identifier 'xtk:foo'",
+      );
+    });
+
+    it("should not repeat the detail when the reason already contains it", () => {
+      // Without faultString and errorCode, the CampaignException message
+      // already ends with the detail
+      const sdkError = {
+        message: "500 - Error: WDB-200011 The record does not exist",
+        detail: "WDB-200011 The record does not exist",
+      };
+      const { message } = wrapSdkError(
+        sdkError,
+        codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+      );
+      expect(message.split("WDB-200011")).to.have.lengthOf(2);
+    });
+
+    it("should surface the detail alone when there is no other reason", () => {
+      expect(
+        wrapSdkError(
+          { detail: "WDB-200011 The record does not exist" },
+          codes.INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED,
+        ).message,
+      ).to.contain("WDB-200011 The record does not exist");
+    });
+
     it("should fall back to errorCode, then message, when no faultString", () => {
       expect(
         wrapSdkError(
