@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   quality:
-    name: Lint and format
+    name: "Quality: prettier, lint, readme, aio-cli dependencies"
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Check devDependencies shared with aio-cli
+      - name: Check aio-cli dependencies
         run: npm run check:aio-dependencies
 
       # The command reference in README.md is generated from the oclif commands.

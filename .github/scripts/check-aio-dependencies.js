@@ -1,4 +1,4 @@
-// Fails when a dependency shared with @adobe/aio-cli is on another release line,
+// Fails when a dependency shared with @adobe/aio-cli differs
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
