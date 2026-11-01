@@ -1,19 +1,11 @@
 // node
-import fs from "fs-extra";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { dirname } from "path";
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
-// sdk
-import { DomUtil } from "@adobe/acc-js-sdk/src/domUtil.js";
 // helpers
-import {
-  makeLogger,
-  makeSpinner,
-  makeClient,
-  makeSchema,
-} from "../../../helpers.js";
+import { makeLogger } from "../../../helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,50 +60,20 @@ const testConfigNoDecompose = {
   ],
 };
 
-// An entity schema as the SDK returns it: an internal key on @id, an external
-// key on @name + @namespace
-const javascriptSchemaXml = `<schema namespace="xtk" name="javascript">
-  <element name="javascript">
-    <key name="id" internal="true"><keyfield xpath="@id"/></key>
-    <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
-    <attribute name="id" type="long"/>
-    <attribute name="name" type="string"/>
-    <attribute name="namespace" type="string"/>
-  </element>
-</schema>`;
-
 describe("AccInstanceWatch", () => {
-  let mockClient, mockLogger, mockSpinner, watcher, cliOptions;
+  let mockLogger, mockPush, watcher, cliOptions;
 
   beforeEach(() => {
-    // mock client
-    mockClient = makeClient();
-    mockClient.NLWS = {
-      xml: {
-        xtkSession: {
-          write: sinon.stub().resolves({}),
-        },
-      },
-    };
-
-    // mock AioLogger
     mockLogger = makeLogger();
+    // The push itself is covered by AccInstancePush.spec.js
+    mockPush = { push: sinon.stub().resolves() };
+    cliOptions = { path: __dirname };
 
-    // mock ora spinner
-    mockSpinner = makeSpinner();
-
-    // default cli options
-    cliOptions = {
-      path: __dirname,
-    };
-
-    // create watcher instance
     watcher = new AccInstanceWatch(
       mockLogger,
-      mockClient,
       testConfig,
       cliOptions,
-      () => mockSpinner,
+      mockPush,
     );
   });
 
@@ -122,20 +84,23 @@ describe("AccInstanceWatch", () => {
   describe("Constructor", () => {
     it("should initialize with provided dependencies", () => {
       expect(watcher.logger).to.equal(mockLogger);
-      expect(watcher.client).to.equal(mockClient);
       expect(watcher.accConfig).to.equal(testConfig);
       expect(watcher.watchPath).to.equal(__dirname);
+      expect(watcher.accInstancePush).to.equal(mockPush);
     });
 
     it("should use process.cwd() when no path provided", () => {
       const watcherNoPath = new AccInstanceWatch(
         mockLogger,
-        mockClient,
         testConfig,
         {},
-        () => mockSpinner,
+        mockPush,
       );
       expect(watcherNoPath.watchPath).to.equal(process.cwd());
+    });
+
+    it("should warn that watch is in early access", () => {
+      expect(mockLogger.warn).to.have.been.calledWithMatch(/early access/);
     });
   });
 
@@ -159,87 +124,6 @@ describe("AccInstanceWatch", () => {
     });
   });
 
-  describe("_findSchemaForFile", () => {
-    beforeEach(() => {
-      watcher.watchTargets = watcher._buildWatchList(
-        getDecomposedSchemas(testConfig.schemas),
-      );
-    });
-
-    it("should find the schema and xpath for a matching file", () => {
-      const result = watcher._findSchemaForFile(
-        "Admin/Config/JavaScript codes/cus/myScript.js",
-      );
-
-      expect(result.schemaConfig.schemaId).to.equal("xtk:javascript");
-      expect(result.xpath).to.equal("data");
-    });
-
-    it("should return null for non-matching file path", () => {
-      expect(watcher._findSchemaForFile("some/random/path/file.js")).to.be.null;
-    });
-
-    it("should return null when no watch list was built", () => {
-      watcher.watchTargets = [];
-      expect(
-        watcher._findSchemaForFile("Admin/Config/JavaScript codes/cus/a.js"),
-      ).to.be.null;
-    });
-
-    it("should warn when several patterns claim the same file", () => {
-      const ambiguousConfig = {
-        schemas: [
-          {
-            schemaId: "xtk:javascript",
-            filename: "/Shared/{@name}.meta.xml",
-            decompose: { data: "/Shared/{@name}.js" },
-          },
-          {
-            schemaId: "xtk:jst",
-            filename: "/Shared/{@name}.meta.xml",
-            decompose: { code: "/Shared/{@name}.js" },
-          },
-        ],
-      };
-      const ambiguousWatcher = new AccInstanceWatch(
-        mockLogger,
-        mockClient,
-        ambiguousConfig,
-        cliOptions,
-        () => mockSpinner,
-      );
-      ambiguousWatcher.watchTargets = ambiguousWatcher._buildWatchList(
-        getDecomposedSchemas(ambiguousConfig.schemas),
-      );
-
-      const result = ambiguousWatcher._findSchemaForFile("Shared/both.js");
-
-      expect(result.schemaConfig.schemaId).to.equal("xtk:javascript");
-      expect(mockLogger.warn).to.have.been.calledWithMatch(
-        /matches 2 decompose patterns/,
-      );
-    });
-  });
-
-  describe("_getMetaFilePath", () => {
-    it("should generate meta file path from decomposed file path", () => {
-      const decomposedFilePath = join("some", "path", "cus", "myScript.js");
-
-      const result = watcher._getMetaFilePath(decomposedFilePath);
-
-      // Should replace .js with .meta.xml in the same directory
-      expect(result).to.equal(join("some", "path", "cus", "myScript.meta.xml"));
-    });
-
-    it("should handle files with multiple dots in name", () => {
-      const decomposedFilePath = join("some", "path", "my.file.js");
-
-      const result = watcher._getMetaFilePath(decomposedFilePath);
-
-      expect(result).to.equal(join("some", "path", "my.file.meta.xml"));
-    });
-  });
-
   describe("startWatching and stopWatching", () => {
     let chokidarStub, mockChokidarWatcher;
 
@@ -260,32 +144,34 @@ describe("AccInstanceWatch", () => {
       sinon.stub(watcher, "_importChokidar").resolves(chokidarStub);
     });
 
+    /**
+     * Event handlers registered on the chokidar watcher, by event name.
+     * @returns {object} the handlers
+     */
+    const getHandlers = () =>
+      Object.fromEntries(
+        mockChokidarWatcher.on.getCalls().map((call) => call.args),
+      );
+
     it("should throw if already running", async () => {
       watcher.isRunning = true;
 
-      try {
-        await watcher.startWatching();
-        expect.fail("Should have thrown");
-      } catch (err) {
-        expect(err.message).to.include("already running");
-      }
+      await expect(watcher.startWatching()).to.be.rejectedWith(
+        /already running/,
+      );
     });
 
     it("should throw if no decomposed schemas found", async () => {
       const watcherNoDecompose = new AccInstanceWatch(
         mockLogger,
-        mockClient,
         testConfigNoDecompose,
         cliOptions,
-        () => mockSpinner,
+        mockPush,
       );
 
-      try {
-        await watcherNoDecompose.startWatching();
-        expect.fail("Should have thrown");
-      } catch (err) {
-        expect(err.message).to.include("No schemas with 'decompose'");
-      }
+      await expect(watcherNoDecompose.startWatching()).to.be.rejectedWith(
+        /No schemas with 'decompose'/,
+      );
     });
 
     it("should watch relative patterns from the watch path", async () => {
@@ -300,6 +186,7 @@ describe("AccInstanceWatch", () => {
       ]);
       expect(options.cwd).to.equal(__dirname);
       expect(options.ignoreInitial).to.be.true;
+      expect(options.ignored).to.include("**/dist/**");
       expect(watcher.isRunning).to.be.true;
     });
 
@@ -346,293 +233,37 @@ describe("AccInstanceWatch", () => {
       );
     });
 
-    it("should route add and change events to _onFileChange", async () => {
-      const onFileChange = sinon.stub(watcher, "_onFileChange").resolves();
+    it("should push each added or changed file", async () => {
       await watcher.startWatching();
 
-      const handlers = Object.fromEntries(
-        mockChokidarWatcher.on.getCalls().map((call) => call.args),
-      );
+      const handlers = getHandlers();
       handlers.add("a.js");
       handlers.change("b.js");
 
-      expect(onFileChange).to.have.been.calledTwice;
-      expect(onFileChange).to.have.been.calledWith("a.js");
-      expect(onFileChange).to.have.been.calledWith("b.js");
+      expect(mockPush.push).to.have.been.calledTwice;
+      expect(mockPush.push).to.have.been.calledWith("a.js");
+      expect(mockPush.push).to.have.been.calledWith("b.js");
     });
 
     it("should log a deleted file without pushing it", async () => {
       await watcher.startWatching();
 
-      const handlers = Object.fromEntries(
-        mockChokidarWatcher.on.getCalls().map((call) => call.args),
-      );
-      handlers.unlink("Campaign Management/Deliveries/DM42.html");
+      getHandlers().unlink("Campaign Management/Deliveries/DM42.html");
 
-      expect(mockLogger.verbose).to.have.been.calledWithMatch(/File deleted/);
-      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
+      expect(mockLogger.verbose).to.have.been.calledWith(
+        "DM42.html: File deleted",
+      );
+      expect(mockPush.push).to.not.have.been.called;
     });
 
-    it("should survive a watcher error raised before any file change", async () => {
+    it("should log a watcher error", async () => {
       await watcher.startWatching();
 
-      const handlers = Object.fromEntries(
-        mockChokidarWatcher.on.getCalls().map((call) => call.args),
-      );
-      // No spinner exists yet: the handler must not throw on it
-      handlers.error(new Error("EMFILE"));
+      getHandlers().error(new Error("EMFILE"));
 
       expect(mockLogger.error).to.have.been.calledWithMatch(
         /Watcher error: EMFILE/,
       );
-    });
-  });
-
-  describe("_getMetadataDocument", () => {
-    let tempDir;
-
-    beforeEach(async () => {
-      // Create a temporary directory for test files
-      tempDir = join(__dirname, "../../../dist/campaignWatcherTest");
-      await fs.ensureDir(tempDir);
-
-      // Create a meta file
-      const metaXml = `<?xml version="1.0" encoding="UTF-8"?>
-        <javascript id="123" name="testScript" namespace="cus">
-          <data></data>
-        </javascript>`;
-      await fs.writeFile(join(tempDir, "testScript.meta.xml"), metaXml);
-
-      // Create a decomposed file
-      await fs.writeFile(
-        join(tempDir, "testScript.js"),
-        "const test = 'hello';",
-      );
-
-      // _getMetadataDocument reports progress on the spinner started by _onFileChange
-      watcher.spinner = mockSpinner;
-    });
-
-    afterEach(async () => {
-      // Clean up
-      await fs.remove(tempDir).catch(() => {});
-    });
-
-    it("should return the parsed meta document", async () => {
-      const schemaConfig = testConfig.schemas[0]; // xtk:javascript
-      const filePath = join(tempDir, "testScript.js");
-
-      const result = await watcher._getMetadataDocument(
-        schemaConfig,
-        filePath,
-        "data",
-      );
-
-      expect(result).to.not.be.null;
-      const rootElement = result.documentElement;
-      expect(rootElement.tagName).to.equal("javascript");
-      expect(rootElement.getAttribute("id")).to.equal("123");
-      expect(rootElement.getAttribute("namespace")).to.equal("cus");
-    });
-
-    it("should throw if meta file not found", async () => {
-      const schemaConfig = testConfig.schemas[0];
-
-      try {
-        await watcher._getMetadataDocument(
-          schemaConfig,
-          "/nonexistent/path/file.js",
-          "data",
-        );
-        expect.fail("Should have thrown");
-      } catch (err) {
-        expect(err.code).to.equal("INSTANCE_WATCH_META_FILE_MISSING");
-        expect(err.message).to.include("file.meta.xml");
-      }
-    });
-
-    it("should return the meta document even when the xpath is absent", async () => {
-      // A meta file without the target node: the xpath is only used to build the payload
-      const metaXml = `<?xml version="1.0" encoding="UTF-8"?>
-        <javascript id="123" name="testScript" namespace="cus">
-        </javascript>`;
-      await fs.writeFile(join(tempDir, "noData.meta.xml"), metaXml);
-
-      const result = await watcher._getMetadataDocument(
-        testConfig.schemas[0],
-        join(tempDir, "noData.js"),
-        "nonexistent",
-      );
-
-      expect(result.documentElement.tagName).to.equal("javascript");
-    });
-  });
-
-  describe("Integration: File change flow", () => {
-    let tempDir;
-
-    beforeEach(async () => {
-      tempDir = join(__dirname, "../../../dist/campaignWatcherIntegration");
-      await fs.ensureDir(tempDir);
-
-      // Pull writes the decomposed files under the template directory
-      const scriptDir = join(
-        tempDir,
-        "Admin",
-        "Config",
-        "JavaScript codes",
-        "test",
-      );
-      await fs.ensureDir(scriptDir);
-
-      const metaXml = `<?xml version="1.0" encoding="UTF-8"?>
-        <javascript id="456" name="integrationTest" namespace="test">
-          <data></data>
-        </javascript>`;
-      await fs.writeFile(join(scriptDir, "integrationTest.meta.xml"), metaXml);
-      await fs.writeFile(join(scriptDir, "integrationTest.js"), "// initial");
-
-      mockClient.application = {
-        getSchema: sinon.stub().resolves(makeSchema(javascriptSchemaXml)),
-      };
-
-      // Create watcher rooted on the temp dir
-      cliOptions = { path: tempDir };
-      watcher = new AccInstanceWatch(
-        mockLogger,
-        mockClient,
-        testConfig,
-        cliOptions,
-        () => mockSpinner,
-      );
-      watcher.watchTargets = watcher._buildWatchList(
-        getDecomposedSchemas(testConfig.schemas),
-      );
-    });
-
-    afterEach(async () => {
-      await fs.remove(tempDir).catch(() => {});
-    });
-
-    it("should push the changed content to the server", async () => {
-      const relativePath =
-        "Admin/Config/JavaScript codes/test/integrationTest.js";
-      await fs.writeFile(join(tempDir, relativePath), "// updated content");
-
-      await watcher._onFileChange(relativePath);
-
-      expect(mockClient.NLWS.xml.xtkSession.write).to.have.been.calledOnce;
-      const payload = mockClient.NLWS.xml.xtkSession.write.firstCall.args[0];
-      const xml = DomUtil.toXMLString(payload.documentElement);
-      expect(xml).to.include('xtkschema="xtk:javascript"');
-      expect(xml).to.include('_operation="update"');
-      expect(xml).to.include("// updated content");
-      // Reconciled on the internal key only
-      expect(xml).to.include('_key="@id"');
-      expect(xml).to.include('id="456"');
-      expect(xml).to.not.include("namespace=");
-
-      // The push is journaled for auditing, alongside AccInstancePullLog for pull
-      expect(mockLogger.debug).to.have.been.calledOnce;
-      const pushLogSummary = mockLogger.debug.firstCall.args[0];
-      expect(pushLogSummary.schemaId).to.equal("xtk:javascript");
-      expect(pushLogSummary.filePath).to.equal(join(tempDir, relativePath));
-      expect(pushLogSummary.operation).to.equal("update");
-      expect(pushLogSummary.payloadXml).to.equal(xml);
-      expect(pushLogSummary.error).to.be.undefined;
-    });
-
-    it("should push a composite key as _key and both attributes", async () => {
-      mockClient.application.getSchema.resolves(
-        makeSchema(`<schema namespace="xtk" name="javascript">
-          <element name="javascript">
-            <key name="name"><keyfield xpath="@name"/><keyfield xpath="@namespace"/></key>
-            <attribute name="name" type="string"/>
-            <attribute name="namespace" type="string"/>
-          </element>
-        </schema>`),
-      );
-
-      await watcher._onFileChange(
-        "Admin/Config/JavaScript codes/test/integrationTest.js",
-      );
-
-      const payload = mockClient.NLWS.xml.xtkSession.write.firstCall.args[0];
-      const xml = DomUtil.toXMLString(payload.documentElement);
-      expect(xml).to.include('_key="@name,@namespace"');
-      expect(xml).to.include('name="integrationTest"');
-      expect(xml).to.include('namespace="test"');
-      expect(xml).to.not.include("id=");
-    });
-
-    it("should report a meta file that cannot supply the key", async () => {
-      await fs.writeFile(
-        join(
-          tempDir,
-          "Admin/Config/JavaScript codes/test/integrationTest.meta.xml",
-        ),
-        `<?xml version="1.0" encoding="UTF-8"?>
-        <javascript name="integrationTest" namespace="test">
-          <data></data>
-        </javascript>`,
-      );
-
-      await watcher._onFileChange(
-        "Admin/Config/JavaScript codes/test/integrationTest.js",
-      );
-
-      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
-      expect(mockLogger.error).to.have.been.calledWithMatch(
-        /no value for the key "id"/,
-      );
-    });
-
-    it("should report an unknown schema", async () => {
-      mockClient.application.getSchema.resolves(null);
-
-      await watcher._onFileChange(
-        "Admin/Config/JavaScript codes/test/integrationTest.js",
-      );
-
-      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
-      expect(mockLogger.error).to.have.been.calledWithMatch(
-        /Schema xtk:javascript not found/,
-      );
-    });
-
-    it("should stop before pushing when the meta file is missing", async () => {
-      const relativePath = "Campaign Management/Deliveries/DM42.html";
-      await fs.outputFile(join(tempDir, relativePath), "<p>orphan</p>");
-
-      await watcher._onFileChange(relativePath);
-
-      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
-      expect(mockLogger.error).to.have.been.calledWithMatch({
-        code: "INSTANCE_WATCH_META_FILE_MISSING",
-      });
-    });
-
-    it("should report a failed push without throwing", async () => {
-      mockClient.NLWS.xml.xtkSession.write.rejects(new Error("SOAP down"));
-      const relativePath =
-        "Admin/Config/JavaScript codes/test/integrationTest.js";
-
-      await watcher._onFileChange(relativePath);
-
-      expect(mockLogger.error).to.have.been.calledWithMatch(
-        /Failed to push integrationTest.js/,
-      );
-    });
-
-    it("should skip a file outside the decompose configuration", async () => {
-      await fs.writeFile(join(tempDir, "notWatched.js"), "// noise");
-
-      await watcher._onFileChange("notWatched.js");
-
-      expect(mockClient.NLWS.xml.xtkSession.write).to.not.have.been.called;
-      expect(mockLogger.error).to.have.been.calledWithMatch({
-        code: "INSTANCE_WATCH_FILE_NOT_IN_SCOPE",
-      });
     });
   });
 });

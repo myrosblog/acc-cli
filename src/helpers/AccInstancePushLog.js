@@ -3,7 +3,7 @@ import accSdk from "@adobe/acc-js-sdk";
 const { DomUtil } = accSdk;
 
 /**
- * Log data for a single entity pushed by AccInstanceWatch._pushEntityToServer,
+ * Log data for a single entity pushed by AccInstancePush._pushEntityToServer,
  * for troubleshooting and auditing.
  * 1 instance per push attempt (no batching, unlike AccInstancePullLog).
  * @class AccInstancePushLog
@@ -55,6 +55,12 @@ class AccInstancePushLog {
   payloadXml;
 
   /**
+   * The file the payload was written to, under the dist folder.
+   * @type {string}
+   */
+  distPath;
+
+  /**
    * @type {Error}
    */
   error;
@@ -83,6 +89,7 @@ class AccInstancePushLog {
       payloadXml: this.payloadXml
         ? DomUtil.toXMLString(this.payloadXml)
         : undefined,
+      distPath: this.distPath,
       error: this.error ? this.error.message || String(this.error) : undefined,
     };
   }

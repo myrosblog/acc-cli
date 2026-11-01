@@ -192,29 +192,27 @@ E(
   "No schemas with 'decompose' configuration found in acc.config.json. Only decomposed files can be watched.",
 );
 E(
-  "INSTANCE_WATCH_FILE_NOT_IN_SCOPE",
-  "File not part of any decomposed schema. Only files defined in 'decompose' are watched.",
-);
-E(
-  "INSTANCE_WATCH_META_FILE_MISSING",
-  "Meta XML file not found for entity. Cannot rebuild without the meta file: %s",
-);
-E(
-  "INSTANCE_WATCH_SCHEMA_NOT_FOUND",
-  "Schema %s not found on the instance. Check the schemaId in acc.config.json.",
-);
-E(
-  "INSTANCE_WATCH_NO_WRITE_KEY",
-  "Cannot update %s: the meta file has no value for the key %s.",
-);
-E(
-  "INSTANCE_WATCH_PUSH_FAILED",
-  "Failed to push the entity to the server. Cause: %s",
-);
-E(
   "INSTANCE_WATCH_ALREADY_RUNNING",
   "Watch is already running. Stop the current watch before starting a new one.",
 );
+// INSTANCE push
+E(
+  "INSTANCE_PUSH_FILE_NOT_IN_SCOPE",
+  "File not part of any decomposed schema. Only files defined in 'decompose' can be pushed.",
+);
+E(
+  "INSTANCE_PUSH_META_FILE_MISSING",
+  "Meta XML file not found for entity. Cannot rebuild without the meta file: %s",
+);
+E(
+  "INSTANCE_PUSH_SCHEMA_NOT_FOUND",
+  "Schema %s not found on the instance. Check the schemaId in acc.config.json.",
+);
+E(
+  "INSTANCE_PUSH_NO_WRITE_KEY",
+  "Cannot update %s: the meta file has no value for the key %s.",
+);
+E("INSTANCE_PUSH_FAILED", "Failed to push the entity to the server. Cause: %s");
 E("INSTANCE_EXEC_FILE_NOT_FOUND", "Exec failed: script file not found: %s");
 E(
   "INSTANCE_EXEC_SDK_EVALUATE_FAILED",

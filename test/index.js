@@ -41,6 +41,7 @@ import "./unit/services/instance/AccInstanceQueryDef.spec.js";
 import "./unit/services/instance/AccInstanceInfo.spec.js";
 import "./unit/services/monitor/AccMonitor.spec.js";
 import "./unit/services/instance/AccInstanceWatch.spec.js";
+import "./unit/services/instance/AccInstancePush.spec.js";
 import "./unit/InstanceCommand.spec.js";
 import "./unit/adapters/ImsAuthAdapter.spec.js";
 import "./unit/adapters/PromptAdapter.spec.js";

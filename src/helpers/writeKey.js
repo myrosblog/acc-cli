@@ -1,6 +1,6 @@
 import DomUtilAcc from "./DomUtilAcc.js";
 import { codes } from "./AccErrors.js";
-const { INSTANCE_WATCH_NO_WRITE_KEY } = codes;
+const { INSTANCE_PUSH_NO_WRITE_KEY } = codes;
 
 /**
  * Reads the values of every field of a key from the meta document.
@@ -45,7 +45,7 @@ function getKeyValues(key, rootElement) {
  * @param {XtkSchema} schema - The schema of the entity, from the SDK
  * @param {Element} rootElement - Root element of the meta document
  * @returns {{key: XtkSchemaKey, keyValues: Array<{xpath: string, attributeName: string, value: string}>}} the key and its values
- * @throws {INSTANCE_WATCH_NO_WRITE_KEY} If the meta file does not supply the key
+ * @throws {INSTANCE_PUSH_NO_WRITE_KEY} If the meta file does not supply the key
  * @see https://opensource.adobe.com/acc-js-sdk/application.html
  */
 export function getWriteKey(schema, rootElement) {
@@ -53,7 +53,7 @@ export function getWriteKey(schema, rootElement) {
   const keyValues = key && getKeyValues(key, rootElement);
 
   if (!keyValues) {
-    throw new INSTANCE_WATCH_NO_WRITE_KEY({
+    throw new INSTANCE_PUSH_NO_WRITE_KEY({
       messageValues: [schema.id, key ? `"${key.name}"` : "(none defined)"],
     });
   }
