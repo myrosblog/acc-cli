@@ -86,7 +86,8 @@ class AccInstanceWatch {
     }
 
     this.logger.info(
-      `👀 Starting to watch decomposed files in ${this.watchPath} (debounce: ${debounceTime}ms)`,
+      `👀 Started the watch process in ${this.watchPath} ` +
+        `(debounce: ${debounceTime}ms, XML saved to ${AccInstancePush.DIST_DIRNAME}/)`,
     );
 
     const decomposedSchemas = getDecomposedSchemas(this.accConfig.schemas);
@@ -155,7 +156,8 @@ class AccInstanceWatch {
 
     this.isRunning = true;
     this.logger.info(
-      `✅ Watching ${filePatterns.length} file pattern(s) for changes. Press Ctrl+C to stop.`,
+      `📋 Found ${filePatterns.length} schema(s) to watch from ${this.accConfig.configPath}` +
+        ` (key: decompose). Press Ctrl+C to stop.`,
     );
   }
 

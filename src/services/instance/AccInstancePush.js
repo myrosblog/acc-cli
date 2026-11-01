@@ -211,7 +211,7 @@ class AccInstancePush {
    * @returns {string} Text placed before the step message
    */
   _getSpinnerPrefix(stage) {
-    let prefix = `Watch(${chalk.green(this.spinnerFilename)})`;
+    let prefix = `Push(${chalk.green(this.spinnerFilename)})`;
     if (stage > 0) {
       prefix += `>Metadata(xpath: ${chalk.yellow(this.spinnerMetadata)})`;
     }
