@@ -148,6 +148,7 @@ npm run coverage:strict        # only the 100% per-file check of src/helpers/, s
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
 npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
+npm run check:aio-dependencies # compare the dependencies shared with @adobe/aio-cli (network); CI runs it on each PR and weekly
 ACC_E2E_ALIAS=local npm run test:e2e   # end-to-end against an instance
 ```
 
@@ -158,6 +159,7 @@ Tests mirror `src/` (`test/unit/services/<topic>/Acc*.spec.js`, `test/unit/comma
 Quality gates:
 
 - ESLint default limits and Airbnb's extra rules.
+- To keep `acc` and `aio-cli` on the same tech stack, their dependencies are controlled by `.github/scripts/check-aio-dependencies.js`.
 - Code coverage: 100% statements, branches, functions and lines, file by file.
 - Target: all `src/*`. Starting with `src/helpers`, `src/commands` and `src/adapters`.
 

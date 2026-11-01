@@ -372,12 +372,12 @@ class AccAuth {
 
   /**
    * Applies `--json-file`: loads the OAuth Server-to-Server credential from disk
-   * into `opts.json`, which is what {@link _buildStoredInstance} persists and
-   * {@link _resolveImsToken} consumes. The file only holds S2S credentials, so
+   * into `opts.json`, which is what {@link AccAuth#_buildStoredInstance} persists and
+   * {@link AccAuth#_resolveImsToken} consumes. The file only holds S2S credentials, so
    * the method is inferred when `--method` was omitted; an explicit,
    * conflicting `--method` is rejected rather than silently ignoring the file.
    *
-   * Runs before {@link _collectInitOptions} so the flag works unattended (that
+   * Runs before {@link AccAuth#_collectInitOptions} so the flag works unattended (that
    * method returns untouched on a non-interactive terminal).
    *
    * @param {object} opts - partial init options, possibly carrying `jsonFile`

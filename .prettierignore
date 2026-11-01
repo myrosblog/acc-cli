@@ -4,4 +4,3 @@ dist
 package-lock.json
 test/dist
 test/mocks
-scripts/
