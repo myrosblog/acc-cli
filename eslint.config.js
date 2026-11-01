@@ -42,7 +42,7 @@ export default [
       "jsdoc/informative-docs": "warn",
       // Types that cannot be imported: AioLogger (aio-lib-core-logging),
       // Client, ConnectionParameters, CampaignException, XtkSchema, XtkSchemaKey
-      // (acc-js-sdk), Element, Document (@xmldom), NodeJS.ReadStream (Node)
+      // (acc-js-sdk), Element, Document (@xmldom), NodeJS namespace (Node)
       "jsdoc/no-undefined-types": [
         "warn",
         {
@@ -55,17 +55,13 @@ export default [
             "ConnectionParameters",
             "Document",
             "Element",
-            "NodeJS.ReadStream",
+            "NodeJS",
             "PromptAdapter",
             "XtkSchema",
             "XtkSchemaKey",
           ],
         },
       ],
-      // {Function} types the injected factories (AGENTS.md), and {*} the
-      // return of AccAuth._stage
-      "jsdoc/reject-any-type": "off",
-      "jsdoc/reject-function-type": "off",
 
       "n/prefer-node-protocol": "warn",
       "no-shadow": "warn",
