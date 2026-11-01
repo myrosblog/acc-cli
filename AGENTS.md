@@ -97,7 +97,7 @@ Adhere to the following guidelines in your code:
 - Use concise comments to explain why you are doing something in a certain way, if it is not obvious. If unsure, leave a comment.
 - Employ descriptive, human-readable variable and function/const names.
 - Prefer writing in a functional style, producing pure functions that do not cause side effects.
-- The codebase is linted with `npm run lint` (ESLint, `--max-warnings 0`) and formatted with `npm run format` (Prettier); follow the existing code style to ensure consistency. A warning fails the build, so a new function needs its JSDoc params and returns described, not only typed.
+- The codebase is linted with `npm run lint` (`@adobe/eslint-config-aio-lib-config`, `--max-warnings 0`) and formatted with `npm run format` (Prettier); follow the existing code style to ensure consistency. A warning fails the build, so a new function needs its JSDoc params and returns described, not only typed.
 - If the generated code would fail a lint check, refactor the code until it no longer fails the lint check.
 - Search hard to find an existing function where possible. These are often in the `Tech stack` libraries.
 - Be concise. Minimize any prose.
@@ -158,14 +158,13 @@ Tests mirror `src/` (`test/unit/services/<topic>/Acc*.spec.js`, `test/unit/comma
 
 Quality gates:
 
-- ESLint default limits and Airbnb's extra rules.
 - To keep `acc` and `aio-cli` on the same tech stack, their dependencies are controlled by `.github/scripts/check-aio-dependencies.js`.
 - Code coverage: 100% statements, branches, functions and lines, file by file.
 - Target: all `src/*`. Starting with `src/helpers`, `src/commands` and `src/adapters`.
 
 ### Commits & pull requests
 
-- Use **Conventional Commits** keywords whitelist: `feat:` `fix:` `test:` `docs:` `chore:` `refactor:` `build:` `style:`.
+- Use **Conventional Commits** keywords whitelist (controlled by `./.githooks/commit-msg`)
 - All changes land through a GitHub **pull request** (no direct push to `main`).
 
 ## Knowledge
@@ -209,7 +208,7 @@ You must compare each decision with what was done by Adobe in `aio-cli` and `acc
   - adding dependencies, including changing `package.json`
   - modifying compilation resource order
   - anything not explicitly covered by this AGENTS.md
-- 🚫 Never do: delete file, git push, push to npm
+- 🚫 Never do: delete gitignored file, any push (git push, npm publish)
 - Ignore folders: `coverage` (code coverage reports)
 
 ## Local extension
