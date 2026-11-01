@@ -1,0 +1,28 @@
+name: Check aio dependencies
+
+# ci.yml runs the check on each pull request. This run catches aio-cli
+# moving upstream while nothing changes here.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-aio-dependencies:
+    name: Dependencies match aio-cli
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Compare with aio-cli
+        run: npm run check:aio-dependencies
