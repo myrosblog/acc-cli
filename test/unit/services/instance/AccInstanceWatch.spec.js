@@ -1,5 +1,6 @@
 // node
 import fs from "fs-extra";
+import os from "node:os";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 // npm
@@ -20,6 +21,7 @@ const __dirname = dirname(__filename);
 
 // acc
 import AccInstanceWatch from "../../../../src/services/instance/AccInstanceWatch.js";
+import AccInstancePush from "../../../../src/services/instance/AccInstancePush.js";
 import { getDecomposedSchemas } from "../../../../src/helpers/watchTargets.js";
 
 // Test configuration with decomposed schemas
@@ -125,6 +127,24 @@ describe("AccInstanceWatch", () => {
       expect(watcher.client).to.equal(mockClient);
       expect(watcher.accConfig).to.equal(testConfig);
       expect(watcher.watchPath).to.equal(__dirname);
+    });
+
+    it("should root the default payload builder on the watch path", () => {
+      expect(watcher.accInstancePush).to.be.instanceOf(AccInstancePush);
+      expect(watcher.accInstancePush.projectPath).to.equal(__dirname);
+    });
+
+    it("should use the injected payload builder", () => {
+      const accInstancePush = new AccInstancePush(mockLogger, cliOptions);
+      const injected = new AccInstanceWatch(
+        mockLogger,
+        mockClient,
+        testConfig,
+        cliOptions,
+        () => mockSpinner,
+        accInstancePush,
+      );
+      expect(injected.accInstancePush).to.equal(accInstancePush);
     });
 
     it("should use process.cwd() when no path provided", () => {
@@ -300,6 +320,7 @@ describe("AccInstanceWatch", () => {
       ]);
       expect(options.cwd).to.equal(__dirname);
       expect(options.ignoreInitial).to.be.true;
+      expect(options.ignored).to.include("**/dist/**");
       expect(watcher.isRunning).to.be.true;
     });
 
@@ -392,9 +413,7 @@ describe("AccInstanceWatch", () => {
     let tempDir;
 
     beforeEach(async () => {
-      // Create a temporary directory for test files
-      tempDir = join(__dirname, "../../../dist/campaignWatcherTest");
-      await fs.ensureDir(tempDir);
+      tempDir = await fs.mkdtemp(join(os.tmpdir(), "acc-watch-"));
 
       // Create a meta file
       const metaXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -472,8 +491,7 @@ describe("AccInstanceWatch", () => {
     let tempDir;
 
     beforeEach(async () => {
-      tempDir = join(__dirname, "../../../dist/campaignWatcherIntegration");
-      await fs.ensureDir(tempDir);
+      tempDir = await fs.mkdtemp(join(os.tmpdir(), "acc-watch-"));
 
       // Pull writes the decomposed files under the template directory
       const scriptDir = join(
@@ -540,6 +558,13 @@ describe("AccInstanceWatch", () => {
       expect(pushLogSummary.operation).to.equal("update");
       expect(pushLogSummary.payloadXml).to.equal(xml);
       expect(pushLogSummary.error).to.be.undefined;
+
+      // dist holds what was sent
+      const distPath = join(tempDir, "dist", `${relativePath}.xml`);
+      expect(pushLogSummary.distPath).to.equal(distPath);
+      expect(fs.readFileSync(distPath, "utf8")).to.equal(
+        DomUtil.toXMLString(payload),
+      );
     });
 
     it("should push a composite key as _key and both attributes", async () => {
@@ -622,6 +647,9 @@ describe("AccInstanceWatch", () => {
       expect(mockLogger.error).to.have.been.calledWithMatch(
         /Failed to push integrationTest.js/,
       );
+      // The payload of a failed push stays auditable
+      expect(fs.existsSync(join(tempDir, "dist", `${relativePath}.xml`))).to.be
+        .true;
     });
 
     it("should skip a file outside the decompose configuration", async () => {
