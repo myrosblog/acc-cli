@@ -119,7 +119,7 @@ describe("helpers/writeKey", () => {
         getWriteKey(schema, rootElement);
         expect.fail("Should have thrown");
       } catch (err) {
-        expect(err.code).to.equal("INSTANCE_WATCH_NO_WRITE_KEY");
+        expect(err.code).to.equal("INSTANCE_PUSH_NO_WRITE_KEY");
         expect(err.message).to.include("xtk:javascript");
         expect(err.message).to.include('"id"');
       }
