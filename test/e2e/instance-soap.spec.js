@@ -125,6 +125,12 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       expect(stdout).to.contain("ptmServerTime");
     });
 
+    // acc instance soap -s xtk:session -m TestCnx
+    it("calls TestCnx (no return value)", async () => {
+      const { stdout } = await soap("xtk:session", "TestCnx");
+      expect(stdout.trim()).to.equal("");
+    });
+
     // acc instance soap -s xtk:session -m GetDefaultEntity --args '["nms:recipient"]'
     it("calls GetDefaultEntity", async () => {
       const { stdout } = await soap("xtk:session", "GetDefaultEntity", [
@@ -143,6 +149,17 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       expect(ids.every(Number.isInteger)).to.be.true;
     });
 
+    // acc instance soap -s xtk:session -m GetNewIdsEx --args '[3, "xtkNewId"]'
+    it("calls GetNewIdsEx --args [3, xtkNewId]", async () => {
+      const { stdout } = await soap("xtk:session", "GetNewIdsEx", [
+        3,
+        "xtkNewId",
+      ]);
+      const ids = stdout.trim().split(",").map(Number); // 4210,4211,4212
+      expect(ids).to.have.lengthOf(3);
+      expect(ids.every(Number.isInteger)).to.be.true;
+    });
+
     // acc instance soap -s xtk:session -m GetOption --args '["Nms_DefaultRcpSchema"]'
     it("calls GetOption --args [Nms_DefaultRcpSchema]", async () => {
       const { stdout } = await soap("xtk:session", "GetOption", [
@@ -158,6 +175,21 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       ]);
       // GetOption returns [value, type], one per line: an empty value, type 0
       expect(stdout.trimEnd().split("\n")).to.deep.equal(["", "0"]);
+    });
+
+    // acc instance soap -s xtk:session -m GetUserInfo
+    it("calls GetUserInfo", async () => {
+      const { stdout } = await soap("xtk:session", "GetUserInfo");
+      expect(stdout).to.match(/^<userInfo/);
+      expect(stdout).to.match(/ login="[^"]+"/);
+    });
+
+    // acc instance soap -s xtk:session -m GetCnxInfo
+    it("calls GetCnxInfo", async () => {
+      const { stdout } = await soap("xtk:session", "GetCnxInfo");
+      // The session of this call is one of the connections
+      expect(stdout).to.match(/^<infos/);
+      expect(stdout).to.contain("<cnx ");
     });
   });
 
