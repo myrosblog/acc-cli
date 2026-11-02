@@ -227,6 +227,27 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:persist", () => {
+    // acc instance soap -s xtk:persist -m GetEntityIfMoreRecent --args '["xtk:option|XtkDatabaseId", "", false]'
+    it("calls GetEntityIfMoreRecent on an xtk:option", async () => {
+      // An empty md5 never matches, so the entity is always returned
+      const { stdout } = await soap("xtk:persist", "GetEntityIfMoreRecent", [
+        "xtk:option|XtkDatabaseId",
+        "",
+        false,
+      ]);
+      expect(stdout).to.match(/^<option/);
+      expect(stdout).to.contain('name="XtkDatabaseId"');
+    });
+
+    // acc instance soap -s xtk:persist -m GetActiveApplicationMenus
+    it("calls GetActiveApplicationMenus", async () => {
+      const { stdout } = await soap("xtk:persist", "GetActiveApplicationMenus");
+      expect(stdout).to.match(/^<app/);
+    });
+  });
+
+
   describe("nms:delivery", () => {
     // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
     it("calls HtmlToText --args ['<p>Hello</p>']", async () => {
