@@ -247,6 +247,19 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:jobInterface", () => {
+    // acc instance soap -s xtk:jobInterface -m GetJobsInProcess
+    it("calls GetJobsInProcess", async () => {
+      const { stdout } = await soap("xtk:jobInterface", "GetJobsInProcess");
+      expect(stdout).to.match(/^<jobInfo/);
+    });
+
+    // acc instance soap -s xtk:jobInterface -m GetServerDiskSpace
+    it("calls GetServerDiskSpace (int64)", async () => {
+      const { stdout } = await soap("xtk:jobInterface", "GetServerDiskSpace");
+      expect(stdout.trim()).to.match(/^-?\d+$/); // -1 when unknown
+    });
+  });
 
   describe("nms:delivery", () => {
     // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
