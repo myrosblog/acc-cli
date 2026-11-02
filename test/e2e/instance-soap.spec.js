@@ -261,6 +261,20 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("nl:monitoring", () => {
+    // acc instance soap -s nl:monitoring -m GetMissingProcesses
+    it("calls GetMissingProcesses", async () => {
+      const { stdout } = await soap("nl:monitoring", "GetMissingProcesses");
+      expect(stdout).to.match(/^<elemProcessList/);
+    });
+
+    // acc instance soap -s nl:monitoring -m GetLogFileList
+    it("calls GetLogFileList (JSON in a string)", async () => {
+      const { stdout } = await soap("nl:monitoring", "GetLogFileList");
+      expect(JSON.parse(stdout).files).to.be.an("array");
+    });
+  });
+
   describe("nms:delivery", () => {
     // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
     it("calls HtmlToText --args ['<p>Hello</p>']", async () => {
