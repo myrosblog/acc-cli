@@ -199,6 +199,24 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       const { stdout } = await soap("xtk:builder", "GetDefaultNamespace");
       expect(stdout).to.match(/^\w+/); // cus
     });
+
+    // acc instance soap -s xtk:builder -m CheckTableExists --args '["default", "XtkOption"]'
+    it("calls CheckTableExists on an existing table", async () => {
+      const { stdout } = await soap("xtk:builder", "CheckTableExists", [
+        "default",
+        "XtkOption",
+      ]);
+      expect(stdout.trim()).to.equal("true");
+    });
+
+    // acc instance soap -s xtk:builder -m CheckTableExists --args '["default", "AccE2eNotFound"]'
+    it("calls CheckTableExists on a table not found", async () => {
+      const { stdout } = await soap("xtk:builder", "CheckTableExists", [
+        "default",
+        "AccE2eNotFound",
+      ]);
+      expect(stdout.trim()).to.equal("false");
+    });
   });
 
   describe("nms:delivery", () => {
