@@ -231,6 +231,38 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:folder", () => {
+    // acc instance soap -s xtk:folder -m LoadChildren --args '["", "", false, "", true]'
+    it("calls LoadChildren on the root folder", async () => {
+      const { stdout } = await soap("xtk:folder", "LoadChildren", [
+        "",
+        "",
+        false,
+        "",
+        true,
+      ]);
+      expect(stdout).to.match(/^<folder/);
+      expect(stdout).to.match(/<folder [^>]*fullName="\/[^"]+\/"/); // /Administration/
+    });
+
+    // acc instance soap -s xtk:folder -m FindFirstAuthorized --args '["@model='\''nmsRecipient'\''", false, 0]'
+    it("calls FindFirstAuthorized on the recipient folders", async () => {
+      const { stdout } = await soap("xtk:folder", "FindFirstAuthorized", [
+        "@model='nmsRecipient'",
+        false,
+        0,
+      ]);
+      expect(stdout).to.match(/^<folder/);
+      expect(stdout).to.contain('model="nmsRecipient"');
+    });
+
+    // acc instance soap -s xtk:folder -m HasFolderWriteRight --args '["0"]'
+    it("calls HasFolderWriteRight on the root folder", async () => {
+      const { stdout } = await soap("xtk:folder", "HasFolderWriteRight", ["0"]);
+      expect(stdout.trim()).to.match(/^(true|false)$/); // depends on the operator
+    });
+  });
+
   describe("xtk:queryDef", () => {
     // acc instance soap -s xtk:queryDef -m EvaluateExpr --args '["1+1"]'
     it("calls EvaluateExpr --args [1+1]", async () => {
