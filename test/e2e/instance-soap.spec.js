@@ -271,6 +271,20 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:report", () => {
+    // acc instance soap -s xtk:report -m GetReportList --args '["", "nms:delivery", "", ""]'
+    it("calls GetReportList on nms:delivery", async () => {
+      const { stdout } = await soap("xtk:report", "GetReportList", [
+        "",
+        "nms:delivery",
+        "",
+        "",
+      ]);
+      expect(stdout).to.match(/^<report-collection/);
+      expect(stdout).to.match(/<report [^>]*internalName="[^"]+"/); // browserStatistics
+    });
+  });
+
   describe("xtk:persist", () => {
     // acc instance soap -s xtk:persist -m GetEntityIfMoreRecent --args '["xtk:option|XtkDatabaseId", "", false]'
     it("calls GetEntityIfMoreRecent on an xtk:option", async () => {
