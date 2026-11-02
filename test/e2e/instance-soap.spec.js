@@ -219,6 +219,14 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:queryDef", () => {
+    // acc instance soap -s xtk:queryDef -m EvaluateExpr --args '["1+1"]'
+    it("calls EvaluateExpr --args [1+1]", async () => {
+      const { stdout } = await soap("xtk:queryDef", "EvaluateExpr", ["1+1"]);
+      expect(stdout.trim()).to.equal("2");
+    });
+  });
+
   describe("nms:delivery", () => {
     // acc instance soap -s nms:delivery -m HtmlToText --args '["<p>Hello</p>"]'
     it("calls HtmlToText --args ['<p>Hello</p>']", async () => {
