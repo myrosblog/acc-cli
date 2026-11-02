@@ -283,5 +283,14 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
       ]);
       expect(stdout).to.match(/^Hello/);
     });
+
+    // acc instance soap -s nms:delivery -m DiagnoseHTML --args '["<p>Hi</p>", 0]'
+    it("calls DiagnoseHTML", async () => {
+      const { stdout } = await soap("nms:delivery", "DiagnoseHTML", [
+        "<p>Hi</p>",
+        0,
+      ]);
+      expect(stdout).to.match(/^<diagnostic/);
+    });
   });
 });
