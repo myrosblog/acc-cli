@@ -219,6 +219,18 @@ describe(`acc instance soap (e2e CLI, alias=${ALIAS})`, function () {
     });
   });
 
+  describe("xtk:enum", () => {
+    // acc instance soap -s xtk:enum -m GetCleanedValue --args '[0, "acc-e2e"]'
+    it("calls GetCleanedValue on an enum not found", async () => {
+      // Without cleansing rules, the alias is returned as is
+      const { stdout } = await soap("xtk:enum", "GetCleanedValue", [
+        0,
+        "acc-e2e",
+      ]);
+      expect(stdout.trim()).to.equal("acc-e2e");
+    });
+  });
+
   describe("xtk:queryDef", () => {
     // acc instance soap -s xtk:queryDef -m EvaluateExpr --args '["1+1"]'
     it("calls EvaluateExpr --args [1+1]", async () => {
