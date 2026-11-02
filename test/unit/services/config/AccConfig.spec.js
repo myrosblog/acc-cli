@@ -354,9 +354,8 @@ describe("AccAuth", function () {
         }
       });
 
-      // storage/transport are runtime-only objects the CLI owns (login overwrites
-      // storage with a per-instance cache). Forbid them in the JSON config so a
-      // user gets an explicit error rather than a silent override.
+      // The CLI sets storage and transport at runtime: an explicit error rather
+      // than a silent override
       ["storage", "transport"].forEach((forbidden) => {
         it(`should throw CONFIG_VALIDATE_ERRORS when acc-js-sdk.${forbidden} is set`, () => {
           const configJson = {

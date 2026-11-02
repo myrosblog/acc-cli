@@ -86,9 +86,8 @@ describe("AccCache", function () {
     });
 
     it("should round-trip keys containing path separators and reserved chars", async () => {
-      // The SDK key embeds the endpoint (with a trailing slash) and schema
-      // ids: a naive path.join would treat the `/` as a sub-directory and fail
-      // with ENOENT, since the SDK swallows storage errors.
+      // The SDK key holds `/`: a path.join would fail with ENOENT, which the SDK
+      // swallows
       const cache = new AccCache(dir);
       const key =
         "acc.js.sdk.1.2.1.localhost:8080/.cache.XtkEntityCache$xtk:schema|xtk:session";

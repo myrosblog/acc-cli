@@ -1,7 +1,5 @@
-// e2e for `acc instance queryDef` against a live instance: runs a read-only
-// query (xtk:queryDef#ExecuteQuery) and echoes the result collection on stdout.
-// xtk:option exists on every instance, which makes a safe, universal probe.
-// Suite docs (how to run, gating): see ./README.md
+// e2e for `acc instance queryDef` against a live instance, on xtk:option, present
+// on every instance.
 import { join } from "node:path";
 import os from "node:os";
 import fs from "node:fs";
@@ -38,6 +36,30 @@ describe(`acc instance queryDef (e2e CLI, alias=${ALIAS})`, function () {
     expect(err, "expected a non-zero exit").to.not.be.null;
     expect(err.code).to.not.equal(0);
     expect(err.stderr).to.match(/queryDef failed/i);
+  });
+
+  it("fails with a non-zero exit on a schema not found", async () => {
+    const err = await acc(
+      "instance",
+      "queryDef",
+      "-a",
+      ALIAS,
+      "-q",
+      '<queryDef schema="xtk:accE2eNotFound" operation="select">' +
+        '<select><node expr="@name"/></select></queryDef>',
+    ).then(
+      () => null,
+      (e) => e,
+    );
+    expect(err, "expected a non-zero exit").to.not.be.null;
+    expect(err.code).to.not.equal(0);
+    // The query is built locally, the server rejects the schema on execute
+    expect(err.stderr).to.contain("INSTANCE_QUERYDEF_SDK_EXECUTE_FAILED");
+    // The SOAP fault detail names the schema (XFR-180000)
+    expect(err.stderr).to.contain(
+      "Unable to load the document of identifier 'xtk:accE2eNotFound'",
+    );
+    expect(err.stdout).to.equal("");
   });
 
   // acc instance queryDef -q '<queryDef'
@@ -95,6 +117,23 @@ describe(`acc instance queryDef (e2e CLI, alias=${ALIAS})`, function () {
     );
     expect(stdout).to.match(/^<option/);
     expect(stdout).to.match(/stringValue="[^"]+"/);
+  });
+
+  // acc instance queryDef -q '<queryDef schema="xtk:javascript"'
+  it("selects an xtk:javascript not found (empty collection)", async () => {
+    const { stdout } = await acc(
+      "instance",
+      "queryDef",
+      "-a",
+      ALIAS,
+      "-q",
+      '<queryDef schema="xtk:javascript" operation="select">' +
+        '<select><node expr="@name"/></select>' +
+        "<where><condition expr=\"@name = 'acc-e2e-not-found.js'\"/></where>" +
+        "</queryDef>",
+    );
+    // No match is a success with an empty collection, not an error
+    expect(stdout).to.match(/^<javascript-collection[^>]*\/>/);
   });
 
   // acc instance queryDef --file query.xml

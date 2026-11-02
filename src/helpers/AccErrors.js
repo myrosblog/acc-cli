@@ -50,16 +50,15 @@ function sdkDetailsOf(error) {
  * @returns {ErrorClass} the wrapped error
  */
 function wrapSdkError(error, ErrorClass, context = {}) {
-  // The acc-js-sdk throws a CampaignException whose actual reason is in
-  // `faultString` (the SOAP <faultstring>) or `errorCode`. aio's ErrorWrapper
-  // DROPS `cause` and never prints `sdkDetails`, so on its own the server's
-  // message is swallowed. Fold it into the message via messageValues: aio fills
-  // a trailing `%s` or, when the template has none, appends it after a space,
-  // so every wrapped SDK error now surfaces the underlying server fault.
+  // aio's ErrorWrapper drops `cause` and never prints `sdkDetails`:
+  // the server fault goes into the message via messageValues.
+  const reason = error?.faultString || error?.errorCode || error?.message;
+  // faultString is often generic, `detail` names the cause (e.g. a missing schema)
   const detail =
-    error?.faultString || error?.errorCode || error?.message || undefined;
+    error?.detail && !reason?.includes(error.detail) ? error.detail : "";
+  const messageValue = [reason, detail].filter(Boolean).join(" ");
   return new ErrorClass({
-    messageValues: detail ? [detail] : [],
+    messageValues: messageValue ? [messageValue] : [],
     sdkDetails: { ...context, ...sdkDetailsOf(error) },
     cause: error,
   });

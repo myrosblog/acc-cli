@@ -1,6 +1,7 @@
 // npm
 import adobeConfig from "@adobe/eslint-config-aio-lib-config";
 import globals from "globals";
+import noCommentSlop from "eslint-plugin-no-comment-slop";
 
 // helper to turn off adobeConfig rules
 const rulesOff = (prefix) =>
@@ -175,7 +176,33 @@ export default [
     languageOptions: {
       globals: { ...globals.mocha, expect: "readonly" },
     },
+    // Control comments
+    plugins: { "no-comment-slop": noCommentSlop },
     rules: {
+      "no-comment-slop/max-comment-lines": ["warn", { max: 2, headerMax: 2 }],
+      "no-comment-slop/no-banner-comment": "warn",
+      "no-comment-slop/no-em-dash": "warn",
+      "no-comment-slop/no-jargon": [
+        "warn",
+        {
+          extraWords: [
+            "genuine",
+            "bare",
+            "truly",
+            "actionable",
+            "hermetic",
+            "loudly",
+            "verbatim",
+            "synergy",
+            "disruptive",
+            "craft",
+            "scaffold",
+            "hatch",
+            "mint",
+            "curated",
+          ],
+        },
+      ],
       // Chai asserts through property access (`expect(x).to.be.true`), which
       // this rule reads as a statement with no effect
       "no-unused-expressions": "off",
