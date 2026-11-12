@@ -19,6 +19,7 @@ Full documentation available on [Getting started with acc](https://myrosblog.com
 - [Changelog](#-changelog)
 - [Architecture & Security](#-architecture--security)
 - [Command reference](#-command-reference)
+- [Telemetry](#-telemetry)
 - [Advanced configuration](#-advanced-configuration)
 
 ## Features
@@ -114,6 +115,7 @@ Read the [acc Architecture & Security](https://myrosblog.com/adobe-campaign/acc-
 - [`acc instance watch`](#acc-instance-watch)
 - [`acc monitor test`](#acc-monitor-test)
 - [`acc report`](#acc-report)
+- [`acc telemetry [STATE]`](#acc-telemetry-state)
 
 ## `acc auth decode TOKEN`
 
@@ -720,6 +722,38 @@ DESCRIPTION
 ```
 
 _See code: [@adobe/aio-cli-plugin-info](https://github.com/adobe/aio-cli-plugin-info/blob/4.1.0/src/commands/report.js)_
+
+## `acc telemetry [STATE]`
+
+Display or change the collection of anonymous usage data.
+
+```
+USAGE
+  $ acc telemetry [STATE] [--json]
+
+ARGUMENTS
+  [STATE]  (on|off) Turn telemetry on or off
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Display or change the collection of anonymous usage data.
+
+  Only the command, the flag names, the duration, the versions and the shell name are sent. Never the instance, the
+  arguments, the flag values or the result.
+
+EXAMPLES
+  Display whether telemetry is on.
+
+    $ acc telemetry
+
+  Stop sending usage data.
+
+    $ acc telemetry off
+```
+
+_See code: [src/commands/telemetry/index.js](https://github.com/myrosblog/acc-cli/blob/main/src/commands/telemetry/index.js)_
 <!-- commandsstop -->
 
 ## 🛠️ Local development
