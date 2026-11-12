@@ -1,5 +1,6 @@
 // e2e suite entry point, apart from test/index.js so `npm test` needs no server.
 process.env.ACC_NO_FILE_LOG = "1";
+process.env.AIO_TELEMETRY_DISABLED = "true";
 process.env.AIO_LOG_LEVEL = process.env.AIO_LOG_LEVEL || "error";
 
 import "./auth-login.spec.js";

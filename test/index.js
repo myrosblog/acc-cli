@@ -1,5 +1,7 @@
 // Tests never write the rotating acc.log to the user cache.
 process.env.ACC_NO_FILE_LOG = "1";
+// Tests never send usage data.
+process.env.AIO_TELEMETRY_DISABLED = "true";
 // Silence the diagnostics logs during tests, except for errors which indicate test failures.
 process.env.AIO_LOG_LEVEL = "error";
 
@@ -30,6 +32,7 @@ import "./unit/helpers/writeKey.spec.js";
 import "./unit/helpers/AccInstancePullLog.spec.js";
 import "./unit/helpers/AccInstancePushLog.spec.js";
 import "./unit/helpers/hideCommand.spec.js";
+import "./unit/helpers/telemetryEvent.spec.js";
 import "./unit/validators/queryDef.spec.js";
 import "./unit/services/config/AccConfig.spec.js";
 import "./unit/services/auth/AccAuth.spec.js";
@@ -42,6 +45,8 @@ import "./unit/services/instance/AccInstanceInfo.spec.js";
 import "./unit/services/monitor/AccMonitor.spec.js";
 import "./unit/services/instance/AccInstanceWatch.spec.js";
 import "./unit/services/instance/AccInstancePush.spec.js";
+import "./unit/services/telemetry/AccTelemetry.spec.js";
+import "./unit/services/telemetry/telemetryWorker.spec.js";
 import "./unit/InstanceCommand.spec.js";
 import "./unit/adapters/ImsAuthAdapter.spec.js";
 import "./unit/adapters/PromptAdapter.spec.js";
@@ -61,6 +66,7 @@ import "./unit/commands/instance-soap.spec.js";
 import "./unit/commands/instance-info.spec.js";
 import "./unit/commands/instance-watch.spec.js";
 import "./unit/commands/monitor-test.spec.js";
+import "./unit/commands/telemetry.spec.js";
 import "./unit/commands/flag-chars.spec.js";
 
 // integration tests
