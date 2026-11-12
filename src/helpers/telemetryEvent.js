@@ -8,7 +8,7 @@
  * @param {string} event.flags - Flag names in the typed order, i.e. "json,alias"
  * @param {number} event.durationMs - Command duration in milliseconds
  * @param {string} event.cliVersion - Version of acc
- * @param {string} event.agent - Name of the AI agent, i.e. "claude", or "human"
+ * @param {string} event.agent - AI agent name as detected by aio, i.e. "claude-code_2-1-309_agent", or "human"
  * @param {string} event.shell - Login shell, i.e. "zsh", or "unknown"
  * @param {string} event.platform - process.platform, i.e. "darwin"
  * @param {string} event.osVersion - OS release

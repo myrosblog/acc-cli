@@ -19,7 +19,6 @@ Full documentation available on [Getting started with acc](https://myrosblog.com
 - [Changelog](#-changelog)
 - [Architecture & Security](#-architecture--security)
 - [Command reference](#-command-reference)
-- [Telemetry](#-telemetry)
 - [Advanced configuration](#-advanced-configuration)
 
 ## Features
