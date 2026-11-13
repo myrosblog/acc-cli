@@ -1,14 +1,12 @@
 // node
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+import fs from "node:fs";
+import os from "node:os";
+import { join } from "node:path";
 // npm
 import { expect } from "chai";
 import sinon from "sinon";
 // helpers
 import { makeLogger } from "../../../helpers.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // acc
 import AccInstanceWatch from "../../../../src/services/instance/AccInstanceWatch.js";
@@ -61,13 +59,15 @@ const testConfigNoDecompose = {
 };
 
 describe("AccInstanceWatch", () => {
-  let mockLogger, mockPush, watcher, cliOptions;
+  let projectPath, mockLogger, mockPush, watcher, cliOptions;
 
   beforeEach(() => {
+    // temp folder for the watch path, to avoid polluting the real cwd
+    projectPath = fs.mkdtempSync(join(os.tmpdir(), "acc-watch-"));
     mockLogger = makeLogger();
     // The push itself is covered by AccInstancePush.spec.js
     mockPush = { push: sinon.stub().resolves() };
-    cliOptions = { path: __dirname };
+    cliOptions = { path: projectPath };
 
     watcher = new AccInstanceWatch(
       mockLogger,
@@ -78,6 +78,7 @@ describe("AccInstanceWatch", () => {
   });
 
   afterEach(() => {
+    fs.rmSync(projectPath, { recursive: true, force: true });
     sinon.restore();
   });
 
@@ -85,7 +86,7 @@ describe("AccInstanceWatch", () => {
     it("should initialize with provided dependencies", () => {
       expect(watcher.logger).to.equal(mockLogger);
       expect(watcher.accConfig).to.equal(testConfig);
-      expect(watcher.watchPath).to.equal(__dirname);
+      expect(watcher.watchPath).to.equal(projectPath);
       expect(watcher.accInstancePush).to.equal(mockPush);
     });
 
@@ -184,7 +185,7 @@ describe("AccInstanceWatch", () => {
         "Campaign Management/Deliveries/*.html",
         "Campaign Management/Deliveries/*.txt",
       ]);
-      expect(options.cwd).to.equal(__dirname);
+      expect(options.cwd).to.equal(projectPath);
       expect(options.ignoreInitial).to.be.true;
       expect(options.ignored).to.include("**/dist/**");
       expect(watcher.isRunning).to.be.true;
