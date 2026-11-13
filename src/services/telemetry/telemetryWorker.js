@@ -54,8 +54,5 @@ export async function postEvent(url, body, fetchFn = fetch) {
 }
 
 if (process.argv[1] === WORKER_FILE) {
-  await postEvent(
-    process.env.ACC_TELEMETRY_URL,
-    process.env.ACC_TELEMETRY_PAYLOAD,
-  );
+  postEvent(process.env.ACC_TELEMETRY_URL, process.env.ACC_TELEMETRY_PAYLOAD);
 }
