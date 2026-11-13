@@ -71,13 +71,14 @@ acc # default oclif output
 acc auth # handles authentication: login, list, init, ip
 acc instance # handles main logic: pull, check, exec, queryDef, soap, info, watch, template
 acc monitor # handles monitoring: test
+acc telemetry # displays or changes the anonymous usage data sent by BaseCommand.finally
 ```
 
 ### Source layout (`./src/`)
 
-- `commands/{auth,config,instance,monitor}/*.js`: oclif command classes (one file per command). Thin: parse flags, then delegate.
+- `commands/{auth,config,instance,monitor,telemetry}/*.js`: oclif command classes (one file per command). Thin: parse flags, then delegate.
 - `BaseCommand.js`, `InstanceCommand.js`: shared oclif base classes. `InstanceCommand.connect(flags)` resolves the alias, logs in and returns `{ client, config, flags }`; `createSpinner` is the spinner factory handed to the services.
-- `services/{auth,config,instance,monitor}/Acc*.js`: service classes holding the business logic, one folder per topic. Dependencies are injected (see Code guidelines).
+- `services/{auth,config,instance,monitor,telemetry}/Acc*.js`: service classes holding the business logic, one folder per topic. Dependencies are injected (see Code guidelines).
   - Named `Acc<Topic><Command>`, one class per command (`AccInstancePull`, `AccInstanceSoap`, ...), so a service can be tested and changed without touching the others.
   - A command that talks to an instance logs in with `connect()`, then builds its service with the client: `new AccInstanceSoap(this.logger, client, this.createSpinner)`.
 - `adapters/`: wrappers around external concerns (prompt, cache, spinner, ...).

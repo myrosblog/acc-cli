@@ -11,6 +11,9 @@ import AccCache from "./helpers/AccCache.js";
 import AccAuth from "./services/auth/AccAuth.js";
 import AccConfig, { CONFIG_FILENAME } from "./services/config/AccConfig.js";
 import AccMonitor from "./services/monitor/AccMonitor.js";
+import AccTelemetry, {
+  TELEMETRY_NOTICE,
+} from "./services/telemetry/AccTelemetry.js";
 import logCacheStats from "./helpers/cacheStatsLogger.js";
 
 /**
@@ -28,8 +31,18 @@ import logCacheStats from "./helpers/cacheStatsLogger.js";
  */
 export default class BaseCommand extends Command {
   /**
-   * @type {AioLogger}
+   * Start of the command, for the telemetry duration.
+   * @type {number}
    */
+  startedAt = Date.now();
+
+  /**
+   * Long names of the flags typed by the user, for the telemetry, i.e. ["alias", "json"].
+   * @type {string[]}
+   */
+  typedFlags = [];
+
+  /** @type {AioLogger} */
   get logger() {
     if (!this._logger) {
       this._logger = makeLogger(this.config?.cacheDir);
@@ -38,9 +51,7 @@ export default class BaseCommand extends Command {
     return this._logger;
   }
 
-  /**
-   * @type {AccAuth}
-   */
+  /** @type {AccAuth} */
   get auth() {
     return (this._auth ??= new AccAuth(
       this.logger,
@@ -64,11 +75,14 @@ export default class BaseCommand extends Command {
     ));
   }
 
-  /**
-   * @type {AccMonitor}
-   */
+  /** @type {AccMonitor} */
   get monitor() {
     return (this._monitor ??= new AccMonitor(this.logger, sdk, this.auth));
+  }
+
+  /** @type {AccTelemetry} */
+  get telemetry() {
+    return (this._telemetry ??= new AccTelemetry());
   }
 
   /**
@@ -102,6 +116,21 @@ export default class BaseCommand extends Command {
   }
 
   /**
+   * Keeps the typed flag names, as oclif does not store the parse output.
+   * Its raw tokens hold the flags typed, without the defaults and with -a as alias.
+   * @param {object} [options] the command class, i.e. AuthList
+   * @param {string[]} [argv] the arguments, this.argv by default
+   * @returns {Promise<object>} the oclif parse output
+   */
+  async parse(options, argv) {
+    const parsed = await super.parse(options, argv);
+    this.typedFlags = parsed.raw
+      .filter((token) => token.type === "flag")
+      .map((token) => token.flag);
+    return parsed;
+  }
+
+  /**
    * Runs after every command invocation, success or failure. Logs a final
    * snapshot of the SDK's internal cache stats so the numbers reflect the
    * command's actual work (schema/method/option lookups), not just the
@@ -113,6 +142,33 @@ export default class BaseCommand extends Command {
     if (this._auth?.client) {
       logCacheStats(this.logger, this._auth.client);
     }
+    this.trackUsage();
     return super.finally(err);
+  }
+
+  /**
+   * Sends the command call to telemetry.
+   * Uses finally() because oclif runs no "postrun" hook when a command fails.
+   * @returns {void}
+   */
+  trackUsage() {
+    try {
+      // Display notice if telemetry is not initialized
+      const isFirstRun = this.telemetry.lib.isNull();
+      if (isFirstRun) {
+        this.logger.warn(TELEMETRY_NOTICE);
+      }
+      this.telemetry.track(
+        {
+          command: this.id,
+          flags: this.typedFlags.join(","),
+          durationMs: Date.now() - this.startedAt,
+          cliVersion: this.config.version,
+        },
+        isFirstRun,
+      );
+    } catch {
+      // Any exception must not fail the command
+    }
   }
 }

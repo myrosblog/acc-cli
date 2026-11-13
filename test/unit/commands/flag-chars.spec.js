@@ -15,6 +15,7 @@ import InstanceSoap from "../../../src/commands/instance/soap.js";
 import InstanceTemplate from "../../../src/commands/instance/template.js";
 import InstanceWatch from "../../../src/commands/instance/watch.js";
 import MonitorTest from "../../../src/commands/monitor/test.js";
+import Telemetry from "../../../src/commands/telemetry/index.js";
 
 const COMMANDS = [
   AuthDecode,
@@ -33,6 +34,7 @@ const COMMANDS = [
   InstanceTemplate,
   InstanceWatch,
   MonitorTest,
+  Telemetry,
 ];
 
 // `-h` and `-v` are declared as additionalHelpFlags / additionalVersionFlags in package.json
