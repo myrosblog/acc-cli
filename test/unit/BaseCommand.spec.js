@@ -1,10 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
-import { Config, Flags } from "@oclif/core";
+import { Flags } from "@oclif/core";
 import BaseCommand from "../../src/BaseCommand.js";
 import AuthLogin from "../../src/commands/auth/login.js";
 import { makeLogger } from "../helpers.js";
-import { BIN } from "../helpers-cli.js";
 import { TELEMETRY_NOTICE } from "../../src/services/telemetry/AccTelemetry.js";
 
 describe("BaseCommand", () => {
@@ -91,14 +90,19 @@ describe("BaseCommand", () => {
   describe("trackUsage", () => {
     let cmd, logger;
 
+    // Stands for the oclif config: parse() for telemetry trackUsage
+    const config = {
+      version: "1.9.0",
+      runHook: async () => ({ successes: [] }),
+    };
+
     // A short and a long flag, as the instance commands have
     class FlagCommand extends BaseCommand {
       static flags = { alias: Flags.string({ char: "a" }) };
       static enableJsonFlag = true;
     }
 
-    beforeEach(async () => {
-      const config = await Config.load(BIN);
+    beforeEach(() => {
       cmd = new FlagCommand(["--json", "-a", "staging"], config);
       cmd.id = "auth:list";
       logger = makeLogger();
