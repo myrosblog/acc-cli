@@ -1,4 +1,6 @@
 import { expect } from "chai";
+import os from "node:os";
+import path from "node:path";
 import sinon from "sinon";
 import telemetryLib from "@adobe/aio-cli-plugin-telemetry/src/telemetry-lib.js";
 import AccTelemetry from "../../../../src/services/telemetry/AccTelemetry.js";
@@ -75,6 +77,35 @@ describe("AccTelemetry", () => {
       expect(payload.device.browser_version).to.equal(process.versions.node);
       expect(payload.user_properties.agent.value).to.equal("claude");
       expect(payload.user_properties.shell.value).to.equal("fish");
+    });
+
+    it("sends the shell name without a Windows path holding the user name", () => {
+      const send = sinon.stub();
+      new AccTelemetry(
+        {
+          SHELL:
+            "C:\\Users\\jdoe\\AppData\\Local\\Programs\\Git\\usr\\bin\\bash.exe",
+        },
+        send,
+        makeLib(),
+      ).track(EVENT);
+      expect(send.firstCall.args[1].user_properties.shell.value).to.equal(
+        "bash",
+      );
+    });
+
+    // Runs with the real home directory of each CI runner, i.e. C:\Users\runneradmin on Windows
+    it("never sends the home directory nor the user name of the machine", () => {
+      const send = sinon.stub();
+      const homeDir = os.homedir();
+      new AccTelemetry(
+        { ...process.env, SHELL: path.join(homeDir, "bin", "bash") },
+        send,
+        makeLib(),
+      ).track(EVENT);
+      const body = JSON.stringify(send.firstCall.args[1]);
+      expect(body).to.not.include(homeDir);
+      expect(body).to.not.include(path.basename(homeDir));
     });
 
     it("sends human and unknown without agent nor SHELL", () => {

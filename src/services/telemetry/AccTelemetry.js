@@ -56,9 +56,10 @@ class AccTelemetry {
           ...event,
           // AI assistant detection from aio-cli-plugin-telemetry
           agent: this.lib.getInvocationContext(this.env).agentName ?? "human",
-          // Name without its path; Windows sets no SHELL, except Git Bash
+          // Name only: the path can hold the user name, i.e. C:\Users\<name>\...\bash.exe.
+          // win32 splits on both / and \ on any OS. Windows sets no SHELL, except Git Bash
           shell: this.env.SHELL
-            ? path.posix.basename(this.env.SHELL)
+            ? path.win32.parse(this.env.SHELL).name
             : "unknown",
           platform: process.platform,
           osVersion: os.release(),
