@@ -77,6 +77,21 @@ describe("AccTelemetry", () => {
       expect(payload.user_properties.shell.value).to.equal("fish");
     });
 
+    it("sends the shell name without a Windows path holding the user name", () => {
+      const send = sinon.stub();
+      new AccTelemetry(
+        {
+          SHELL:
+            "C:\\Users\\jdoe\\AppData\\Local\\Programs\\Git\\usr\\bin\\bash.exe",
+        },
+        send,
+        makeLib(),
+      ).track(EVENT);
+      expect(send.firstCall.args[1].user_properties.shell.value).to.equal(
+        "bash",
+      );
+    });
+
     it("sends human and unknown without agent nor SHELL", () => {
       const send = sinon.stub();
       new AccTelemetry({}, send, makeLib()).track(EVENT);
