@@ -58,10 +58,10 @@
   },
   "c8": {
     "check-coverage": true,
-    "statements": 97,
-    "lines": 97,
-    "branches": 94,
-    "functions": 92,
+    "statements": 98,
+    "lines": 98,
+    "branches": 97,
+    "functions": 97,
     "per-file": false
   },
   "scripts": {
