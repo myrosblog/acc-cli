@@ -58,9 +58,9 @@
   },
   "c8": {
     "check-coverage": true,
-    "statements": 99,
-    "lines": 99,
-    "branches": 98,
+    "statements": 100,
+    "lines": 100,
+    "branches": 100,
     "functions": 100,
     "per-file": false
   },
@@ -69,7 +69,7 @@
     "test:e2e": "mocha test/e2e/index.js",
     "check:aio-dependencies": "node .github/scripts/check-aio-dependencies.js",
     "coverage": "c8 --reporter=lcov --reporter=text npm test && npm run coverage:strict",
-    "coverage:strict": "c8 report --all --src=src --include=\"src/helpers/**\" --include=\"src/commands/**\" --include=\"src/adapters/**\" --include=\"src/services/config/**\" --include=\"src/services/monitor/**\" --include=src/InstanceCommand.js --include=src/BaseCommand.js --include=src/services/instance/AccInstanceInfo.js --include=src/services/instance/AccInstancePull.js --include=src/services/instance/AccInstanceWatch.js --reporter=text --skip-full --check-coverage --100 --per-file",
+    "coverage:strict": "c8 report --all --src=src --include=\"src/**\" --reporter=text --skip-full --check-coverage --100 --per-file",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",

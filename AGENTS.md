@@ -143,8 +143,8 @@ Adhere to the following guidelines in your code:
 
 ```bash
 npm test                       # unit + integration tests (XML samples, real binary on commands failing before login), no network
-npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds ("c8" in package.json) and below 100% per file in the paths of coverage:strict
-npm run coverage:strict        # only the 100% per-file check of the paths listed in this script, on the data of the last coverage run
+npm run coverage               # unit tests with c8 coverage report; fails below 100% globally ("c8" in package.json) and per file in src/
+npm run coverage:strict        # only the 100% per-file check of src/, on the data of the last coverage run
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
 npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
@@ -159,8 +159,8 @@ Tests mirror `src/` (`test/unit/services/<topic>/Acc*.spec.js`, `test/unit/comma
 Quality gates:
 
 - To keep `acc` and `aio-cli` on the same tech stack, their dependencies are controlled by `.github/scripts/check-aio-dependencies.js`.
-- Code coverage: 100% statements, branches, functions and lines, file by file.
-- Target: all `src/*`. The paths at 100% are listed in the `coverage:strict` script: add a path once it reaches 100%. The global thresholds only go up.
+- Code coverage: 100% statements, branches, functions and lines, file by file, on all `src/`. A new file starts at 100%.
+- Prefer a test, or removing code that cannot run, over a `/* c8 ignore */`. When one is needed, its reason goes in the comment.
 
 ### Commits & pull requests
 
