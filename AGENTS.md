@@ -143,8 +143,8 @@ Adhere to the following guidelines in your code:
 
 ```bash
 npm test                       # unit + integration tests (XML samples, real binary on commands failing before login), no network
-npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds and below 100% per file in src/helpers/, src/commands/ and src/adapters/
-npm run coverage:strict        # only the 100% per-file check of src/helpers/, src/commands/ and src/adapters/, on the data of the last coverage run
+npm run coverage               # unit tests with c8 coverage report; fails below the global thresholds ("c8" in package.json) and below 100% per file in the paths of coverage:strict
+npm run coverage:strict        # only the 100% per-file check of the paths listed in this script, on the data of the last coverage run
 npm run format:check           # prettier check (use npm run format to fix)
 npm run lint                   # eslint, zero warning tolerated (use npm run lint:fix to fix)
 npm run readme                 # regenerate the command reference in README.md (oclif readme + prettier); CI fails if it is stale
@@ -160,7 +160,7 @@ Quality gates:
 
 - To keep `acc` and `aio-cli` on the same tech stack, their dependencies are controlled by `.github/scripts/check-aio-dependencies.js`.
 - Code coverage: 100% statements, branches, functions and lines, file by file.
-- Target: all `src/*`. Starting with `src/helpers`, `src/commands` and `src/adapters`.
+- Target: all `src/*`. The paths at 100% are listed in the `coverage:strict` script: add a path once it reaches 100%. The global thresholds only go up.
 
 ### Commits & pull requests
 
