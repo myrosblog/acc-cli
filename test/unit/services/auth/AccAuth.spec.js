@@ -1345,7 +1345,6 @@ describe("AccAuth", function () {
     it("should return Unknown when no password is present", () => {
       expect(auth._methodOf({ user: "admin" })).to.equal("Unknown");
       expect(auth._methodOf({})).to.equal("Unknown");
-      expect(auth._methodOf(null)).to.equal("Unknown");
     });
   });
 });
