@@ -162,10 +162,6 @@ class AccInstancePush {
         absolutePath,
         xpath,
       );
-
-      if (!metadataDocument) {
-        throw new Error(`Could not get metadata for ${absolutePath}`);
-      }
     } catch (err) {
       this.logger.error(err);
       this.spinner.fail(
@@ -249,14 +245,7 @@ class AccInstancePush {
     }
 
     const metaXmlContent = fs.readFileSync(metaFilePath, "utf8"); // @throws
-    const document = DomUtil.parse(metaXmlContent); // @throws
-
-    const rootElement = document.documentElement;
-    if (!rootElement) {
-      throw new Error(`No root element found in meta XML`);
-    }
-
-    return document;
+    return DomUtil.parse(metaXmlContent); // @throws on a document without root element
   }
 
   /**
@@ -306,10 +295,6 @@ class AccInstancePush {
     try {
       const rootElement = metadataDocument.documentElement;
 
-      if (!rootElement) {
-        throw new Error("No root element in entity XML");
-      }
-
       const schema = await this.client.application.getSchema(schemaId);
       if (!schema) {
         throw new INSTANCE_PUSH_SCHEMA_NOT_FOUND({
@@ -358,7 +343,7 @@ class AccInstancePush {
 
       // adapterWrite already wraps SDK failures: wrapping again would nest the
       // message
-      if (err?.sdk === "acc") {
+      if (err.sdk === "acc") {
         throw err;
       }
       throw wrapSdkError(err, INSTANCE_PUSH_FAILED, { schemaId });
