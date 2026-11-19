@@ -1,9 +1,11 @@
+import path from "node:path";
 import { expect } from "chai";
 import sinon from "sinon";
+import tmp from "tmp";
 import { Flags } from "@oclif/core";
 import BaseCommand from "../../src/BaseCommand.js";
 import AuthLogin from "../../src/commands/auth/login.js";
-import { makeLogger } from "../helpers.js";
+import { makeLogger, useMissingCredentialsFile } from "../helpers.js";
 import { TELEMETRY_NOTICE } from "../../src/services/telemetry/AccTelemetry.js";
 
 describe("BaseCommand", () => {
@@ -175,6 +177,34 @@ describe("BaseCommand", () => {
 
     it("builds the telemetry service lazily", () => {
       expect(cmd.telemetry).to.equal(cmd.telemetry);
+    });
+  });
+
+  describe("auth", () => {
+    afterEach(() => sinon.restore());
+
+    it("keeps the SDK cache of each alias in its own directory under the oclif cache dir", () => {
+      useMissingCredentialsFile();
+      const cacheDir = tmp.dirSync({ unsafeCleanup: true });
+      const cmd = new AuthLogin([], { cacheDir: cacheDir.name });
+      cmd._logger = makeLogger();
+
+      const cache = cmd.auth.makeCache("prod/eu");
+
+      // The alias is encoded, so "/" does not create a nested directory
+      expect(cache.dir).to.equal(
+        path.join(cacheDir.name, "sdk-cache", "prod%2Feu"),
+      );
+      cacheDir.removeCallback();
+    });
+  });
+
+  describe("spinner", () => {
+    it("builds a stopped ora spinner with the given text", () => {
+      const spinner = new AuthLogin([], {}).spinner("Logging in");
+
+      expect(spinner.text).to.equal("Logging in");
+      expect(spinner.isSpinning).to.equal(false);
     });
   });
 });
