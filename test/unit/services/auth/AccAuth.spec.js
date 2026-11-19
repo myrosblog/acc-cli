@@ -16,6 +16,7 @@ import { codes } from "../../../../src/helpers/AccErrors.js";
 const {
   AUTH_CONSTR_SDK_MISSING,
   AUTH_INIT_EXISTING_ALIAS,
+  AUTH_INIT_INVALID_METHOD,
   AUTH_LOGIN_ALIAS_MISSING,
   AUTH_LOGIN_ALIAS_EMPTY,
   AUTH_LOGIN_ALIAS_INVALID,
@@ -733,6 +734,16 @@ describe("AccAuth", function () {
       );
     });
 
+    it("should throw AUTH_LOGIN_ALIAS_INVALID for an IMS instance without host", async function () {
+      mockConfig.get.returns({
+        ims: { authMethod: "ImsBearerToken", token: "ims-token" },
+      });
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig);
+      await expect(auth.login({ alias: "ims" })).to.be.rejectedWith(
+        AUTH_LOGIN_ALIAS_INVALID,
+      );
+    });
+
     it("should throw AUTH_LOGIN_INVALID_METHOD for an unknown authMethod", async function () {
       mockConfig.get.returns({
         weird: { host: "http://localhost", authMethod: "Telepathy" },
@@ -801,6 +812,21 @@ describe("AccAuth", function () {
       expect(setCall, "token cache write").to.exist;
       expect(setCall.args[1].accessToken).to.equal("minted");
       expect(setCall.args[1].expiresAt).to.be.a("number");
+    });
+
+    it("stores a token without expires_in as expired, so the next login generates a new one", async function () {
+      const imsAuth = {
+        generateAccessToken: sinon.stub().resolves({ access_token: "minted" }),
+      };
+      auth = makeAuth(imsAuth, undefined);
+
+      await auth.login({ alias: "s2s" });
+
+      const setCall = mockConfig.set
+        .getCalls()
+        .find((c) => c.args[0] === "acc.auth.imsTokens.s2s");
+      expect(setCall.args[1].accessToken).to.equal("minted");
+      expect(setCall.args[1].expiresAt).to.be.at.most(Date.now());
     });
 
     it("re-uses a cached token that is comfortably valid", async function () {
@@ -1174,6 +1200,56 @@ describe("AccAuth", function () {
       });
     });
 
+    it("should log a pasted S2S JSON that does not parse, then prompt again", async function () {
+      mockConfig.get.returns(null);
+      const mockPrompt = {
+        isInteractive: sinon.stub().returns(true),
+        input: sinon.stub(),
+        password: sinon.stub(),
+        select: sinon.stub().resolves("ImsServerToServer"),
+      };
+      // Prompt order: host -> file path -> pasted JSON (invalid) -> file path
+      // -> pasted JSON (valid) -> alias
+      mockPrompt.input
+        .onCall(0)
+        .resolves("http://localhost")
+        .onCall(1)
+        .resolves("")
+        .onCall(2)
+        .resolves("{not json")
+        .onCall(3)
+        .resolves("")
+        .onCall(4)
+        .resolves('{"ORG_ID":"org@AdobeOrg"}')
+        .onCall(5)
+        .resolves("prod");
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+      sinon.stub(auth, "login").resolves();
+
+      await auth.init({});
+
+      expect(mockLogger.error).to.have.been.calledOnceWith(
+        sinon.match(/^Invalid JSON provided: /),
+      );
+      expect(mockConfig.set.firstCall.args[1].json).to.deep.equal({
+        ORG_ID: "org@AdobeOrg",
+      });
+    });
+
+    it("should throw AUTH_INIT_INVALID_METHOD for an unknown method", async function () {
+      mockConfig.get.returns(null);
+      auth = new AccAuth(mockLogger, mockSdk, mockConfig, mockPrompt);
+
+      await expect(
+        auth.init({
+          alias: "prod",
+          host: "http://localhost",
+          method: "Telepathy",
+        }),
+      ).to.be.rejectedWith(AUTH_INIT_INVALID_METHOD);
+      expect(mockConfig.set.called).to.be.false;
+    });
+
     it("should store S2S JSON (non-interactive)", async function () {
       mockConfig.get.returns(null);
       const mockPrompt = {
@@ -1330,6 +1406,16 @@ describe("AccAuth", function () {
       expect(rows[0]).to.not.have.property("password");
     });
 
+    it("should keep the four fields of an instance stored as null", () => {
+      // An aio config edited by hand can hold null instead of an instance
+      auth.instances = { broken: null };
+      auth.instanceIds = Object.keys(auth.instances);
+
+      expect(auth.list()).to.deep.equal([
+        { alias: "broken", host: null, user: null, method: "Unknown" },
+      ]);
+    });
+
     it("should return an empty array when no instances are configured", () => {
       auth.instances = {};
       auth.instanceIds = [];
@@ -1338,6 +1424,12 @@ describe("AccAuth", function () {
   });
 
   describe("_methodOf", () => {
+    it("should return the stored authMethod", () => {
+      expect(
+        auth._methodOf({ authMethod: "ImsBearerToken", password: "x" }),
+      ).to.equal("ImsBearerToken");
+    });
+
     it("should return UserPassword when a password is present", () => {
       expect(auth._methodOf({ password: "x" })).to.equal("UserPassword");
     });
@@ -1345,7 +1437,6 @@ describe("AccAuth", function () {
     it("should return Unknown when no password is present", () => {
       expect(auth._methodOf({ user: "admin" })).to.equal("Unknown");
       expect(auth._methodOf({})).to.equal("Unknown");
-      expect(auth._methodOf(null)).to.equal("Unknown");
     });
   });
 });

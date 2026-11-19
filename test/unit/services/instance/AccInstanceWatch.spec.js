@@ -266,4 +266,11 @@ describe("AccInstanceWatch", () => {
       );
     });
   });
+
+  describe("_importChokidar", () => {
+    it("should load chokidar with the default export used by startWatching", async () => {
+      const chokidar = await watcher._importChokidar();
+      expect(chokidar.default.watch).to.be.a("function");
+    });
+  });
 });

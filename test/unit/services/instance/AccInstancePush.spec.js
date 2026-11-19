@@ -288,6 +288,16 @@ describe("AccInstancePush", () => {
       );
     });
 
+    it("should name the error type when the error has no message", async () => {
+      mockClient.application.getSchema.rejects(new Error(""));
+
+      await accInstancePush.push(scriptPath);
+
+      expect(mockLogger.verbose).to.have.been.calledWith(
+        "  Push failed: Error",
+      );
+    });
+
     it("should not push an xpath that holds child elements", async () => {
       mockClient.application.getSchema.resolves(
         makeSchema(`<schema namespace="xtk" name="javascript">

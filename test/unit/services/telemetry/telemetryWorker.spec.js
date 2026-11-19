@@ -1,9 +1,18 @@
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { expect } from "chai";
 import sinon from "sinon";
 import {
   postEvent,
   sendInBackground,
 } from "../../../../src/services/telemetry/telemetryWorker.js";
+
+const WORKER_FILE = fileURLToPath(
+  new URL(
+    "../../../../src/services/telemetry/telemetryWorker.js",
+    import.meta.url,
+  ),
+);
 
 describe("telemetryWorker", () => {
   describe("sendInBackground", () => {
@@ -43,6 +52,25 @@ describe("telemetryWorker", () => {
 
       expect(await postEvent("https://example.test/mp", "{}", fetch)).to.be
         .false;
+    });
+  });
+
+  describe("worker process", () => {
+    it("exits cleanly when the post fails", () => {
+      // Runs the file as sendInBackground does. fetch rejects the invalid URL
+      // before any connection, so the test stays off the network.
+      const worker = spawnSync(process.execPath, [WORKER_FILE], {
+        env: {
+          ...process.env,
+          ACC_TELEMETRY_URL: "not a url",
+          ACC_TELEMETRY_PAYLOAD: "{}",
+        },
+        encoding: "utf8",
+        timeout: 10000,
+      });
+
+      expect(worker.status).to.equal(0);
+      expect(worker.stderr).to.equal("");
     });
   });
 });

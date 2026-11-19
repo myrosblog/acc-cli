@@ -164,8 +164,8 @@ class AccConfig {
         messageValues: [this.ajv.errorsText(this.ajvValidate.errors)],
       });
     }
-    // OK
-    this.schemas = configJson.schemas || [];
+    // OK: accConfig.json requires "schemas" as an array
+    this.schemas = configJson.schemas;
     this.queryDefWarnings = this.schemas.map((schemaConfig, index) =>
       this._getQueryDefWarnings(schemaConfig, index),
     );

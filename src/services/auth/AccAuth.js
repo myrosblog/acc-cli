@@ -147,9 +147,6 @@ class AccAuth {
    * @returns {string} One of {@link AUTH_METHODS} values, or "Unknown"
    */
   _methodOf(record) {
-    if (!record) {
-      return "Unknown";
-    }
     if (record.authMethod) {
       return record.authMethod;
     }
@@ -175,7 +172,7 @@ class AccAuth {
   async init(authOptions, sdkOptions, cliOptions) {
     // Resolve --json-file first: it works in both modes, whereas
     // _collectInitOptions() is a no-op on a non-interactive terminal.
-    authOptions = this._resolveJsonFile(authOptions || {});
+    authOptions = this._resolveJsonFile(authOptions);
     authOptions = await this._collectInitOptions(authOptions);
     if (this.instanceIds.includes(authOptions.alias)) {
       throw new AUTH_INIT_EXISTING_ALIAS();
@@ -356,8 +353,8 @@ class AccAuth {
     }
     // generateAccessToken resolves the full IMS response { access_token,
     // expires_in }
-    const accessToken = resp?.access_token ?? resp;
-    const expiresInMs = (resp?.expires_in ?? 0) * 1000;
+    const accessToken = resp.access_token;
+    const expiresInMs = (resp.expires_in ?? 0) * 1000;
     const expiresAt = Date.now() + expiresInMs;
     this.config.set(`${AUTH_IMS_TOKENS_KEY}.${alias}`, {
       accessToken,
