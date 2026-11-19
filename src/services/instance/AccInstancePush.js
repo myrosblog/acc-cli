@@ -347,6 +347,7 @@ class AccInstancePush {
         throw err;
       }
       throw wrapSdkError(err, INSTANCE_PUSH_FAILED, { schemaId });
+      /* c8 ignore next -- V8 counts a block after a catch that always throws, no code runs there */
     } finally {
       pushLog.endTime = new Date();
       this.logger.debug(pushLog.toLog());
