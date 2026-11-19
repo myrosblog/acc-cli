@@ -44,6 +44,7 @@ const nmsDeliveryMappingsRecipientAndSubscribe = loadXml(
 );
 // acc
 import AccInstancePull from "../../../../src/services/instance/AccInstancePull.js";
+import DomUtilAcc from "../../../../src/helpers/DomUtilAcc.js";
 
 describe("AccInstancePull", () => {
   let mockClient,
@@ -1051,4 +1052,105 @@ describe("AccInstancePull", () => {
   });
 
   describe("parse all mocks", () => {});
+
+  describe("adapterCreateAndExecuteQuery", () => {
+    const queryDefXml = DomUtil.parse(
+      '<queryDef schema="xtk:srcSchema" operation="select"/>',
+    );
+
+    // Stands for the SDK query returned by xtkQueryDef.create
+    const useQuery = (query) => {
+      const create = sinon.stub().returns(query);
+      mockClient.NLWS = { xml: { xtkQueryDef: { create } } };
+      return new AccInstancePull(
+        mockLogger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+      );
+    };
+
+    it("should select all the fields, then return the result collection", async () => {
+      const collection = xtkOlapCubesEmpty;
+      const query = {
+        selectAll: sinon.stub().resolves(),
+        executeQuery: sinon.stub().resolves(collection),
+      };
+      instance = useQuery(query);
+
+      const result = await instance.adapterCreateAndExecuteQuery(queryDefXml);
+
+      expect(result).to.equal(collection);
+      expect(mockClient.NLWS.xml.xtkQueryDef.create).to.have.been.calledWith(
+        queryDefXml,
+      );
+      expect(query.selectAll).to.have.been.calledOnceWithExactly(false);
+      expect(query.selectAll).to.have.been.calledBefore(query.executeQuery);
+    });
+
+    it("should wrap a create failure as INSTANCE_PULL_SDK_CREATEQUERY_FAILED", async () => {
+      instance = useQuery();
+      mockClient.NLWS.xml.xtkQueryDef.create.throws(new Error("x"));
+
+      await expect(
+        instance.adapterCreateAndExecuteQuery(queryDefXml),
+      ).to.be.rejectedWith(/unable to create SDK query/);
+    });
+
+    it("should wrap a selectAll failure as INSTANCE_PULL_SDK_SELECTALL_FAILED", async () => {
+      instance = useQuery({
+        selectAll: sinon.stub().rejects(new Error("x")),
+        executeQuery: sinon.stub(),
+      });
+
+      await expect(
+        instance.adapterCreateAndExecuteQuery(queryDefXml),
+      ).to.be.rejectedWith(/unable to select all fields/);
+    });
+
+    it("should wrap an executeQuery failure as INSTANCE_PULL_SDK_EXECUTEQUERY_FAILED", async () => {
+      instance = useQuery({
+        selectAll: sinon.stub().resolves(),
+        executeQuery: sinon.stub().rejects(new Error("x")),
+      });
+
+      await expect(
+        instance.adapterCreateAndExecuteQuery(queryDefXml),
+      ).to.be.rejectedWith(/unable to execute SDK query/);
+    });
+  });
+
+  describe("parse decompose errors", () => {
+    it("should log a failing decompose xpath and keep the other parts of the record", () => {
+      instance = new AccInstancePull(
+        mockLogger,
+        mockClient,
+        configDefaultFull,
+        optionsFull,
+      );
+      sinon
+        .stub(DomUtilAcc, "findLastElement")
+        .onFirstCall()
+        .throws(new Error("invalid xpath"))
+        .callThrough();
+      const record = DomUtil.getFirstChildElement(
+        DomUtil.parse("<delivery name='DM1'><a>A</a><b>B</b></delivery>"),
+      );
+      const schemaConfig = {
+        schemaId: "nms:delivery",
+        filename: "{@name}.xml",
+        decompose: { a: "{@name}.a.txt", b: "{@name}.b.txt" },
+      };
+
+      instance.parse(record, schemaConfig, true); // preview: no disk write
+
+      expect(mockLogger.verbose).to.have.been.calledWith(
+        "(⚠️ warning:parse invalid xpath)",
+      );
+      // "a" failed and keeps its content, "b" was still decomposed
+      expect(DomUtil.toXMLString(record)).to.equal(
+        '<delivery name="DM1"><a>A</a><b/></delivery>',
+      );
+    });
+  });
 });
