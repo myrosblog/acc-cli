@@ -83,7 +83,6 @@ acc telemetry # displays or changes the anonymous usage data sent by BaseCommand
   - A command that talks to an instance logs in with `connect()`, then builds its service with the client: `new AccInstanceSoap(this.logger, client, this.createSpinner)`.
 - `adapters/`: wrappers around external concerns (prompt, cache, spinner, ...).
 - `helpers/`, `validators/`, `templates/`: pure utilities, ajv validators, and file templates.
-- `index.js`: package entry point (`main`).
 
 ### Code guidelines
 

@@ -20,7 +20,6 @@
     "bin/",
     "src/"
   ],
-  "main": "src/index.js",
   "oclif": {
     "additionalHelpFlags": [
       "-h"
