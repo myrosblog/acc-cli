@@ -79,6 +79,65 @@ describe("AccInstanceInfo", () => {
       expect(text).to.contain("⚠️ timeout of 5000ms exceeded");
     });
 
+    it("should render a server time that is not a Date as a string", async () => {
+      instance = newInstance();
+      stubAll(instance);
+      instance.adapterGetServerTime.resolves("2026-06-06 14:00:00");
+
+      const { text } = await instance.info();
+
+      expect(text).to.contain(
+        "== Server time (xtk:session#GetServerTime) ==\n2026-06-06 14:00:00",
+      );
+    });
+
+    it("adapterGetServerTime should return the server clock", async () => {
+      const serverTime = new Date("2026-06-06T14:00:00.000Z");
+      instance = newInstance();
+      instance.client = {
+        NLWS: {
+          xtkSession: { getServerTime: sinon.stub().resolves(serverTime) },
+        },
+      };
+      expect(await instance.adapterGetServerTime()).to.equal(serverTime);
+    });
+
+    it("adapterGetServerTime should wrap SDK errors as INSTANCE_INFO_SDK_SERVERTIME_FAILED", async () => {
+      instance = newInstance();
+      instance.client = {
+        NLWS: {
+          xtkSession: { getServerTime: sinon.stub().rejects(new Error("x")) },
+        },
+      };
+      await expect(instance.adapterGetServerTime()).to.be.rejectedWith(
+        /GetServerTime error/,
+      );
+    });
+
+    it("adapterGetCnxInfo should return the <infos> element", async () => {
+      instance = newInstance();
+      instance.client = {
+        NLWS: {
+          xml: { xtkSession: { getCnxInfo: sinon.stub().resolves(cnxInfoEl) } },
+        },
+      };
+      expect(await instance.adapterGetCnxInfo()).to.equal(cnxInfoEl);
+    });
+
+    it("adapterGetCnxInfo should wrap SDK errors as INSTANCE_INFO_SDK_CNXINFO_FAILED", async () => {
+      instance = newInstance();
+      instance.client = {
+        NLWS: {
+          xml: {
+            xtkSession: { getCnxInfo: sinon.stub().rejects(new Error("x")) },
+          },
+        },
+      };
+      await expect(instance.adapterGetCnxInfo()).to.be.rejectedWith(
+        /GetCnxInfo error/,
+      );
+    });
+
     it("adapterTestCnx should wrap SDK errors as INSTANCE_INFO_SDK_TESTCNX_FAILED", async () => {
       instance = newInstance();
       instance.client = {
